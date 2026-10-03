@@ -79,7 +79,10 @@ function update(dt){
     p.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,da));
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
-  p.turretAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+  const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+  let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
+  const playerTurretTurnRate=1.25;
+  p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
   if(mouse.down||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){

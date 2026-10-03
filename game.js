@@ -8,8 +8,8 @@ const hulls=[
 ];
 const turrets=[
   {id:'standard',name:'Standard Turret',cost:0,turn:1.25,scale:1},
-  {id:'rapid',name:'Rapid Turret',cost:0,turn:1.8,scale:.9},
-  {id:'heavy',name:'Heavy Turret',cost:0,turn:.85,scale:1.12}
+  {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,scale:.9},
+  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,scale:.82}
 ];
 const barrels=[
   {id:'85mm',name:'85mm Barrel',cost:0,damage:50,precision:1,scale:1,length:1},
@@ -161,7 +161,7 @@ function renderShop(){
     }else if(type==='turret'){
       const sc=item.scale;
       q.fillStyle='#343c34';q.beginPath();q.arc(0,0,19*sc,0,6.283);q.fill();
-      q.fillStyle=item.id==='heavy'?'#45413b':item.id==='rapid'?'#4b5748':'#424d3f';
+      q.fillStyle=item.id==='fast'?'#526149':item.id==='rapid'?'#4b5748':'#424d3f';
       q.beginPath();q.roundRect(-15*sc,-10*sc,30*sc,20*sc,8*sc);q.fill();
       q.fillStyle='#292f2a';q.fillRect(12*sc,-4*sc,12*sc,8*sc);
     }else{
@@ -485,14 +485,17 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';
   x.beginPath();
-  x.moveTo(-r*.48,-r*.30);
-  x.quadraticCurveTo(-r*.28,-r*.48,r*.05,-r*.47);
-  x.lineTo(r*.36,-r*.33);
-  x.quadraticCurveTo(r*.55,-r*.17,r*.55,0);
-  x.quadraticCurveTo(r*.55,r*.17,r*.36,r*.33);
-  x.lineTo(r*.05,r*.47);
-  x.quadraticCurveTo(-r*.28,r*.48,-r*.48,r*.30);
-  x.quadraticCurveTo(-r*.58,0,-r*.48,-r*.30);
+  if(visualTurret.id==='fast'){
+    x.moveTo(-r*.42,-r*.24);x.lineTo(r*.18,-r*.30);x.quadraticCurveTo(r*.48,-r*.18,r*.48,0);
+    x.quadraticCurveTo(r*.48,r*.18,r*.18,r*.30);x.lineTo(-r*.42,r*.24);x.quadraticCurveTo(-r*.52,0,-r*.42,-r*.24);
+  }else if(visualTurret.id==='rapid'){
+    x.moveTo(-r*.46,-r*.29);x.quadraticCurveTo(-r*.18,-r*.43,r*.18,-r*.38);x.quadraticCurveTo(r*.46,-r*.18,r*.46,0);
+    x.quadraticCurveTo(r*.46,r*.18,r*.18,r*.38);x.quadraticCurveTo(-r*.18,r*.43,-r*.46,r*.29);x.quadraticCurveTo(-r*.54,0,-r*.46,-r*.29);
+  }else{
+    x.moveTo(-r*.48,-r*.30);x.quadraticCurveTo(-r*.28,-r*.48,r*.05,-r*.47);x.lineTo(r*.36,-r*.33);
+    x.quadraticCurveTo(r*.55,-r*.17,r*.55,0);x.quadraticCurveTo(r*.55,r*.17,r*.36,r*.33);x.lineTo(r*.05,r*.47);
+    x.quadraticCurveTo(-r*.28,r*.48,-r*.48,r*.30);x.quadraticCurveTo(-r*.58,0,-r*.48,-r*.30);
+  }
   x.closePath();x.fill();
 
   // Turret facets / casting details.

@@ -46,7 +46,7 @@ function makeEnemy(){
 function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*820,vy:Math.sin(a)*820,r:3.5,life:1.8,dmg:72+p.lv*8});
+  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*980,vy:Math.sin(a)*980,r:2.8,life:1.8,dmg:72+p.lv*8,trail:[]});
   p.cd=.9;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
@@ -76,7 +76,7 @@ function applyBulletHit(target,baseDamage,bx,by){
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*560,vy:Math.sin(a)*560,r:3,life:2.4,dmg:e.heavy?32:20});
+  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*680,vy:Math.sin(a)*680,r:2.5,life:2.4,dmg:e.heavy?32:20,trail:[]});
   e.fire=e.heavy?2.2+Math.random()*.8:1.4+Math.random()*.7;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
 }
@@ -128,7 +128,7 @@ function update(dt){
   if(mouse.down||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
-    const b=bs[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let hit=false;
+    const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);let hit=false;
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
@@ -140,7 +140,7 @@ function update(dt){
   }
 
   for(let i=ebs.length-1;i>=0;i--){
-    const b=ebs[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+    const b=ebs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);
@@ -385,8 +385,14 @@ function draw(){
   for(let a=-40;a<H+40;a+=48){x.beginPath();x.moveTo(0,a);x.lineTo(W,a);x.stroke()}
   // shell trails / explosions
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,3.5,0,6.283);x.fill()}x.globalAlpha=1;
-  for(const b of bs){x.fillStyle='#ffe08b';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
-  for(const b of ebs){x.fillStyle='#ff765d';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
+  for(const b of bs){
+    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.28;x.globalAlpha=a;x.fillStyle='#ffd77a';x.beginPath();x.arc(t.x,t.y,b.r*(.45+.55*a),0,6.283);x.fill()}
+    x.globalAlpha=1;x.fillStyle='#fff1b0';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill();
+  }
+  for(const b of ebs){
+    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.24;x.globalAlpha=a;x.fillStyle='#ff694f';x.beginPath();x.arc(t.x,t.y,b.r*(.45+.55*a),0,6.283);x.fill()}
+    x.globalAlpha=1;x.fillStyle='#ffb09a';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill();
+  }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
     tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0);

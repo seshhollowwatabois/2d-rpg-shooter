@@ -130,7 +130,8 @@ function update(dt){
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   // Moving throws off the gun. Accuracy recovers while the hull is stationary.
   const moving=drive!==0;
-  const aimChangeRate=moving?1.8:3.2;
+  // Accuracy takes about 4 seconds to fully settle after movement stops.
+  const aimChangeRate=moving?1.8:.35;
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=1.25;

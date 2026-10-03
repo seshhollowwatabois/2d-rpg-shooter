@@ -30,7 +30,7 @@ function addXp(n){
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.max+=45;p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
 function makeEnemy(){
-  if(en.length>=7)return;
+  if(en.length>=4)return;
   const side=Math.floor(Math.random()*4);let a,b;
   if(side===0){a=-45;b=Math.random()*H}else if(side===1){a=W+45;b=Math.random()*H}
   else if(side===2){a=Math.random()*W;b=-45}else{a=Math.random()*W;b=H+45}
@@ -62,7 +62,7 @@ function die(){reset()}
 function update(dt){
   if(over)return;
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
-  spawn-=dt;if(spawn<=0){makeEnemy();spawn=Math.max(1.8,3.6-p.lv*.12)}
+  spawn-=dt;if(spawn<=0){makeEnemy();spawn=Math.max(2.8,5.2-p.lv*.10)}
   let dx=0,dy=0;
   if(keys.has('w')||keys.has('arrowup'))dy--;if(keys.has('s')||keys.has('arrowdown'))dy++;
   if(keys.has('a')||keys.has('arrowleft'))dx--;if(keys.has('d')||keys.has('arrowright'))dx++;
@@ -110,83 +110,94 @@ function update(dt){
 
 function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
-  const bw=r*1.55,bh=r*1.15,tw=r*.34,th=r*1.72;
+  const bw=r*1.7,bh=r*1.05,tw=r*.38,th=r*1.58;
 
   // Shadow
-  x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.3)';
-  x.beginPath();x.ellipse(2,5,r*1.15,r*.85,0,0,6.283);x.fill();x.restore();
+  x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.32)';
+  x.beginPath();x.ellipse(2,5,r*1.25,r*.78,0,0,6.283);x.fill();x.restore();
 
-  // T-34 style wide tracks
-  x.fillStyle=flash?'#e5c8aa':(enemy?(heavy?'#292b2d':'#472c30'):'#252b25');
+  // Tracks run along the SIDES of the tank.
+  x.fillStyle=flash?'#e6c9ab':(enemy?(heavy?'#25272a':'#432a2e'):'#242923');
   x.roundRect(-bw/2-tw,-th/2,tw,th,7);x.fill();
   x.roundRect(bw/2,-th/2,tw,th,7);x.fill();
 
-  // Large road wheels
-  x.fillStyle=enemy?(heavy?'#5c5a55':'#694145'):'#4c534b';
+  // Individual road wheels make the side tracks read as a real tank.
+  x.fillStyle=enemy?(heavy?'#62605a':'#704247'):'#50574e';
   for(const sx of [-1,1]){
     const tx=sx*(bw/2+tw/2);
-    for(let yy=-th*.34;yy<=th*.34;yy+=th*.225){
-      x.beginPath();x.arc(tx,yy,r*.125,0,6.283);x.fill();
-      x.strokeStyle='#242725';x.lineWidth=1.5;x.stroke();
+    for(let yy=-th*.38;yy<=th*.38;yy+=th*.19){
+      x.beginPath();x.arc(tx,yy,r*.12,0,6.283);x.fill();
+      x.strokeStyle='#202320';x.lineWidth=1.5;x.stroke();
     }
   }
 
-  // Sloped T-34 glacis: unmistakable pointed front
-  x.fillStyle=enemy?(heavy?'#514b45':'#713f43'):'#53634b';
+  // Main hull: low, armored, with a clearly distinct FRONT and REAR.
+  x.fillStyle=enemy?(heavy?'#4b4640':'#6c3b3e'):'#4e5d48';
   x.beginPath();
-  x.moveTo(-bw*.48,-bh*.48);
-  x.lineTo(bw*.18,-bh*.48);
-  x.lineTo(bw*.57,-bh*.23);
-  x.lineTo(bw*.66,0);
-  x.lineTo(bw*.57,bh*.23);
-  x.lineTo(bw*.18,bh*.48);
-  x.lineTo(-bw*.48,bh*.48);
-  x.quadraticCurveTo(-bw*.58,0,-bw*.48,-bh*.48);
+  x.moveTo(-bw*.43,-bh*.48);
+  x.lineTo(bw*.25,-bh*.48);
+  x.lineTo(bw*.53,-bh*.32);
+  x.lineTo(bw*.62,-bh*.14);
+  x.lineTo(bw*.62,bh*.14);
+  x.lineTo(bw*.53,bh*.32);
+  x.lineTo(bw*.25,bh*.48);
+  x.lineTo(-bw*.43,bh*.48);
+  x.quadraticCurveTo(-bw*.54,0,-bw*.43,-bh*.48);
   x.closePath();x.fill();
 
-  // Front armor highlight and rear engine deck
-  x.fillStyle=flash?'#ffe0c0':(enemy?(heavy?'#6b6259':'#955052'):'#6e805d');
+  // FRONT armor wedge — on the direction the hull faces (+X).
+  x.fillStyle=flash?'#ffe1c1':(enemy?(heavy?'#756b60':'#985052'):'#71835f');
   x.beginPath();
-  x.moveTo(bw*.18,-bh*.48);x.lineTo(bw*.57,-bh*.23);x.lineTo(bw*.66,0);
-  x.lineTo(bw*.57,bh*.23);x.lineTo(bw*.18,bh*.48);x.closePath();x.fill();
+  x.moveTo(bw*.25,-bh*.48);
+  x.lineTo(bw*.53,-bh*.32);
+  x.lineTo(bw*.62,-bh*.14);
+  x.lineTo(bw*.62,bh*.14);
+  x.lineTo(bw*.53,bh*.32);
+  x.lineTo(bw*.25,bh*.48);
+  x.closePath();x.fill();
 
-  // Rear is flat, with engine deck vents so it cannot be mistaken for the front.
-  x.fillStyle=enemy?(heavy?'#3b3834':'#4b2e32'):'#3d473c';
-  x.fillRect(-bw*.53,-bh*.36,bw*.16,bh*.72);
-  x.strokeStyle=enemy?(heavy?'#5b554d':'#754347'):'#596454';x.lineWidth=2;
-  for(let yy=-bh*.22;yy<=bh*.22;yy+=bh*.22){
-    x.beginPath();x.moveTo(-bw*.47,yy);x.lineTo(-bw*.35,yy);x.stroke();
+  // REAR engine section — flat, darker, and visually opposite the front.
+  x.fillStyle=enemy?(heavy?'#353432':'#4a2d31'):'#394339';
+  x.fillRect(-bw*.47,-bh*.39,bw*.18,bh*.78);
+  x.strokeStyle=enemy?(heavy?'#625b53':'#704044'):'#5a6554';x.lineWidth=2;
+  for(let yy=-bh*.24;yy<=bh*.24;yy+=bh*.16){
+    x.beginPath();x.moveTo(-bw*.42,yy);x.lineTo(-bw*.32,yy);x.stroke();
   }
 
-  // T-34-style turret: low rounded hexagonal turret with commander hatch
+  // Hull armor plates.
+  x.strokeStyle=enemy?(heavy?'#71685d':'#8f4e50'):'#77856c';x.lineWidth=1.5;
+  x.beginPath();x.moveTo(-bw*.27,-bh*.45);x.lineTo(-bw*.27,bh*.45);x.stroke();
+  x.beginPath();x.moveTo(bw*.25,-bh*.47);x.lineTo(bw*.25,bh*.47);x.stroke();
+
+  // Side fenders over the tracks.
+  x.fillStyle=enemy?(heavy?'#3b3936':'#593538'):'#414b3d';
+  x.fillRect(-bw*.38,-bh*.57,bw*.88,r*.09);
+  x.fillRect(-bw*.38,bh*.48,bw*.88,r*.09);
+
+  // T-34-85-inspired low turret, sitting centered over the hull.
   x.save();x.rotate(turretAngle-hullAngle);
-  x.fillStyle=enemy?(heavy?'#433e39':'#63383b'):'#414a3e';
-  x.beginPath();x.arc(0,0,r*.58,0,6.283);x.fill();
-  x.fillStyle=enemy?(heavy?'#655c52':'#87474a'):'#68785c';
+  x.fillStyle=enemy?(heavy?'#403c37':'#60373a'):'#414b3e';
+  x.beginPath();x.arc(0,0,r*.62,0,6.283);x.fill();
+  x.fillStyle=enemy?(heavy?'#62594f':'#844549'):'#68785c';
   x.beginPath();
-  x.moveTo(-r*.48,-r*.36);x.lineTo(r*.24,-r*.38);x.lineTo(r*.5,-r*.12);
-  x.lineTo(r*.5,r*.12);x.lineTo(r*.24,r*.38);x.lineTo(-r*.48,r*.36);
-  x.quadraticCurveTo(-r*.58,0,-r*.48,-r*.36);x.closePath();x.fill();
+  x.moveTo(-r*.46,-r*.34);x.lineTo(r*.22,-r*.38);x.lineTo(r*.49,-r*.14);
+  x.lineTo(r*.49,r*.14);x.lineTo(r*.22,r*.38);x.lineTo(-r*.46,r*.34);
+  x.quadraticCurveTo(-r*.56,0,-r*.46,-r*.34);x.closePath();x.fill();
 
-  // Turret roof and hatch
-  x.fillStyle='#78866c';
-  x.beginPath();x.ellipse(-r*.12,0,r*.23,r*.16,0,0,6.283);x.fill();
-  x.fillStyle='#30352f';x.beginPath();x.arc(-r*.12,0,r*.10,0,6.283);x.fill();
+  // Commander hatch.
+  x.fillStyle='#30352f';x.beginPath();x.ellipse(-r*.12,0,r*.19,r*.13,0,0,6.283);x.fill();
+  x.strokeStyle='#7d8972';x.lineWidth=1;x.stroke();
 
-  // T-34 85mm-style long gun, with prominent mantlet
-  x.fillStyle=enemy?'#252426':'#292e29';
-  x.roundRect(r*.18,-r*.16,r*.34,r*.32,4);x.fill();
-  x.fillStyle='#171a1b';x.fillRect(r*.43,-r*.095,r*1.02,r*.19);
-  x.fillStyle='#101314';x.fillRect(r*1.25,-r*.13,r*.13,r*.26);
+  // Long cannon with large mantlet.
+  x.fillStyle=enemy?'#242527':'#292e29';
+  x.roundRect(r*.17,-r*.17,r*.35,r*.34,4);x.fill();
+  x.fillStyle='#151819';x.fillRect(r*.43,-r*.095,r*1.08,r*.19);
+  x.fillStyle='#0e1112';x.fillRect(r*1.30,-r*.13,r*.15,r*.26);
 
-  // Hull front lights
-  x.fillStyle=enemy?'#d86b62':'#d5c878';
-  x.fillRect(bw*.52,-bh*.25,r*.08,r*.15);x.fillRect(bw*.52,bh*.10,r*.08,r*.15);
-
-  // Side fender strips
-  x.fillStyle=enemy?(heavy?'#393735':'#573438'):'#424b40';
-  x.fillRect(-bw*.15,-bh*.53,bw*.72,r*.08);
-  x.fillRect(-bw*.15,bh*.45,bw*.72,r*.08);
+  // Headlights at the FRONT only.
+  x.fillStyle=enemy?'#d66b62':'#d8ca79';
+  x.fillRect(bw*.53,-bh*.22,r*.08,r*.14);
+  x.fillRect(bw*.53,bh*.08,r*.08,r*.14);
 
   x.restore();
   x.restore();

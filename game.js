@@ -38,7 +38,9 @@ function makeEnemy(){
   const hp=heavy?520+p.lv*35:260+p.lv*20;
   en.push({
     x:a,y:b,r:heavy?23:19,speed:heavy?48:64,hp,max:hp,dmg:heavy?35:20,
-    heavy,angle:0,fire:.8+Math.random()*1.5,hitFlash:0
+    heavy,angle:0,fire:.8+Math.random()*1.5,hitFlash:0,
+    wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
+    idle:Math.random()<.3
   });
 }
 function shoot(){
@@ -70,8 +72,11 @@ function update(dt){
   const l=Math.hypot(dx,dy)||1;
   if(dx||dy){
     p.x+=dx/l*p.speed*dt;p.y+=dy/l*p.speed*dt;
-    // The hull faces the direction of travel; the turret stays independent and follows the mouse.
-    p.angle=Math.atan2(dy,dx);
+    // Smooth hull rotation so the tank turns into its travel direction instead of snapping instantly.
+    const targetAngle=Math.atan2(dy,dx);
+    let da=((targetAngle-p.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+    const turnRate=3.2;
+    p.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,da));
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   p.turretAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
@@ -99,8 +104,35 @@ function update(dt){
   }
 
   for(const e of en){
-    const d=Math.hypot(p.x-e.x,p.y-e.y),a=Math.atan2(p.y-e.y,p.x-e.x);e.angle=a;e.fire-=dt;e.hitFlash=Math.max(0,e.hitFlash-dt);
-    if(d>260){e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt}
+    const d=Math.hypot(p.x-e.x,p.y-e.y);
+    e.fire-=dt;e.hitFlash=Math.max(0,e.hitFlash-dt);
+
+    // Bots wander around the battlefield instead of constantly chasing the player.
+    e.wanderTime-=dt;
+    if(e.wanderTime<=0){
+      e.wanderX=60+Math.random()*Math.max(1,W-120);
+      e.wanderY=60+Math.random()*Math.max(1,H-120);
+      e.wanderTime=1.5+Math.random()*4;
+      e.idle=Math.random()<.35;
+    }
+
+    if(!e.idle){
+      const wa=Math.atan2(e.wanderY-e.y,e.wanderX-e.x);
+      let wda=((wa-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+      const turnRate=2.1;
+      e.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,wda));
+      const wd=Math.hypot(e.wanderX-e.x,e.wanderY-e.y);
+      if(wd>28){
+        e.x+=Math.cos(e.angle)*e.speed*dt;
+        e.y+=Math.sin(e.angle)*e.speed*dt;
+      }
+    }
+
+    // Keep bots inside the battlefield.
+    e.x=Math.max(e.r+10,Math.min(W-e.r-10,e.x));
+    e.y=Math.max(e.r+10,Math.min(H-e.r-10,e.y));
+
+    // Bots can engage from range without needing to chase the player.
     if(d<620&&e.fire<=0)enemyShoot(e);
     if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);if(p.hp<=0)die()}
   }

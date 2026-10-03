@@ -1,12 +1,27 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
+const hulls=[
+  {id:'standard',name:'T-34 Standard',cost:0,hp:100,speed:120,reverse:75,turn:1.65,scale:1},
+  {id:'scout',name:'BT-7 Scout',cost:50,hp:80,speed:155,reverse:95,turn:2.1,scale:.92},
+  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:140,speed:90,reverse:60,turn:1.15,scale:1.12}
+];
+const turrets=[
+  {id:'standard',name:'85mm Standard',cost:0,damage:50,reload:4,turn:1.25,scale:1},
+  {id:'rapid',name:'57mm Rapid',cost:60,damage:40,reload:2.7,turn:1.8,scale:.9},
+  {id:'heavy',name:'122mm Heavy',cost:100,damage:80,reload:6,turn:.85,scale:1.12}
+];
+let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
+let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
+let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
+let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
 
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
 function reset(){
-  p={x:W/2,y:H/2,r:20,speed:190,hp:100,max:100,lv:1,aimPrecision:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0};
+  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0];
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed,hp:hull.hp,max:hull.hp,lv:1,aimPrecision:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -23,6 +38,7 @@ addEventListener('pointerup',()=>mouse.down=false);
 addEventListener('pointercancel',()=>mouse.down=false);
 addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space'))reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+$('shopToggle').onclick=()=>{$('shop').classList.toggle('open');renderShop()};
 $('restart').onclick=reset;
 
 function burst(a,b,col,n=8){
@@ -62,11 +78,12 @@ function makeEnemy(){
 }
 function shoot(){
   if(p.cd>0)return;
+  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0];
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
-  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:50,trail:[]});
-  p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:turret.damage,trail:[]});
+  p.cd=turret.reload;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -107,6 +124,40 @@ function killEnemy(e,j){
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);en.splice(j,1);
 }
 function die(){reset()}
+function saveShop(){
+  localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
+  localStorage.setItem('tankOwnedTurrets',JSON.stringify(ownedTurrets));
+  localStorage.setItem('tankEquippedHull',equippedHull);
+  localStorage.setItem('tankEquippedTurret',equippedTurret);
+}
+function renderShop(){
+  const box=$('shopItems'); if(!box)return;
+  box.innerHTML='';
+  const add=(type,item,owned,equipped)=>{
+    const row=document.createElement('div'); row.className='shopItem';
+    row.innerHTML='<div><b>'+item.name+'</b><small>'+ (type==='hull' ? 'HP '+item.hp+' • Speed '+item.speed : 'DMG '+item.damage+' • Reload '+item.reload+'s') +'</small></div>';
+    const btn=document.createElement('button');
+    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':('💰 '+item.cost);
+    btn.disabled=equipped;
+    btn.onclick=()=>{
+      if(!owned){
+        if(p.coins<item.cost)return;
+        p.coins-=item.cost;
+        if(type==='hull')ownedHulls.push(item.id);else ownedTurrets.push(item.id);
+      }
+      if(type==='hull'){equippedHull=item.id;p.hullId=item.id}
+      else {equippedTurret=item.id;p.turretId=item.id}
+      const h=hulls.find(v=>v.id===p.hullId)||hulls[0],t=turrets.find(v=>v.id===p.turretId)||turrets[0];
+      if(type==='hull'){p.r=20*h.scale;p.max=h.hp;p.hp=Math.min(p.hp,p.max)}
+      saveShop();renderShop();
+    };
+    row.appendChild(btn);box.appendChild(row);
+  };
+  const title=document.createElement('div');title.className='shopSectionTitle';title.textContent='HULLS';box.appendChild(title);
+  hulls.forEach(v=>add('hull',v,ownedHulls.includes(v.id),equippedHull===v.id));
+  const title2=document.createElement('div');title2.className='shopSectionTitle';title2.textContent='TURRETS';box.appendChild(title2);
+  turrets.forEach(v=>add('turret',v,ownedTurrets.includes(v.id),equippedTurret===v.id));
+}
 
 function update(dt){
   if(over)return;
@@ -131,9 +182,10 @@ function update(dt){
   }
 
   // Keep rotation and movement as separate upgradeable stats.
-  const hullTurnRate=1.65;
-  const driveSpeed=120;
-  const reverseSpeed=75;
+  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0];
+  const hullTurnRate=hull.turn;
+  const driveSpeed=hull.speed;
+  const reverseSpeed=hull.reverse;
   if(turn){
     // When reversing, left/right steering reverses naturally.
     const reverseFactor=drive<0?-1:1;
@@ -150,7 +202,7 @@ function update(dt){
   const aimChangeRate=moving?1.8:.35;
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
-  const playerTurretTurnRate=1.25;
+  const playerTurretTurnRate=turret.turn;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
   // Accuracy starts low while moving and settles toward 100% while stopped.
   p.aimPrecision=p.aimPrecision??1;
@@ -469,17 +521,18 @@ function draw(){
   }
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
-  const reloadPct=Math.max(0,Math.min(1,1-p.cd/4));
+  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0];
+  const reloadPct=Math.max(0,Math.min(1,1-p.cd/turret.reload));
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
   for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle='#ffd27a';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
   x.restore();
 
   const hp=Math.max(0,p.hp/p.max),xp=Math.max(0,p.xp/p.next);
-  $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';
+  $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';$('coinsText').textContent=p.coins;
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
-  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=50;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
+  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=turret.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
   // Precision reticle around the cursor: smaller/tighter means more accurate.
   const precisionRadius=28+(1-p.aimPrecision)*42;
@@ -488,7 +541,7 @@ function draw(){
   x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');
   if(cursorReload){
-    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):'4.00';
+    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):turret.reload.toFixed(2);
     cursorReload.hidden=false;
     cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';

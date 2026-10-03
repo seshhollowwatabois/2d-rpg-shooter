@@ -110,119 +110,138 @@ function update(dt){
 
 function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
-  const bw=r*1.7,bh=r*1.05,tw=r*.38,th=r*1.58;
+
+  // T-34-85-inspired top-down proportions:
+  // long hull, sharply sloped glacis, rounded rear, wide side tracks and five road wheels.
+  const L=r*2.55, B=r*1.18, trackW=r*.34, trackL=L*.92;
+  const hullB=r*.88;
 
   // Ground shadow
-  x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.32)';
-  x.beginPath();x.ellipse(2,5,r*1.25,r*.78,0,0,6.283);x.fill();x.restore();
+  x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.34)';
+  x.beginPath();x.ellipse(2,5,r*1.48,r*.88,0,0,6.283);x.fill();x.restore();
 
-  // Side tracks
-  x.fillStyle=flash?'#e6c9ab':(enemy?(heavy?'#25272a':'#432a2e'):'#242923');
-  x.roundRect(-bw/2-tw,-th/2,tw,th,7);x.fill();
-  x.roundRect(bw/2,-th/2,tw,th,7);x.fill();
+  // Tracks are on the SIDES of the hull, like a real tank.
+  x.fillStyle=flash?'#e2c3a5':(enemy?(heavy?'#292b2c':'#4b3033'):'#242923');
+  for(const sy of [-1,1]){
+    const ty=sy*(hullB/2+trackW/2);
+    x.beginPath();x.roundRect(-trackL/2,ty-trackW/2,trackL,trackW,6);x.fill();
+    x.strokeStyle=enemy?(heavy?'#5b5954':'#704347'):'#454c43';x.lineWidth=2;x.stroke();
 
-  // Track guide rails
-  x.strokeStyle=enemy?(heavy?'#54514c':'#633b3f'):'#424940';x.lineWidth=2;
-  x.strokeRect(-bw/2-tw+3,-th/2+3,tw-6,th-6);
-  x.strokeRect(bw/2+3,-th/2+3,tw-6,th-6);
+    // Track inner rail
+    x.strokeStyle=enemy?(heavy?'#3c3d3d':'#5b383b'):'#30362f';x.lineWidth=2;
+    x.strokeRect(-trackL*.43,ty-trackW*.24,trackL*.86,trackW*.48);
 
-  // Road wheels
-  x.fillStyle=enemy?(heavy?'#62605a':'#704247'):'#50574e';
-  for(const sx of [-1,1]){
-    const tx=sx*(bw/2+tw/2);
-    for(let yy=-th*.38;yy<=th*.38;yy+=th*.19){
-      x.beginPath();x.arc(tx,yy,r*.12,0,6.283);x.fill();
+    // Five large T-34-style road wheels.
+    for(let i=0;i<5;i++){
+      const wx=-trackL*.34+i*(trackL*.17);
+      x.fillStyle=enemy?(heavy?'#66635d':'#75464a'):'#555d52';
+      x.beginPath();x.arc(wx,ty,r*.16,0,6.283);x.fill();
       x.strokeStyle='#202320';x.lineWidth=1.5;x.stroke();
-      x.fillStyle=enemy?(heavy?'#343534':'#4c3034'):'#353b35';
-      x.beginPath();x.arc(tx,yy,r*.045,0,6.283);x.fill();
-      x.fillStyle=enemy?(heavy?'#62605a':'#704247'):'#50574e';
+      x.fillStyle=enemy?(heavy?'#353735':'#4b3033'):'#353b35';
+      x.beginPath();x.arc(wx,ty,r*.055,0,6.283);x.fill();
     }
+
+    // Track end/idler hints.
+    x.fillStyle=enemy?(heavy?'#77736a':'#875057'):'#697264';
+    x.beginPath();x.arc(-trackL*.43,ty,r*.075,0,6.283);x.fill();
+    x.beginPath();x.arc(trackL*.43,ty,r*.075,0,6.283);x.fill();
   }
 
-  // Detailed low-profile armored hull — no artificial front/rear color blocks.
-  x.fillStyle=flash?'#e5c5a7':(enemy?(heavy?'#4b4640':'#6c3b3e'):'#4e5d48');
+  // Main hull silhouette: pointed/sloped nose, straight sides, rounded rear.
+  x.fillStyle=flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):'#526149');
   x.beginPath();
-  x.moveTo(-bw*.48,-bh*.43);
-  x.lineTo(-bw*.25,-bh*.52);
-  x.lineTo(bw*.28,-bh*.50);
-  x.lineTo(bw*.48,-bh*.38);
-  x.lineTo(bw*.55,-bh*.12);
-  x.lineTo(bw*.55,bh*.12);
-  x.lineTo(bw*.48,bh*.38);
-  x.lineTo(bw*.28,bh*.50);
-  x.lineTo(-bw*.25,bh*.52);
-  x.lineTo(-bw*.48,bh*.43);
-  x.quadraticCurveTo(-bw*.56,0,-bw*.48,-bh*.43);
+  x.moveTo(L*.50,0);                    // pointed glacis nose
+  x.lineTo(L*.34,-hullB*.43);
+  x.lineTo(L*.04,-hullB*.54);
+  x.lineTo(-L*.32,-hullB*.51);
+  x.quadraticCurveTo(-L*.47,-hullB*.43,-L*.48,-hullB*.18);
+  x.lineTo(-L*.48,hullB*.18);
+  x.quadraticCurveTo(-L*.47,hullB*.43,-L*.32,hullB*.51);
+  x.lineTo(L*.04,hullB*.54);
+  x.lineTo(L*.34,hullB*.43);
   x.closePath();x.fill();
 
-  // Sloped armor surfaces and panel seams.
-  x.fillStyle=enemy?(heavy?'#5c554d':'#7d4245'):'#617052';
+  // Characteristic sloped glacis.
+  x.fillStyle=enemy?(heavy?'#605a52':'#81484c'):'#647258';
   x.beginPath();
-  x.moveTo(-bw*.25,-bh*.52);x.lineTo(bw*.28,-bh*.50);x.lineTo(bw*.48,-bh*.38);
-  x.lineTo(bw*.34,-bh*.25);x.lineTo(-bw*.18,-bh*.28);x.closePath();x.fill();
-  x.fillStyle=enemy?(heavy?'#393734':'#5a3235'):'#414b40';
+  x.moveTo(L*.50,0);x.lineTo(L*.34,-hullB*.43);x.lineTo(L*.04,-hullB*.54);
+  x.lineTo(L*.08,-hullB*.22);x.lineTo(L*.31,-hullB*.16);x.closePath();x.fill();
+
+  // Lower hull side bands.
+  x.fillStyle=enemy?(heavy?'#393734':'#593337'):'#3f493e';
   x.beginPath();
-  x.moveTo(-bw*.25,bh*.52);x.lineTo(bw*.28,bh*.50);x.lineTo(bw*.48,bh*.38);
-  x.lineTo(bw*.34,bh*.25);x.lineTo(-bw*.18,bh*.28);x.closePath();x.fill();
+  x.moveTo(-L*.32,-hullB*.51);x.lineTo(L*.04,-hullB*.54);x.lineTo(L*.08,-hullB*.22);
+  x.lineTo(-L*.30,-hullB*.25);x.closePath();x.fill();
+  x.beginPath();
+  x.moveTo(-L*.32,hullB*.51);x.lineTo(L*.04,hullB*.54);x.lineTo(L*.08,hullB*.22);
+  x.lineTo(-L*.30,hullB*.25);x.closePath();x.fill();
 
-  x.strokeStyle=enemy?(heavy?'#71685d':'#975054'):'#77856c';x.lineWidth=1.3;
-  x.beginPath();x.moveTo(-bw*.25,-bh*.49);x.lineTo(-bw*.18,bh*.49);x.stroke();
-  x.beginPath();x.moveTo(bw*.28,-bh*.47);x.lineTo(bw*.34,bh*.47);x.stroke();
-  x.beginPath();x.moveTo(-bw*.40,-bh*.27);x.lineTo(bw*.39,-bh*.22);x.stroke();
-  x.beginPath();x.moveTo(-bw*.40,bh*.27);x.lineTo(bw*.39,bh*.22);x.stroke();
+  // Engine deck at the rear.
+  x.fillStyle=enemy?(heavy?'#373532':'#4f3034'):'#3d473c';
+  x.beginPath();
+  x.moveTo(-L*.43,-hullB*.34);x.lineTo(-L*.08,-hullB*.39);
+  x.lineTo(-L*.02,-hullB*.12);x.lineTo(-L*.36,-hullB*.10);x.closePath();x.fill();
+  x.beginPath();
+  x.moveTo(-L*.43,hullB*.34);x.lineTo(-L*.08,hullB*.39);
+  x.lineTo(-L*.02,hullB*.12);x.lineTo(-L*.36,hullB*.10);x.closePath();x.fill();
 
-  // Fender rails and small armor bolts
-  x.fillStyle=enemy?(heavy?'#393735':'#593538'):'#414b3d';
-  x.fillRect(-bw*.36,-bh*.57,bw*.76,r*.075);
-  x.fillRect(-bw*.36,bh*.495,bw*.76,r*.075);
-  x.fillStyle=enemy?(heavy?'#aaa08e':'#a95a5d'):'#a0aa91';
-  for(const yy of [-bh*.46,bh*.46]){
-    for(const xx of [-bw*.20,bw*.20]){
-      x.beginPath();x.arc(xx,yy,r*.035,0,6.283);x.fill();
+  // Engine vents.
+  x.strokeStyle=enemy?(heavy?'#625d54':'#744246'):'#5e6a59';x.lineWidth=1.2;
+  for(let i=0;i<4;i++){
+    const vx=-L*.34+i*r*.075;
+    x.beginPath();x.moveTo(vx,-hullB*.30);x.lineTo(vx+.035*r,-hullB*.14);x.stroke();
+    x.beginPath();x.moveTo(vx,hullB*.30);x.lineTo(vx+.035*r,hullB*.14);x.stroke();
+  }
+
+  // Hull seams and small armor bolts.
+  x.strokeStyle=enemy?(heavy?'#777067':'#9a5558'):'#78866d';x.lineWidth=1.2;
+  x.beginPath();x.moveTo(-L*.29,-hullB*.50);x.lineTo(-L*.29,hullB*.50);x.stroke();
+  x.beginPath();x.moveTo(L*.08,-hullB*.53);x.lineTo(L*.08,hullB*.53);x.stroke();
+  x.fillStyle=enemy?(heavy?'#aaa092':'#ad5d60'):'#a1ac91';
+  for(const px of [-L*.24,L*.18]){
+    for(const py of [-hullB*.42,hullB*.42]){
+      x.beginPath();x.arc(px,py,r*.035,0,6.283);x.fill();
     }
   }
 
-  // Engine deck details behind the turret
-  x.fillStyle=enemy?(heavy?'#353330':'#4a2d31'):'#3b443a';
-  x.roundRect(-bw*.34,-bh*.20,bw*.25,bh*.40,3);x.fill();
-  x.strokeStyle=enemy?(heavy?'#5b554d':'#744145'):'#5c6656';x.lineWidth=1.5;
-  for(let i=-2;i<=2;i++){
-    x.beginPath();x.moveTo(-bw*.29+i*r*.045,-bh*.14);x.lineTo(-bw*.29+i*r*.045,bh*.14);x.stroke();
-  }
+  // Turret ring.
+  x.fillStyle=enemy?(heavy?'#363432':'#513033'):'#343c34';
+  x.beginPath();x.arc(-L*.02,0,r*.57,0,6.283);x.fill();
+  x.strokeStyle=enemy?(heavy?'#696258':'#8c4b4f'):'#697760';x.lineWidth=1.4;x.stroke();
 
-  // Central turret ring
-  x.fillStyle=enemy?(heavy?'#373431':'#513033'):'#353d34';
-  x.beginPath();x.arc(0,0,r*.66,0,6.283);x.fill();
-  x.strokeStyle=enemy?(heavy?'#6a6258':'#8b4a4d'):'#697760';x.lineWidth=1.5;x.stroke();
-
-  // Detailed low turret
+  // Rounded T-34-85-inspired turret, independent from hull.
   x.save();x.rotate(turretAngle-hullAngle);
-  x.fillStyle=enemy?(heavy?'#403c37':'#60373a'):'#414b3e';
+  x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';
   x.beginPath();
-  x.moveTo(-r*.48,-r*.35);x.lineTo(-r*.20,-r*.45);x.lineTo(r*.25,-r*.39);
-  x.lineTo(r*.52,-r*.16);x.lineTo(r*.52,r*.16);x.lineTo(r*.25,r*.39);
-  x.lineTo(-r*.20,r*.45);x.lineTo(-r*.48,r*.35);
-  x.quadraticCurveTo(-r*.58,0,-r*.48,-r*.35);x.closePath();x.fill();
+  x.moveTo(-r*.48,-r*.30);
+  x.quadraticCurveTo(-r*.28,-r*.48,r*.05,-r*.47);
+  x.lineTo(r*.36,-r*.33);
+  x.quadraticCurveTo(r*.55,-r*.17,r*.55,0);
+  x.quadraticCurveTo(r*.55,r*.17,r*.36,r*.33);
+  x.lineTo(r*.05,r*.47);
+  x.quadraticCurveTo(-r*.28,r*.48,-r*.48,r*.30);
+  x.quadraticCurveTo(-r*.58,0,-r*.48,-r*.30);
+  x.closePath();x.fill();
 
-  // Turret armor plates
-  x.strokeStyle=enemy?(heavy?'#776e62':'#955054'):'#7d8a72';x.lineWidth=1.3;
-  x.beginPath();x.moveTo(-r*.20,-r*.44);x.lineTo(-r*.18,r*.44);x.stroke();
-  x.beginPath();x.moveTo(r*.25,-r*.38);x.lineTo(r*.25,r*.38);x.stroke();
+  // Turret facets / casting details.
+  x.strokeStyle=enemy?(heavy?'#746c61':'#925055'):'#7f8b75';x.lineWidth=1.25;
+  x.beginPath();x.moveTo(-r*.27,-r*.42);x.quadraticCurveTo(-r*.08,-r*.30,r*.02,-r*.29);x.stroke();
+  x.beginPath();x.moveTo(-r*.27,r*.42);x.quadraticCurveTo(-r*.08,r*.30,r*.02,r*.29);x.stroke();
 
-  // Commander hatch
-  x.fillStyle='#2b302b';x.beginPath();x.ellipse(-r*.13,0,r*.18,r*.13,0,0,6.283);x.fill();
+  // Roof hatch.
+  x.fillStyle='#292e2a';x.beginPath();x.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);x.fill();
   x.strokeStyle='#89967c';x.stroke();
 
-  // Cannon mantlet and long barrel
-  x.fillStyle=enemy?'#242527':'#292e29';
-  x.roundRect(r*.17,-r*.18,r*.36,r*.36,4);x.fill();
-  x.fillStyle='#151819';x.fillRect(r*.43,-r*.095,r*1.08,r*.19);
-  x.fillStyle='#0e1112';x.fillRect(r*1.30,-r*.13,r*.15,r*.26);
+  // Gun mantlet and long 85mm-style barrel.
+  x.fillStyle=enemy?'#252729':'#292f2a';
+  x.beginPath();x.roundRect(r*.10,-r*.18,r*.34,r*.36,5);x.fill();
+  x.fillStyle='#151819';x.fillRect(r*.38,-r*.075,r*1.16,r*.15);
+  x.fillStyle='#0e1112';x.fillRect(r*1.48,-r*.105,r*.14,r*.21);
 
-  // Turret fittings
-  x.fillStyle=enemy?(heavy?'#71675b':'#985054'):'#7d8b70';
-  x.beginPath();x.arc(-r*.36,-r*.25,r*.045,0,6.283);x.fill();
-  x.beginPath();x.arc(-r*.36,r*.25,r*.045,0,6.283);x.fill();
+  // Small turret fittings.
+  x.fillStyle=enemy?(heavy?'#746a5d':'#9b5458'):'#849176';
+  x.beginPath();x.arc(-r*.36,-r*.23,r*.04,0,6.283);x.fill();
+  x.beginPath();x.arc(-r*.36,r*.23,r*.04,0,6.283);x.fill();
 
   x.restore();
   x.restore();

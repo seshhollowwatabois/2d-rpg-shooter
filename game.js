@@ -431,8 +431,9 @@ function draw(){
   // Show the live reload countdown beside the cursor.
   const cursorReload=$('cursorReload');
   if(cursorReload){
-    cursorReload.textContent=Math.max(0,p.cd).toFixed(2);
-    cursorReload.hidden=p.cd<=0;
+    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):'4.00';
+    cursorReload.hidden=false;
+    cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';
     cursorReload.style.top=(mouse.y+8)+'px';
   }

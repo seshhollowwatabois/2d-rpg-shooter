@@ -53,9 +53,9 @@ function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
   const local=((hitAngle-target.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const c=Math.cos(local);
-  if(c>=.5)return {mult:.5,rear:false,zone:'front'};
+  if(c>=.5)return {mult:.25,rear:false,zone:'front'};
   if(c<=-.5)return {mult:1,rear:true,zone:'rear'};
-  return {mult:.75,rear:false,zone:'side'};
+  return {mult:.5,rear:false,zone:'side'};
 }
 function applyBulletHit(target,baseDamage,bx,by){
   const profile=getHitProfile(target,bx,by);

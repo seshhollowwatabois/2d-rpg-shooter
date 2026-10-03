@@ -142,6 +142,32 @@ function update(dt){
     if(d<620&&e.fire<=0)enemyShoot(e);
     if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);if(p.hp<=0)die()}
   }
+
+  // Tank-to-tank collision damage. Heavy tanks hit harder and both tanks take damage.
+  for(let i=0;i<en.length;i++){
+    const a=en[i];
+    for(let j=i+1;j<en.length;j++){
+      const b=en[j],d=Math.hypot(a.x-b.x,a.y-b.y),min=a.r+b.r;
+      if(d<min){
+        const nx=(b.x-a.x)/(d||1),ny=(b.y-a.y)/(d||1),push=(min-d)*.5;
+        a.x-=nx*push;a.y-=ny*push;b.x+=nx*push;b.y+=ny*push;
+        const impact=14*dt;
+        a.hp-=impact*(b.heavy?1.35:1);b.hp-=impact*(a.heavy?1.35:1);
+        a.hitFlash=.08;b.hitFlash=.08;
+        if(Math.random()<.12)burst((a.x+b.x)/2,(a.y+b.y)/2,'#ff9b55',3);
+      }
+    }
+  }
+
+  // Player also takes collision damage from enemy tanks.
+  for(const e of en){
+    const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;
+    if(d<min){
+      const nx=(e.x-p.x)/(d||1),ny=(e.y-p.y)/(d||1),push=(min-d)*.65;
+      p.x-=nx*push;p.y-=ny*push;e.x+=nx*push;e.y+=ny*push;
+      if(p.inv<=0){const impact=22*(e.heavy?1.4:1);p.hp-=impact;p.inv=.25;shake=7;burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);if(p.hp<=0)die()}
+    }
+  }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
   shake=Math.max(0,shake-dt*25);
@@ -309,7 +335,8 @@ function draw(){
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
-  $('reloadBar').style.width=((1-p.cd/.9)*100)+'%';$('damageText').textContent=(72+p.lv*8);$('reloadText').textContent=p.cd>0?'RELOADING':'READY';
+  const reloadPct=Math.max(0,Math.min(1,1-p.cd/.9));$('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=(72+p.lv*8);$('reloadText').textContent=p.cd>0?'RELOADING':'READY';
+  const rb=$('reloadCursor');if(rb){rb.style.left=(mouse.x+10)+'px';rb.style.top=(mouse.y+10)+'px';rb.style.setProperty('--reload',reloadPct);rb.classList.toggle('ready',p.cd<=0);}
 }
 function joy(e){
   const r=$('joystick').getBoundingClientRect(),dx0=e.clientX-(r.left+r.width/2),dy0=e.clientY-(r.top+r.height/2),m=Math.hypot(dx0,dy0),max=r.width*.34;

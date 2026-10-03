@@ -6,7 +6,7 @@ function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio|
 addEventListener('resize',resize);resize();
 
 function reset(){
-  p={x:W/2,y:H/2,r:20,speed:190,hp:400,max:400,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0};
+  p={x:W/2,y:H/2,r:20,speed:190,hp:100,max:100,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   $('death').hidden=true;
 }
@@ -27,7 +27,7 @@ function burst(a,b,col,n=8){
 }
 function addXp(n){
   p.xp+=n;
-  while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.max+=45;p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
+  while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
 function makeEnemy(){
   if(en.length>=4)return;
@@ -35,7 +35,7 @@ function makeEnemy(){
   if(side===0){a=-45;b=Math.random()*H}else if(side===1){a=W+45;b=Math.random()*H}
   else if(side===2){a=Math.random()*W;b=-45}else{a=Math.random()*W;b=H+45}
   const heavy=Math.random()<Math.min(.35,.08+p.lv*.02);
-  const hp=heavy?520+p.lv*35:260+p.lv*20;
+  const hp=100;
   en.push({
     x:a,y:b,r:heavy?23:19,speed:heavy?48:64,hp,max:hp,dmg:heavy?35:20,
     heavy,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
@@ -46,7 +46,7 @@ function makeEnemy(){
 function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*980,vy:Math.sin(a)*980,r:2.8,life:1.8,dmg:72+p.lv*8,trail:[]});
+  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*980,vy:Math.sin(a)*980,r:2.8,life:1.8,dmg:50,trail:[]});
   p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
@@ -76,7 +76,7 @@ function applyBulletHit(target,baseDamage,bx,by){
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*680,vy:Math.sin(a)*680,r:2.5,life:2.4,dmg:e.heavy?32:20,trail:[]});
+  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*680,vy:Math.sin(a)*680,r:2.5,life:2.4,dmg:50,trail:[]});
   e.fire=4;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
 }
@@ -427,7 +427,7 @@ function draw(){
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
-  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=(72+p.lv*8);$('reloadText').textContent=p.cd>0?'RELOADING':'READY';
+  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=50;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
   const cursorReload=$('cursorReload');
   if(cursorReload){

@@ -6,7 +6,7 @@ function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio|
 addEventListener('resize',resize);resize();
 
 function reset(){
-  p={x:W/2,y:H/2,r:20,speed:190,hp:100,max:100,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0};
+  p={x:W/2,y:H/2,r:20,speed:190,hp:100,max:100,lv:1,aimPrecision:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   $('death').hidden=true;
 }
@@ -46,7 +46,9 @@ function makeEnemy(){
 function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*980,vy:Math.sin(a)*980,r:2.8,life:1.8,dmg:50,trail:[]});
+  const spread=(1-p.aimPrecision)*0.12;
+  const fireAngle=a+(Math.random()-.5)*spread;
+  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*980,vy:Math.sin(fireAngle)*980,r:2.8,life:1.8,dmg:50,trail:[]});
   p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
@@ -126,10 +128,17 @@ function update(dt){
     p.y+=Math.sin(p.angle)*drive*moveSpeed*dt;
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
+  // Moving throws off the gun. Accuracy recovers while the hull is stationary.
+  const moving=drive!==0;
+  const aimChangeRate=moving?1.8:3.2;
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=1.25;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
+  // Accuracy starts low while moving and settles toward 100% while stopped.
+  p.aimPrecision=p.aimPrecision??1;
+  const aimTarget=moving?0.25:1;
+  p.aimPrecision+=Math.sign(aimTarget-p.aimPrecision)*Math.min(Math.abs(aimTarget-p.aimPrecision),aimChangeRate*dt);
   if(mouse.down||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
@@ -439,6 +448,11 @@ function draw(){
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=50;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
+  // Precision reticle around the cursor: smaller/tighter means more accurate.
+  const precisionRadius=28+(1-p.aimPrecision)*42;
+  x.save();x.strokeStyle=p.aimPrecision>.85?'#39e66b':p.aimPrecision>.5?'#ffd21a':'#ff4b4b';x.lineWidth=1.5;x.globalAlpha=.9;
+  x.beginPath();x.arc(mouse.x,mouse.y,precisionRadius,0,6.283);x.stroke();
+  x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');
   if(cursorReload){
     cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):'4.00';

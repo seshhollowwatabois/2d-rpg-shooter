@@ -1,6 +1,7 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
+const mobileDrive={up:false,down:false,left:false,right:false};
 const hulls=[
   {id:'standard',name:'T-34 Standard',cost:0,hp:100,speed:120,reverse:75,turn:1.65,scale:1},
   {id:'scout',name:'BT-7 Scout',cost:50,hp:80,speed:155,reverse:95,turn:2.1,scale:.92},
@@ -227,6 +228,10 @@ function update(dt){
     drive=-touch.y;
     turn=touch.x;
   }
+  if(mobileDrive.up)drive=1;
+  if(mobileDrive.down)drive=-1;
+  if(mobileDrive.left)turn=-1;
+  if(mobileDrive.right)turn=1;
 
   // Keep rotation and movement as separate upgradeable stats.
   const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
@@ -610,15 +615,19 @@ function draw(){
     cursorReload.style.top=(mouse.y+8)+'px';
   }
 }
-function joy(e){
-  const r=$('joystick').getBoundingClientRect(),dx0=e.clientX-(r.left+r.width/2),dy0=e.clientY-(r.top+r.height/2),m=Math.hypot(dx0,dy0),max=r.width*.34;
-  const dx=m>max?dx0/m*max:dx0,dy=m>max?dy0/m*max:dy0;
-  touch.x=dx/max;touch.y=dy/max;$('knob').style.transform='translate('+dx+'px,'+dy+'px)';
+function setMobileButton(id,key){
+  const el=$(id); if(!el)return;
+  const press=e=>{e.preventDefault();mobileDrive[key]=true;el.classList.add('pressed');el.setPointerCapture?.(e.pointerId)};
+  const release=e=>{e.preventDefault();mobileDrive[key]=false;el.classList.remove('pressed')};
+  el.addEventListener('pointerdown',press);
+  el.addEventListener('pointerup',release);
+  el.addEventListener('pointercancel',release);
+  el.addEventListener('lostpointercapture',()=>{mobileDrive[key]=false;el.classList.remove('pressed')});
 }
-$('joystick').addEventListener('pointerdown',e=>{touch.active=true;joy(e)});
-$('joystick').addEventListener('pointermove',e=>{if(touch.active)joy(e)});
-$('joystick').addEventListener('pointerup',()=>{touch.active=false;touch.x=touch.y=0;$('knob').style.transform='translate(0,0)'});
-$('joystick').addEventListener('pointercancel',()=>{touch.active=false;touch.x=touch.y=0;$('knob').style.transform='translate(0,0)'});
+setMobileButton('upButton','up');
+setMobileButton('downButton','down');
+setMobileButton('leftButton','left');
+setMobileButton('rightButton','right');
 $('fireButton').addEventListener('pointerdown',e=>{e.preventDefault();mouse.down=true});
 $('fireButton').addEventListener('pointerup',e=>{e.preventDefault();mouse.down=false});
 $('fireButton').addEventListener('pointercancel',()=>mouse.down=false);

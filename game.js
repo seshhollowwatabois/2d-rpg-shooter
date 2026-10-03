@@ -80,7 +80,9 @@ function update(dt){
   const hullTurnRate=1.65;
   const driveSpeed=120;
   if(turn){
-    p.angle+=turn*hullTurnRate*dt;
+    // When reversing, left/right steering reverses naturally.
+    const reverseFactor=drive<0?-1:1;
+    p.angle+=turn*hullTurnRate*dt*reverseFactor;
   }
   if(drive){
     p.x+=Math.cos(p.angle)*drive*driveSpeed*dt;

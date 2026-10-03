@@ -53,25 +53,28 @@ function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
   const local=((hitAngle-target.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const c=Math.cos(local);
-  if(c>=.5)return {mult:.25,rear:false,zone:'front'};
-  if(c<=-.5)return {mult:1,rear:true,zone:'rear'};
-  return {mult:.5,rear:false,zone:'side'};
+  if(c>=.5)return {penetration:.25,rear:false,zone:'front'};
+  if(c<=-.5)return {penetration:1,rear:true,zone:'rear'};
+  return {penetration:.5,rear:false,zone:'side'};
 }
 function applyBulletHit(target,baseDamage,bx,by){
   const profile=getHitProfile(target,bx,by);
-  const damage=baseDamage*profile.mult;
-  target.hp-=damage;
-  target.hitFlash=.08;
-  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
+  const penetrates=Math.random()<profile.penetration;
+  const damage=penetrates?baseDamage:0;
+  if(penetrates){
+    target.hp-=damage;
+    target.hitFlash=.08;
+    dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
+  }
 
-  // A rear hit has a 1% chance to ignite the tank. Burning deals 40% of
+  // A penetrating rear hit has a 1% chance to ignite the tank. Burning deals 40% of
   // its max HP over 10 seconds, at a steady rate.
-  if(profile.rear&&target.burnTime<=0&&Math.random()<.01){
+  if(penetrates&&profile.rear&&target.burnTime<=0&&Math.random()<.01){
     target.burnTime=10;
     target.burnDamage=target.max*.40;
     burst(target.x,target.y,'#ff9b55',16);
   }
-  burst(bx,by,'#ffd27a',14);
+  burst(bx,by,penetrates?'#ffd27a':'#b8c0c8',penetrates?14:8);
   return profile;
 }
 function enemyShoot(e){
@@ -146,10 +149,15 @@ function update(dt){
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);
-        const damage=b.dmg*profile.mult;
-        p.hp-=damage;p.inv=.28;shake=10;
-        dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
-        if(profile.rear&&p.burnTime<=0&&Math.random()<.01){
+        const penetrates=Math.random()<profile.penetration;
+        const damage=penetrates?b.dmg:0;
+        if(penetrates){
+          p.hp-=damage;p.inv=.28;shake=10;
+          dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
+        }else{
+          burst(b.x,b.y,'#b8c0c8',8);
+        }
+        if(penetrates&&profile.rear&&p.burnTime<=0&&Math.random()<.01){
           p.burnTime=10;p.burnDamage=p.max*.40;burst(p.x,p.y,'#ff9b55',16);
         }
         burst(b.x,b.y,'#ff765d',14);

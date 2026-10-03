@@ -47,7 +47,7 @@ function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*980,vy:Math.sin(a)*980,r:2.8,life:1.8,dmg:72+p.lv*8,trail:[]});
-  p.cd=.9;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+  p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -77,7 +77,7 @@ function applyBulletHit(target,baseDamage,bx,by){
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
   ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*680,vy:Math.sin(a)*680,r:2.5,life:2.4,dmg:e.heavy?32:20,trail:[]});
-  e.fire=e.heavy?2.2+Math.random()*.8:1.4+Math.random()*.7;
+  e.fire=4;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
 }
 function killEnemy(e,j){
@@ -417,7 +417,7 @@ function draw(){
   }
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
-  const reloadPct=Math.max(0,Math.min(1,1-p.cd/.9));
+  const reloadPct=Math.max(0,Math.min(1,1-p.cd/4));
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
   for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle='#ffd27a';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
@@ -428,6 +428,14 @@ function draw(){
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=(72+p.lv*8);$('reloadText').textContent=p.cd>0?'RELOADING':'READY';
+  // Show the live reload countdown beside the cursor.
+  const cursorReload=$('cursorReload');
+  if(cursorReload){
+    cursorReload.textContent=Math.max(0,p.cd).toFixed(2);
+    cursorReload.hidden=p.cd<=0;
+    cursorReload.style.left=(mouse.x+18)+'px';
+    cursorReload.style.top=(mouse.y+8)+'px';
+  }
 }
 function joy(e){
   const r=$('joystick').getBoundingClientRect(),dx0=e.clientX-(r.left+r.width/2),dy0=e.clientY-(r.top+r.height/2),m=Math.hypot(dx0,dy0),max=r.width*.34;

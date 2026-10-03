@@ -1,5 +1,5 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[];
+let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[];
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
@@ -7,7 +7,7 @@ addEventListener('resize',resize);resize();
 
 function reset(){
   p={x:W/2,y:H/2,r:20,speed:190,hp:400,max:400,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0};
-  en=[];bs=[];ebs=[];ps=[];spawn=.8;over=false;
+  en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   $('death').hidden=true;
 }
 
@@ -47,7 +47,7 @@ function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*820,vy:Math.sin(a)*820,r:3.5,life:1.8,dmg:72+p.lv*8});
-  p.cd=.52;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+  p.cd=.9;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
@@ -75,7 +75,7 @@ function update(dt){
     // Smooth hull rotation so the tank turns into its travel direction instead of snapping instantly.
     const targetAngle=Math.atan2(dy,dx);
     let da=((targetAngle-p.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turnRate=8.5;
+    const turnRate=7.0;
     p.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,da));
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
@@ -87,7 +87,7 @@ function update(dt){
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
-        e.hp-=b.dmg;e.hitFlash=.08;hit=true;burst(b.x,b.y,'#ffd27a',14);
+        e.hp-=b.dmg;e.hitFlash=.08;hit=true;dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(b.dmg),life:.7});burst(b.x,b.y,'#ffd27a',14);
         if(e.hp<=0)killEnemy(e,j);break;
       }
     }
@@ -135,7 +135,7 @@ function update(dt){
     // Bots keep their hull pointed along their movement path while the turret independently tracks the player.
     const targetTurret=Math.atan2(p.y-e.y,p.x-e.x);
     let tda=((targetTurret-e.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turretTurnRate=3.0;
+    const turretTurnRate=2.4;
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Bots can engage from range without needing to chase the player.
@@ -143,6 +143,7 @@ function update(dt){
     if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);if(p.hp<=0)die()}
   }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}
+  for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
   shake=Math.max(0,shake-dt*25);
 }
 
@@ -301,12 +302,14 @@ function draw(){
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0);
+  for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle='#ffd27a';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
   x.restore();
 
   const hp=Math.max(0,p.hp/p.max),xp=Math.max(0,p.xp/p.next);
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
+  $('reloadBar').style.width=((1-p.cd/.9)*100)+'%';$('damageText').textContent=(72+p.lv*8);$('reloadText').textContent=p.cd>0?'RELOADING':'READY';
 }
 function joy(e){
   const r=$('joystick').getBoundingClientRect(),dx0=e.clientX-(r.left+r.width/2),dy0=e.clientY-(r.top+r.height/2),m=Math.hypot(dx0,dy0),max=r.width*.34;

@@ -339,7 +339,6 @@ function draw(){
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
   const reloadPct=Math.max(0,Math.min(1,1-p.cd/.9));$('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=(72+p.lv*8);$('reloadText').textContent=p.cd>0?'RELOADING':'READY';
-  const rb=$('reloadCursor');if(rb){rb.style.setProperty('--reload',reloadPct);rb.classList.toggle('ready',p.cd<=0);}
 }
 function joy(e){
   const r=$('joystick').getBoundingClientRect(),dx0=e.clientX-(r.left+r.width/2),dy0=e.clientY-(r.top+r.height/2),m=Math.hypot(dx0,dy0),max=r.width*.34;

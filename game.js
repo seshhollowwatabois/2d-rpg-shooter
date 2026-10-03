@@ -46,7 +46,7 @@ function makeEnemy(){
 function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  const spread=(1-p.aimPrecision)*0.12;
+  const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
   bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:50,trail:[]});
   p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);

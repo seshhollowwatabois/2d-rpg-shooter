@@ -603,7 +603,7 @@ function draw(){
   x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');
   if(cursorReload){
-    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):4.toFixed(2);
+    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):'4.00';
     cursorReload.hidden=false;
     cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';

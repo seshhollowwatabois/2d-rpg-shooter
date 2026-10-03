@@ -38,7 +38,7 @@ function makeEnemy(){
   const hp=heavy?520+p.lv*35:260+p.lv*20;
   en.push({
     x:a,y:b,r:heavy?23:19,speed:heavy?48:64,hp,max:hp,dmg:heavy?35:20,
-    heavy,angle:0,fire:.8+Math.random()*1.5,hitFlash:0,
+    heavy,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -50,7 +50,7 @@ function shoot(){
   p.cd=.52;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function enemyShoot(e){
-  const a=Math.atan2(p.y-e.y,p.x-e.x);e.angle=a;
+  const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
   ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*360,vy:Math.sin(a)*360,r:5,life:2.4,dmg:e.heavy?32:20});
   e.fire=e.heavy?2.2+Math.random()*.8:1.4+Math.random()*.7;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
@@ -75,7 +75,7 @@ function update(dt){
     // Smooth hull rotation so the tank turns into its travel direction instead of snapping instantly.
     const targetAngle=Math.atan2(dy,dx);
     let da=((targetAngle-p.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turnRate=3.2;
+    const turnRate=5.5;
     p.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,da));
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
@@ -131,6 +131,12 @@ function update(dt){
     // Keep bots inside the battlefield.
     e.x=Math.max(e.r+10,Math.min(W-e.r-10,e.x));
     e.y=Math.max(e.r+10,Math.min(H-e.r-10,e.y));
+
+    // Bots keep their hull pointed along their movement path while the turret independently tracks the player.
+    const targetTurret=Math.atan2(p.y-e.y,p.x-e.x);
+    let tda=((targetTurret-e.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
+    const turretTurnRate=5.5;
+    e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Bots can engage from range without needing to chase the player.
     if(d<620&&e.fire<=0)enemyShoot(e);
@@ -289,7 +295,7 @@ function draw(){
   for(const b of bs){x.fillStyle='#ffe08b';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
   for(const b of ebs){x.fillStyle='#ff765d';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.angle,true,e.heavy,e.hitFlash>0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0);
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }

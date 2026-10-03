@@ -112,92 +112,117 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
   const bw=r*1.7,bh=r*1.05,tw=r*.38,th=r*1.58;
 
-  // Shadow
+  // Ground shadow
   x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.32)';
   x.beginPath();x.ellipse(2,5,r*1.25,r*.78,0,0,6.283);x.fill();x.restore();
 
-  // Tracks run along the SIDES of the tank.
+  // Side tracks
   x.fillStyle=flash?'#e6c9ab':(enemy?(heavy?'#25272a':'#432a2e'):'#242923');
   x.roundRect(-bw/2-tw,-th/2,tw,th,7);x.fill();
   x.roundRect(bw/2,-th/2,tw,th,7);x.fill();
 
-  // Individual road wheels make the side tracks read as a real tank.
+  // Track guide rails
+  x.strokeStyle=enemy?(heavy?'#54514c':'#633b3f'):'#424940';x.lineWidth=2;
+  x.strokeRect(-bw/2-tw+3,-th/2+3,tw-6,th-6);
+  x.strokeRect(bw/2+3,-th/2+3,tw-6,th-6);
+
+  // Road wheels
   x.fillStyle=enemy?(heavy?'#62605a':'#704247'):'#50574e';
   for(const sx of [-1,1]){
     const tx=sx*(bw/2+tw/2);
     for(let yy=-th*.38;yy<=th*.38;yy+=th*.19){
       x.beginPath();x.arc(tx,yy,r*.12,0,6.283);x.fill();
       x.strokeStyle='#202320';x.lineWidth=1.5;x.stroke();
+      x.fillStyle=enemy?(heavy?'#343534':'#4c3034'):'#353b35';
+      x.beginPath();x.arc(tx,yy,r*.045,0,6.283);x.fill();
+      x.fillStyle=enemy?(heavy?'#62605a':'#704247'):'#50574e';
     }
   }
 
-  // Main hull: low, armored, with a clearly distinct FRONT and REAR.
-  x.fillStyle=enemy?(heavy?'#4b4640':'#6c3b3e'):'#4e5d48';
+  // Detailed low-profile armored hull — no artificial front/rear color blocks.
+  x.fillStyle=flash?'#e5c5a7':(enemy?(heavy?'#4b4640':'#6c3b3e'):'#4e5d48');
   x.beginPath();
-  x.moveTo(-bw*.43,-bh*.48);
-  x.lineTo(bw*.25,-bh*.48);
-  x.lineTo(bw*.53,-bh*.32);
-  x.lineTo(bw*.62,-bh*.14);
-  x.lineTo(bw*.62,bh*.14);
-  x.lineTo(bw*.53,bh*.32);
-  x.lineTo(bw*.25,bh*.48);
-  x.lineTo(-bw*.43,bh*.48);
-  x.quadraticCurveTo(-bw*.54,0,-bw*.43,-bh*.48);
+  x.moveTo(-bw*.48,-bh*.43);
+  x.lineTo(-bw*.25,-bh*.52);
+  x.lineTo(bw*.28,-bh*.50);
+  x.lineTo(bw*.48,-bh*.38);
+  x.lineTo(bw*.55,-bh*.12);
+  x.lineTo(bw*.55,bh*.12);
+  x.lineTo(bw*.48,bh*.38);
+  x.lineTo(bw*.28,bh*.50);
+  x.lineTo(-bw*.25,bh*.52);
+  x.lineTo(-bw*.48,bh*.43);
+  x.quadraticCurveTo(-bw*.56,0,-bw*.48,-bh*.43);
   x.closePath();x.fill();
 
-  // FRONT armor wedge — on the direction the hull faces (+X).
-  x.fillStyle=flash?'#ffe1c1':(enemy?(heavy?'#756b60':'#985052'):'#71835f');
+  // Sloped armor surfaces and panel seams.
+  x.fillStyle=enemy?(heavy?'#5c554d':'#7d4245'):'#617052';
   x.beginPath();
-  x.moveTo(bw*.25,-bh*.48);
-  x.lineTo(bw*.53,-bh*.32);
-  x.lineTo(bw*.62,-bh*.14);
-  x.lineTo(bw*.62,bh*.14);
-  x.lineTo(bw*.53,bh*.32);
-  x.lineTo(bw*.25,bh*.48);
-  x.closePath();x.fill();
+  x.moveTo(-bw*.25,-bh*.52);x.lineTo(bw*.28,-bh*.50);x.lineTo(bw*.48,-bh*.38);
+  x.lineTo(bw*.34,-bh*.25);x.lineTo(-bw*.18,-bh*.28);x.closePath();x.fill();
+  x.fillStyle=enemy?(heavy?'#393734':'#5a3235'):'#414b40';
+  x.beginPath();
+  x.moveTo(-bw*.25,bh*.52);x.lineTo(bw*.28,bh*.50);x.lineTo(bw*.48,bh*.38);
+  x.lineTo(bw*.34,bh*.25);x.lineTo(-bw*.18,bh*.28);x.closePath();x.fill();
 
-  // REAR engine section — flat, darker, and visually opposite the front.
-  x.fillStyle=enemy?(heavy?'#353432':'#4a2d31'):'#394339';
-  x.fillRect(-bw*.47,-bh*.39,bw*.18,bh*.78);
-  x.strokeStyle=enemy?(heavy?'#625b53':'#704044'):'#5a6554';x.lineWidth=2;
-  for(let yy=-bh*.24;yy<=bh*.24;yy+=bh*.16){
-    x.beginPath();x.moveTo(-bw*.42,yy);x.lineTo(-bw*.32,yy);x.stroke();
+  x.strokeStyle=enemy?(heavy?'#71685d':'#975054'):'#77856c';x.lineWidth=1.3;
+  x.beginPath();x.moveTo(-bw*.25,-bh*.49);x.lineTo(-bw*.18,bh*.49);x.stroke();
+  x.beginPath();x.moveTo(bw*.28,-bh*.47);x.lineTo(bw*.34,bh*.47);x.stroke();
+  x.beginPath();x.moveTo(-bw*.40,-bh*.27);x.lineTo(bw*.39,-bh*.22);x.stroke();
+  x.beginPath();x.moveTo(-bw*.40,bh*.27);x.lineTo(bw*.39,bh*.22);x.stroke();
+
+  // Fender rails and small armor bolts
+  x.fillStyle=enemy?(heavy?'#393735':'#593538'):'#414b3d';
+  x.fillRect(-bw*.36,-bh*.57,bw*.76,r*.075);
+  x.fillRect(-bw*.36,bh*.495,bw*.76,r*.075);
+  x.fillStyle=enemy?(heavy?'#aaa08e':'#a95a5d'):'#a0aa91';
+  for(const yy of [-bh*.46,bh*.46]){
+    for(const xx of [-bw*.20,bw*.20]){
+      x.beginPath();x.arc(xx,yy,r*.035,0,6.283);x.fill();
+    }
   }
 
-  // Hull armor plates.
-  x.strokeStyle=enemy?(heavy?'#71685d':'#8f4e50'):'#77856c';x.lineWidth=1.5;
-  x.beginPath();x.moveTo(-bw*.27,-bh*.45);x.lineTo(-bw*.27,bh*.45);x.stroke();
-  x.beginPath();x.moveTo(bw*.25,-bh*.47);x.lineTo(bw*.25,bh*.47);x.stroke();
+  // Engine deck details behind the turret
+  x.fillStyle=enemy?(heavy?'#353330':'#4a2d31'):'#3b443a';
+  x.roundRect(-bw*.34,-bh*.20,bw*.25,bh*.40,3);x.fill();
+  x.strokeStyle=enemy?(heavy?'#5b554d':'#744145'):'#5c6656';x.lineWidth=1.5;
+  for(let i=-2;i<=2;i++){
+    x.beginPath();x.moveTo(-bw*.29+i*r*.045,-bh*.14);x.lineTo(-bw*.29+i*r*.045,bh*.14);x.stroke();
+  }
 
-  // Side fenders over the tracks.
-  x.fillStyle=enemy?(heavy?'#3b3936':'#593538'):'#414b3d';
-  x.fillRect(-bw*.38,-bh*.57,bw*.88,r*.09);
-  x.fillRect(-bw*.38,bh*.48,bw*.88,r*.09);
+  // Central turret ring
+  x.fillStyle=enemy?(heavy?'#373431':'#513033'):'#353d34';
+  x.beginPath();x.arc(0,0,r*.66,0,6.283);x.fill();
+  x.strokeStyle=enemy?(heavy?'#6a6258':'#8b4a4d'):'#697760';x.lineWidth=1.5;x.stroke();
 
-  // T-34-85-inspired low turret, sitting centered over the hull.
+  // Detailed low turret
   x.save();x.rotate(turretAngle-hullAngle);
   x.fillStyle=enemy?(heavy?'#403c37':'#60373a'):'#414b3e';
-  x.beginPath();x.arc(0,0,r*.62,0,6.283);x.fill();
-  x.fillStyle=enemy?(heavy?'#62594f':'#844549'):'#68785c';
   x.beginPath();
-  x.moveTo(-r*.46,-r*.34);x.lineTo(r*.22,-r*.38);x.lineTo(r*.49,-r*.14);
-  x.lineTo(r*.49,r*.14);x.lineTo(r*.22,r*.38);x.lineTo(-r*.46,r*.34);
-  x.quadraticCurveTo(-r*.56,0,-r*.46,-r*.34);x.closePath();x.fill();
+  x.moveTo(-r*.48,-r*.35);x.lineTo(-r*.20,-r*.45);x.lineTo(r*.25,-r*.39);
+  x.lineTo(r*.52,-r*.16);x.lineTo(r*.52,r*.16);x.lineTo(r*.25,r*.39);
+  x.lineTo(-r*.20,r*.45);x.lineTo(-r*.48,r*.35);
+  x.quadraticCurveTo(-r*.58,0,-r*.48,-r*.35);x.closePath();x.fill();
 
-  // Commander hatch.
-  x.fillStyle='#30352f';x.beginPath();x.ellipse(-r*.12,0,r*.19,r*.13,0,0,6.283);x.fill();
-  x.strokeStyle='#7d8972';x.lineWidth=1;x.stroke();
+  // Turret armor plates
+  x.strokeStyle=enemy?(heavy?'#776e62':'#955054'):'#7d8a72';x.lineWidth=1.3;
+  x.beginPath();x.moveTo(-r*.20,-r*.44);x.lineTo(-r*.18,r*.44);x.stroke();
+  x.beginPath();x.moveTo(r*.25,-r*.38);x.lineTo(r*.25,r*.38);x.stroke();
 
-  // Long cannon with large mantlet.
+  // Commander hatch
+  x.fillStyle='#2b302b';x.beginPath();x.ellipse(-r*.13,0,r*.18,r*.13,0,0,6.283);x.fill();
+  x.strokeStyle='#89967c';x.stroke();
+
+  // Cannon mantlet and long barrel
   x.fillStyle=enemy?'#242527':'#292e29';
-  x.roundRect(r*.17,-r*.17,r*.35,r*.34,4);x.fill();
+  x.roundRect(r*.17,-r*.18,r*.36,r*.36,4);x.fill();
   x.fillStyle='#151819';x.fillRect(r*.43,-r*.095,r*1.08,r*.19);
   x.fillStyle='#0e1112';x.fillRect(r*1.30,-r*.13,r*.15,r*.26);
 
-  // Headlights at the FRONT only.
-  x.fillStyle=enemy?'#d66b62':'#d8ca79';
-  x.fillRect(bw*.53,-bh*.22,r*.08,r*.14);
-  x.fillRect(bw*.53,bh*.08,r*.08,r*.14);
+  // Turret fittings
+  x.fillStyle=enemy?(heavy?'#71675b':'#985054'):'#7d8b70';
+  x.beginPath();x.arc(-r*.36,-r*.25,r*.045,0,6.283);x.fill();
+  x.beginPath();x.arc(-r*.36,r*.25,r*.045,0,6.283);x.fill();
 
   x.restore();
   x.restore();

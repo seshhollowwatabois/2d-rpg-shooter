@@ -7,21 +7,28 @@ const hulls=[
   {id:'heavy',name:'KV-1 Heavy',cost:80,hp:140,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];
 const turrets=[
-  {id:'standard',name:'85mm Standard',cost:0,damage:50,reload:4,turn:1.25,scale:1},
-  {id:'rapid',name:'57mm Rapid',cost:60,damage:40,reload:2.7,turn:1.8,scale:.9},
-  {id:'heavy',name:'122mm Heavy',cost:100,damage:80,reload:6,turn:.85,scale:1.12}
+  {id:'standard',name:'Standard Turret',cost:0,reload:4,turn:1.25,scale:1},
+  {id:'rapid',name:'Rapid Turret',cost:0,reload:2.7,turn:1.8,scale:.9},
+  {id:'heavy',name:'Heavy Turret',cost:0,reload:6,turn:.85,scale:1.12}
+];
+const barrels=[
+  {id:'85mm',name:'85mm Barrel',cost:0,damage:50,precision:1,scale:1,length:1},
+  {id:'57mm',name:'57mm Barrel',cost:0,damage:40,precision:.88,scale:.82,length:.82},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,damage:80,precision:.68,scale:1.22,length:1.12}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
+let ownedBarrels=JSON.parse(localStorage.getItem('tankOwnedBarrels')||'["85mm"]');
 let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
 let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
+let equippedBarrel=localStorage.getItem('tankEquippedBarrel')||'85mm';
 
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
 function reset(){
-  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0];
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed,hp:hull.hp,max:hull.hp,lv:1,aimPrecision:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id};
+  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0];
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed,hp:hull.hp,max:hull.hp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -78,11 +85,11 @@ function makeEnemy(){
 }
 function shoot(){
   if(p.cd>0)return;
-  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0];
+  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
-  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:turret.damage,trail:[]});
+  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:barrel.damage,trail:[]});
   p.cd=turret.reload;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
@@ -127,36 +134,76 @@ function die(){reset()}
 function saveShop(){
   localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
   localStorage.setItem('tankOwnedTurrets',JSON.stringify(ownedTurrets));
+  localStorage.setItem('tankOwnedBarrels',JSON.stringify(ownedBarrels));
   localStorage.setItem('tankEquippedHull',equippedHull);
   localStorage.setItem('tankEquippedTurret',equippedTurret);
+  localStorage.setItem('tankEquippedBarrel',equippedBarrel);
 }
 function renderShop(){
   const box=$('shopItems'); if(!box)return;
   box.innerHTML='';
+  const preview=(type,item)=>{
+    const cv=document.createElement('canvas');cv.width=120;cv.height=64;cv.className='shopPreview';
+    const q=cv.getContext('2d');q.clearRect(0,0,120,64);q.translate(60,32);
+    q.fillStyle='#d9dee1';q.fillRect(-60,-32,120,64);
+    q.fillStyle='rgba(255,255,255,.45)';q.fillRect(-60,-32,120,64);
+    q.strokeStyle='rgba(120,130,135,.25)';q.strokeRect(-58,-30,116,60);
+    if(type==='hull'){
+      const sc=item.scale;
+      q.fillStyle=item.id==='heavy'?'#4e4942':item.id==='scout'?'#526149':'#56644c';
+      q.beginPath();q.roundRect(-28*sc,-13*sc,56*sc,26*sc,7*sc);q.fill();
+      q.fillStyle='#252923';
+      q.fillRect(-32*sc,-18*sc,64*sc,5*sc);q.fillRect(-32*sc,13*sc,64*sc,5*sc);
+      q.fillStyle='#687264';
+      for(let i=-2;i<=2;i++){q.beginPath();q.arc(i*11*sc,-15.5*sc,4*sc,0,6.283);q.fill();q.beginPath();q.arc(i*11*sc,15.5*sc,4*sc,0,6.283);q.fill()}
+      q.fillStyle='#3f493e';q.beginPath();q.arc(-2,0,12*sc,0,6.283);q.fill();
+      q.fillStyle='#647258';q.beginPath();q.moveTo(28*sc,0);q.lineTo(17*sc,-9*sc);q.lineTo(3*sc,-11*sc);q.lineTo(3*sc,11*sc);q.lineTo(17*sc,9*sc);q.closePath();q.fill();
+    }else if(type==='turret'){
+      const sc=item.scale;
+      q.fillStyle='#343c34';q.beginPath();q.arc(0,0,19*sc,0,6.283);q.fill();
+      q.fillStyle=item.id==='heavy'?'#45413b':item.id==='rapid'?'#4b5748':'#424d3f';
+      q.beginPath();q.roundRect(-15*sc,-10*sc,30*sc,20*sc,8*sc);q.fill();
+      q.fillStyle='#292f2a';q.fillRect(12*sc,-4*sc,12*sc,8*sc);
+    }else{
+      const sc=item.scale;
+      q.strokeStyle='#292f2a';q.lineWidth=7*sc;q.lineCap='round';q.beginPath();q.moveTo(-12,0);q.lineTo(34*item.length,0);q.stroke();
+      q.strokeStyle='#151819';q.lineWidth=3*sc;q.beginPath();q.moveTo(8,0);q.lineTo(34*item.length,0);q.stroke();
+      q.fillStyle='#3f493e';q.beginPath();q.arc(-12,0,10*sc,0,6.283);q.fill();
+      q.fillStyle='#e3e8e8';q.font='bold 9px system-ui';q.textAlign='center';q.fillText(item.name.split(' ')[0],0,26);
+    }
+    return cv;
+  };
   const add=(type,item,owned,equipped)=>{
-    const row=document.createElement('div'); row.className='shopItem';
-    row.innerHTML='<div><b>'+item.name+'</b><small>'+ (type==='hull' ? 'HP '+item.hp+' • Speed '+item.speed : 'DMG '+item.damage+' • Reload '+item.reload+'s') +'</small></div>';
+    const row=document.createElement('div');row.className='shopItem';
+    const info=document.createElement('div');info.className='shopInfo';
+    info.appendChild(preview(type,item));
+    const text=document.createElement('div');
+    let stat='';
+    if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
+    else if(type==='turret')stat='Turn '+item.turn+' • Reload '+item.reload+'s';
+    else stat='DMG '+item.damage+' • Precision '+Math.round(item.precision*100)+'%';
+    text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
+    info.appendChild(text);row.appendChild(info);
     const btn=document.createElement('button');
-    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':('💰 '+item.cost);
+    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';
     btn.disabled=equipped;
     btn.onclick=()=>{
       if(!owned){
-        if(p.coins<item.cost)return;
-        p.coins-=item.cost;
-        if(type==='hull')ownedHulls.push(item.id);else ownedTurrets.push(item.id);
+        if(type==='hull')ownedHulls.push(item.id);
+        else if(type==='turret')ownedTurrets.push(item.id);
+        else ownedBarrels.push(item.id);
       }
-      if(type==='hull'){equippedHull=item.id;p.hullId=item.id}
-      else {equippedTurret=item.id;p.turretId=item.id}
-      const h=hulls.find(v=>v.id===p.hullId)||hulls[0],t=turrets.find(v=>v.id===p.turretId)||turrets[0];
-      if(type==='hull'){p.r=20*h.scale;p.max=h.hp;p.hp=Math.min(p.hp,p.max)}
+      if(type==='hull'){equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max)}
+      else if(type==='turret'){equippedTurret=item.id;p.turretId=item.id}
+      else {equippedBarrel=item.id;p.barrelId=item.id;p.aimPrecision=item.precision}
       saveShop();renderShop();
     };
     row.appendChild(btn);box.appendChild(row);
   };
-  const title=document.createElement('div');title.className='shopSectionTitle';title.textContent='HULLS';box.appendChild(title);
-  hulls.forEach(v=>add('hull',v,ownedHulls.includes(v.id),equippedHull===v.id));
-  const title2=document.createElement('div');title2.className='shopSectionTitle';title2.textContent='TURRETS';box.appendChild(title2);
-  turrets.forEach(v=>add('turret',v,ownedTurrets.includes(v.id),equippedTurret===v.id));
+  const section=t=>{const z=document.createElement('div');z.className='shopSectionTitle';z.textContent=t;box.appendChild(z)};
+  section('HULLS');hulls.forEach(v=>add('hull',v,ownedHulls.includes(v.id),equippedHull===v.id));
+  section('TURRETS');turrets.forEach(v=>add('turret',v,ownedTurrets.includes(v.id),equippedTurret===v.id));
+  section('CANNON BARRELS');barrels.forEach(v=>add('barrel',v,ownedBarrels.includes(v.id),equippedBarrel===v.id));
 }
 
 function update(dt){
@@ -182,7 +229,7 @@ function update(dt){
   }
 
   // Keep rotation and movement as separate upgradeable stats.
-  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0];
+  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   const hullTurnRate=hull.turn;
   const driveSpeed=hull.speed;
   const reverseSpeed=hull.reverse;
@@ -205,7 +252,7 @@ function update(dt){
   const playerTurretTurnRate=turret.turn;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
   // Accuracy starts low while moving and settles toward 100% while stopped.
-  p.aimPrecision=p.aimPrecision??1;
+  p.aimPrecision=barrel.precision;
   const aimTarget=moving?0.25:1;
   p.aimPrecision+=Math.sign(aimTarget-p.aimPrecision)*Math.min(Math.abs(aimTarget-p.aimPrecision),aimChangeRate*dt);
   if(mouse.down||keys.has(' '))shoot();
@@ -330,13 +377,14 @@ function update(dt){
   shake=Math.max(0,shake-dt*25);
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,barrelId='85mm',turretId='standard',hullId='standard'){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   // T-34-85-inspired top-down proportions:
   // long hull, sharply sloped glacis, rounded rear, wide side tracks and five road wheels.
-  const L=r*2.55, B=r*1.18, trackW=r*.34, trackL=L*.92;
-  const hullB=r*.88;
+  const hullScale=hullId==='scout'?.92:hullId==='heavy'?1.12:1;
+  const L=r*2.55*hullScale, B=r*1.18*hullScale, trackW=r*.34*hullScale, trackL=L*.92;
+  const hullB=r*.88*hullScale;
 
   // Ground shadow
   x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.34)';
@@ -433,6 +481,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // Rounded T-34-85-inspired turret, independent from hull.
   x.save();x.rotate(turretAngle-hullAngle);
+  const visualBarrel=barrels.find(v=>v.id===barrelId)||barrels[0];
+  const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';
   x.beginPath();
   x.moveTo(-r*.48,-r*.30);
@@ -457,8 +507,17 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // Gun mantlet and long 85mm-style barrel.
   x.fillStyle=enemy?'#252729':'#292f2a';
   x.beginPath();x.roundRect(r*.10,-r*.18,r*.34,r*.36,5);x.fill();
-  x.fillStyle='#151819';x.fillRect(r*.38,-r*.075,r*1.16,r*.15);
-  x.fillStyle='#0e1112';x.fillRect(r*1.48,-r*.105,r*.14,r*.21);
+  const barrelScale=visualBarrel.scale, barrelLength=visualBarrel.length;
+  const barrelWidth=.15*barrelScale;
+  x.fillStyle='#151819';x.fillRect(r*.38,-r*barrelWidth/2,r*1.16*barrelLength,r*barrelWidth);
+  if(visualBarrel.id==='122mm'){
+    x.fillStyle='#0e1112';x.fillRect(r*(1.38*barrelLength),-r*.13,r*.20,r*.26);
+    x.fillStyle='#4a5049';x.fillRect(r*.68,-r*.16,r*.16,r*.32);
+  }else if(visualBarrel.id==='57mm'){
+    x.fillStyle='#0e1112';x.fillRect(r*(1.35*barrelLength),-r*.065,r*.10,r*.13);
+  }else{
+    x.fillStyle='#0e1112';x.fillRect(r*(1.48*barrelLength),-r*.105,r*.14,r*.21);
+  }
 
   // Small turret fittings.
   x.fillStyle=enemy?(heavy?'#746a5d':'#9b5458'):'#849176';
@@ -499,7 +558,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,'85mm','standard',e.heavy?'heavy':'standard');
     if(e.burnTime>0){
       x.globalAlpha=.9;
       x.fillStyle='#ff7a2f';
@@ -519,9 +578,9 @@ function draw(){
     x.beginPath();x.arc(p.x+p.r*.05,p.y-p.r*.28,p.r*.18,0,6.283);x.fill();
     x.globalAlpha=1;
   }
-  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0);
+  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.barrelId,p.turretId,p.hullId);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
-  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0];
+  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   const reloadPct=Math.max(0,Math.min(1,1-p.cd/turret.reload));
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
@@ -532,7 +591,7 @@ function draw(){
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';$('coinsText').textContent=p.coins;
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
-  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=turret.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
+  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
   // Precision reticle around the cursor: smaller/tighter means more accurate.
   const precisionRadius=28+(1-p.aimPrecision)*42;

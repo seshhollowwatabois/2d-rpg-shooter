@@ -111,14 +111,16 @@ function update(dt){
   // Keep rotation and movement as separate upgradeable stats.
   const hullTurnRate=1.65;
   const driveSpeed=120;
+  const reverseSpeed=75;
   if(turn){
     // When reversing, left/right steering reverses naturally.
     const reverseFactor=drive<0?-1:1;
     p.angle+=turn*hullTurnRate*dt*reverseFactor;
   }
   if(drive){
-    p.x+=Math.cos(p.angle)*drive*driveSpeed*dt;
-    p.y+=Math.sin(p.angle)*drive*driveSpeed*dt;
+    const moveSpeed=drive<0?reverseSpeed:driveSpeed;
+    p.x+=Math.cos(p.angle)*drive*moveSpeed*dt;
+    p.y+=Math.sin(p.angle)*drive*moveSpeed*dt;
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);

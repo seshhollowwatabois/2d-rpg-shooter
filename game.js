@@ -438,12 +438,12 @@ function draw(){
   // shell trails / explosions
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,3.5,0,6.283);x.fill()}x.globalAlpha=1;
   for(const b of bs){
-    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.28;x.globalAlpha=a;x.fillStyle='#ffd77a';x.beginPath();x.arc(t.x,t.y,b.r*(.45+.55*a),0,6.283);x.fill()}
-    x.globalAlpha=1;x.fillStyle='#fff1b0';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill();
+    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.55;x.globalAlpha=a;x.fillStyle='#ff9d24';x.beginPath();x.arc(t.x,t.y,b.r*(1.0+.9*a),0,6.283);x.fill();x.fillStyle='#ffe39a';x.globalAlpha=a*.9;x.beginPath();x.arc(t.x,t.y,b.r*(.55+.7*a),0,6.283);x.fill()}
+    x.globalAlpha=1;x.fillStyle='#ff8a00';x.beginPath();x.arc(b.x,b.y,b.r*1.7,0,6.283);x.fill();x.fillStyle='#fff4c2';x.beginPath();x.arc(b.x,b.y,b.r*1.05,0,6.283);x.fill();
   }
   for(const b of ebs){
-    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.24;x.globalAlpha=a;x.fillStyle='#ff694f';x.beginPath();x.arc(t.x,t.y,b.r*(.45+.55*a),0,6.283);x.fill()}
-    x.globalAlpha=1;x.fillStyle='#ffb09a';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill();
+    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.5;x.globalAlpha=a;x.fillStyle='#ff4f2f';x.beginPath();x.arc(t.x,t.y,b.r*(.9+.8*a),0,6.283);x.fill();x.fillStyle='#ffc0a8';x.globalAlpha=a*.85;x.beginPath();x.arc(t.x,t.y,b.r*(.5+.6*a),0,6.283);x.fill()}
+    x.globalAlpha=1;x.fillStyle='#ff3b18';x.beginPath();x.arc(b.x,b.y,b.r*1.65,0,6.283);x.fill();x.fillStyle='#fff0d8';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill();
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){

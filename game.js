@@ -46,12 +46,12 @@ function makeEnemy(){
 function shoot(){
   if(p.cd>0)return;
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*570,vy:Math.sin(a)*570,r:6,life:1.8,dmg:72+p.lv*8});
+  bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*820,vy:Math.sin(a)*820,r:3.5,life:1.8,dmg:72+p.lv*8});
   p.cd=.52;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*360,vy:Math.sin(a)*360,r:5,life:2.4,dmg:e.heavy?32:20});
+  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*560,vy:Math.sin(a)*560,r:3,life:2.4,dmg:e.heavy?32:20});
   e.fire=e.heavy?2.2+Math.random()*.8:1.4+Math.random()*.7;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
 }
@@ -75,7 +75,7 @@ function update(dt){
     // Smooth hull rotation so the tank turns into its travel direction instead of snapping instantly.
     const targetAngle=Math.atan2(dy,dx);
     let da=((targetAngle-p.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turnRate=5.5;
+    const turnRate=8.5;
     p.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,da));
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
@@ -87,7 +87,7 @@ function update(dt){
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
-        e.hp-=b.dmg;e.hitFlash=.08;hit=true;burst(b.x,b.y,'#ffd27a',5);
+        e.hp-=b.dmg;e.hitFlash=.08;hit=true;burst(b.x,b.y,'#ffd27a',14);
         if(e.hp<=0)killEnemy(e,j);break;
       }
     }
@@ -97,7 +97,7 @@ function update(dt){
   for(let i=ebs.length-1;i>=0;i--){
     const b=ebs[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
-      if(p.inv<=0){p.hp-=b.dmg;p.inv=.28;shake=10;burst(p.x,p.y,'#e15b64',12);if(p.hp<=0)die()}
+      if(p.inv<=0){p.hp-=b.dmg;p.inv=.28;shake=10;burst(b.x,b.y,'#ff765d',14);if(p.hp<=0)die()}
       ebs.splice(i,1);continue;
     }
     if(b.life<=0||b.x<-60||b.x>W+60||b.y<-60||b.y>H+60)ebs.splice(i,1);
@@ -135,7 +135,7 @@ function update(dt){
     // Bots keep their hull pointed along their movement path while the turret independently tracks the player.
     const targetTurret=Math.atan2(p.y-e.y,p.x-e.x);
     let tda=((targetTurret-e.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turretTurnRate=5.5;
+    const turretTurnRate=3.0;
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Bots can engage from range without needing to chase the player.
@@ -294,6 +294,7 @@ function draw(){
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,3.5,0,6.283);x.fill()}x.globalAlpha=1;
   for(const b of bs){x.fillStyle='#ffe08b';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
   for(const b of ebs){x.fillStyle='#ff765d';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
+  // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
     tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0);
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);

@@ -65,18 +65,26 @@ function update(dt){
   if(over)return;
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
   spawn-=dt;if(spawn<=0){makeEnemy();spawn=Math.max(2.8,5.2-p.lv*.10)}
-  let dx=0,dy=0;
-  if(keys.has('w')||keys.has('arrowup'))dy--;if(keys.has('s')||keys.has('arrowdown'))dy++;
-  if(keys.has('a')||keys.has('arrowleft'))dx--;if(keys.has('d')||keys.has('arrowright'))dx++;
-  if(touch.active){dx=touch.x;dy=touch.y}
-  const l=Math.hypot(dx,dy)||1;
-  if(dx||dy){
-    p.x+=dx/l*p.speed*dt;p.y+=dy/l*p.speed*dt;
-    // Smooth hull rotation so the tank turns into its travel direction instead of snapping instantly.
-    const targetAngle=Math.atan2(dy,dx);
-    let da=((targetAngle-p.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turnRate=7.0;
-    p.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,da));
+  // Tank controls: W/S drive forward and backward; A/D rotate the hull in place.
+  let drive=0,turn=0;
+  if(keys.has('w')||keys.has('arrowup'))drive+=1;
+  if(keys.has('s')||keys.has('arrowdown'))drive-=1;
+  if(keys.has('a')||keys.has('arrowleft'))turn-=1;
+  if(keys.has('d')||keys.has('arrowright'))turn+=1;
+  if(touch.active){
+    drive=-touch.y;
+    turn=touch.x;
+  }
+
+  // Keep rotation and movement as separate upgradeable stats.
+  const hullTurnRate=1.65;
+  const driveSpeed=120;
+  if(turn){
+    p.angle+=turn*hullTurnRate*dt;
+  }
+  if(drive){
+    p.x+=Math.cos(p.angle)*drive*driveSpeed*dt;
+    p.y+=Math.sin(p.angle)*drive*driveSpeed*dt;
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);

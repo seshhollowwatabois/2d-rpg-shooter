@@ -7,9 +7,9 @@ const hulls=[
   {id:'heavy',name:'KV-1 Heavy',cost:80,hp:140,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];
 const turrets=[
-  {id:'standard',name:'Standard Turret',cost:0,reload:4,turn:1.25,scale:1},
-  {id:'rapid',name:'Rapid Turret',cost:0,reload:2.7,turn:1.8,scale:.9},
-  {id:'heavy',name:'Heavy Turret',cost:0,reload:6,turn:.85,scale:1.12}
+  {id:'standard',name:'Standard Turret',cost:0,turn:1.25,scale:1},
+  {id:'rapid',name:'Rapid Turret',cost:0,turn:1.8,scale:.9},
+  {id:'heavy',name:'Heavy Turret',cost:0,turn:.85,scale:1.12}
 ];
 const barrels=[
   {id:'85mm',name:'85mm Barrel',cost:0,damage:50,precision:1,scale:1,length:1},
@@ -90,7 +90,7 @@ function shoot(){
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
   bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:barrel.damage,trail:[]});
-  p.cd=turret.reload;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+  p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -180,7 +180,7 @@ function renderShop(){
     const text=document.createElement('div');
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
-    else if(type==='turret')stat='Turn '+item.turn+' • Reload '+item.reload+'s';
+    else if(type==='turret')stat='Turn speed '+item.turn
     else stat='DMG '+item.damage+' • Precision '+Math.round(item.precision*100)+'%';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
@@ -581,7 +581,7 @@ function draw(){
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.barrelId,p.turretId,p.hullId);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-  const reloadPct=Math.max(0,Math.min(1,1-p.cd/turret.reload));
+  const reloadPct=Math.max(0,Math.min(1,1-p.cd/4));
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
   for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle='#ffd27a';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
@@ -600,7 +600,7 @@ function draw(){
   x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');
   if(cursorReload){
-    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):turret.reload.toFixed(2);
+    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):4.toFixed(2);
     cursorReload.hidden=false;
     cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';

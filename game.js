@@ -6,7 +6,7 @@ function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio|
 addEventListener('resize',resize);resize();
 
 function reset(){
-  p={x:W/2,y:H/2,r:20,speed:190,hp:400,max:400,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0};
+  p={x:W/2,y:H/2,r:20,speed:190,hp:400,max:400,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   $('death').hidden=true;
 }
@@ -38,7 +38,7 @@ function makeEnemy(){
   const hp=heavy?520+p.lv*35:260+p.lv*20;
   en.push({
     x:a,y:b,r:heavy?23:19,speed:heavy?48:64,hp,max:hp,dmg:heavy?35:20,
-    heavy,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,
+    heavy,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -48,6 +48,31 @@ function shoot(){
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*820,vy:Math.sin(a)*820,r:3.5,life:1.8,dmg:72+p.lv*8});
   p.cd=.9;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+}
+function getHitProfile(target,bx,by){
+  const hitAngle=Math.atan2(by-target.y,bx-target.x);
+  const local=((hitAngle-target.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+  const c=Math.cos(local);
+  if(c>=.5)return {mult:.5,rear:false,zone:'front'};
+  if(c<=-.5)return {mult:1,rear:true,zone:'rear'};
+  return {mult:.75,rear:false,zone:'side'};
+}
+function applyBulletHit(target,baseDamage,bx,by){
+  const profile=getHitProfile(target,bx,by);
+  const damage=baseDamage*profile.mult;
+  target.hp-=damage;
+  target.hitFlash=.08;
+  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
+
+  // A rear hit has a 1% chance to ignite the tank. Burning deals 40% of
+  // its max HP over 10 seconds, at a steady rate.
+  if(profile.rear&&target.burnTime<=0&&Math.random()<.01){
+    target.burnTime=10;
+    target.burnDamage=target.max*.40;
+    burst(target.x,target.y,'#ff9b55',16);
+  }
+  burst(bx,by,'#ffd27a',14);
+  return profile;
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
@@ -64,6 +89,13 @@ function die(){reset()}
 function update(dt){
   if(over)return;
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
+  // Burning tanks lose exactly 40% of their max HP over 10 seconds.
+  if(p.burnTime>0){
+    const burnTick=Math.min(p.burnDamage,p.max*.40/10*dt);
+    p.hp-=burnTick;p.burnDamage-=burnTick;p.burnTime=Math.max(0,p.burnTime-dt);
+    if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
+    if(p.hp<=0){p.hp=0;die();return;}
+  }
   spawn-=dt;if(spawn<=0){makeEnemy();spawn=Math.max(2.8,5.2-p.lv*.10)}
   // Tank controls: W/S drive forward and backward; A/D rotate the hull in place.
   let drive=0,turn=0;
@@ -100,7 +132,7 @@ function update(dt){
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
-        e.hp-=b.dmg;e.hitFlash=.08;hit=true;dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(b.dmg),life:.7});burst(b.x,b.y,'#ffd27a',14);
+        applyBulletHit(e,b.dmg,b.x,b.y);hit=true;
         if(e.hp<=0)killEnemy(e,j);break;
       }
     }
@@ -110,7 +142,17 @@ function update(dt){
   for(let i=ebs.length-1;i>=0;i--){
     const b=ebs[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
-      if(p.inv<=0){p.hp-=b.dmg;p.inv=.28;shake=10;burst(b.x,b.y,'#ff765d',14);if(p.hp<=0)die()}
+      if(p.inv<=0){
+        const profile=getHitProfile(p,b.x,b.y);
+        const damage=b.dmg*profile.mult;
+        p.hp-=damage;p.inv=.28;shake=10;
+        dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
+        if(profile.rear&&p.burnTime<=0&&Math.random()<.01){
+          p.burnTime=10;p.burnDamage=p.max*.40;burst(p.x,p.y,'#ff9b55',16);
+        }
+        burst(b.x,b.y,'#ff765d',14);
+        if(p.hp<=0)die();
+      }
       ebs.splice(i,1);continue;
     }
     if(b.life<=0||b.x<-60||b.x>W+60||b.y<-60||b.y>H+60)ebs.splice(i,1);
@@ -119,6 +161,17 @@ function update(dt){
   for(const e of en){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
     e.fire-=dt;e.hitFlash=Math.max(0,e.hitFlash-dt);
+    if(e.burnTime>0){
+      const burnTick=Math.min(e.burnDamage,e.max*.40/10*dt);
+      e.hp-=burnTick;e.burnDamage-=burnTick;e.burnTime=Math.max(0,e.burnTime-dt);
+      if(Math.random()<dt*10)burst(e.x+(Math.random()-.5)*e.r,e.y+(Math.random()-.5)*e.r,'#ff8a3d',2);
+      if(e.hp<=0){
+        e.hp=0;
+        const idx=en.indexOf(e);
+        if(idx>=0)killEnemy(e,idx);
+        continue;
+      }
+    }
 
     // Bots wander around the battlefield instead of constantly chasing the player.
     e.wanderTime-=dt;
@@ -337,8 +390,24 @@ function draw(){
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
     tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0);
+    if(e.burnTime>0){
+      x.globalAlpha=.9;
+      x.fillStyle='#ff7a2f';
+      x.beginPath();x.arc(e.x-e.r*.25,e.y-e.r*.1,e.r*.32,0,6.283);x.fill();
+      x.fillStyle='#ffd35a';
+      x.beginPath();x.arc(e.x+e.r*.05,e.y-e.r*.28,e.r*.18,0,6.283);x.fill();
+      x.globalAlpha=1;
+    }
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
+  }
+  if(p.burnTime>0){
+    x.globalAlpha=.9;
+    x.fillStyle='#ff7a2f';
+    x.beginPath();x.arc(p.x-p.r*.25,p.y-p.r*.1,p.r*.32,0,6.283);x.fill();
+    x.fillStyle='#ffd35a';
+    x.beginPath();x.arc(p.x+p.r*.05,p.y-p.r*.28,p.r*.18,0,6.283);x.fill();
+    x.globalAlpha=1;
   }
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;

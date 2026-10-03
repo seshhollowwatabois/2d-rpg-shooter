@@ -43,7 +43,7 @@ function makeEnemy(){
 }
 function shoot(){
   if(p.cd>0)return;
-  const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.angle=a;
+  const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   bs.push({x:p.x+Math.cos(a)*34,y:p.y+Math.sin(a)*34,vx:Math.cos(a)*570,vy:Math.sin(a)*570,r:6,life:1.8,dmg:72+p.lv*8});
   p.cd=.52;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
@@ -70,7 +70,7 @@ function update(dt){
   const l=Math.hypot(dx,dy)||1;
   if(dx||dy){p.x+=dx/l*p.speed*dt;p.y+=dy/l*p.speed*dt}
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
-  p.angle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+  p.turretAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   if(mouse.down||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
@@ -104,8 +104,8 @@ function update(dt){
   shake=Math.max(0,shake-dt*25);
 }
 
-function tankBody(cx,cy,r,angle,enemy=false,heavy=false,flash=false){
-  x.save();x.translate(cx,cy);x.rotate(angle);
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false){
+  x.save();x.translate(cx,cy);x.rotate(hullAngle);
   // tracks
   x.fillStyle=flash?'#f2d0b0':(enemy?(heavy?'#34363b':'#542f35'):'#30382f');
   x.fillRect(-r-5,-r*.72,r*2+10,r*.38);x.fillRect(-r-5,r*.34,r*2+10,r*.38);
@@ -114,10 +114,11 @@ function tankBody(cx,cy,r,angle,enemy=false,heavy=false,flash=false){
   x.fillStyle=enemy?(heavy?'#6b625c':'#985052'):'#71845f';
   x.beginPath();x.roundRect(-r*.72,-r*.72,r*1.44,r*1.44,6);x.fill();
   // turret
+  x.save();x.rotate(turretAngle-hullAngle);
   x.fillStyle=enemy?(heavy?'#514943':'#7f4548'):'#657554';
   x.beginPath();x.arc(0,0,r*.56,0,6.283);x.fill();
   x.fillStyle=enemy?'#29272a':'#31392e';x.fillRect(r*.1,-r*.16,r*1.25,r*.32);
-  x.fillStyle='#1c2024';x.fillRect(r*.92,-r*.10,r*.55,r*.20);
+  x.fillStyle='#1c2024';x.fillRect(r*.92,-r*.10,r*.55,r*.20);x.restore();
   x.restore();
 }
 function draw(){
@@ -131,11 +132,11 @@ function draw(){
   for(const b of bs){x.fillStyle='#ffe08b';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
   for(const b of ebs){x.fillStyle='#ff765d';x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.fill()}
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,true,e.heavy,e.hitFlash>0);
+    tankBody(e.x,e.y,e.r,e.angle,e.angle,true,e.heavy,e.hitFlash>0);
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  tankBody(p.x,p.y,p.r,p.angle,false,false,p.inv>0);
+  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0);
   x.restore();
 
   const hp=Math.max(0,p.hp/p.max),xp=Math.max(0,p.xp/p.next);

@@ -74,7 +74,7 @@ function getHitProfile(target,bx,by){
   const c=Math.cos(local);
   if(c>=.5)return {penetration:.25,rear:false,zone:'front'};
   if(c<=-.5)return {penetration:1,rear:true,zone:'rear'};
-  return {penetration:.5,rear:false,zone:'side'};
+  return {penetration:.75,rear:false,zone:'side'};
 }
 function applyBulletHit(target,baseDamage,bx,by){
   const profile=getHitProfile(target,bx,by);

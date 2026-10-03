@@ -6,7 +6,7 @@ function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio|
 addEventListener('resize',resize);resize();
 
 function reset(){
-  p={x:W/2,y:H/2,r:20,speed:190,hp:400,max:400,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0};
+  p={x:W/2,y:H/2,r:20,speed:190,hp:400,max:400,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0};
   en=[];bs=[];ebs=[];ps=[];spawn=.8;over=false;
   $('death').hidden=true;
 }
@@ -68,7 +68,11 @@ function update(dt){
   if(keys.has('a')||keys.has('arrowleft'))dx--;if(keys.has('d')||keys.has('arrowright'))dx++;
   if(touch.active){dx=touch.x;dy=touch.y}
   const l=Math.hypot(dx,dy)||1;
-  if(dx||dy){p.x+=dx/l*p.speed*dt;p.y+=dy/l*p.speed*dt}
+  if(dx||dy){
+    p.x+=dx/l*p.speed*dt;p.y+=dy/l*p.speed*dt;
+    // The hull faces the direction of travel; the turret stays independent and follows the mouse.
+    p.angle=Math.atan2(dy,dx);
+  }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   p.turretAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   if(mouse.down||keys.has(' '))shoot();
@@ -106,19 +110,90 @@ function update(dt){
 
 function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
-  // tracks
-  x.fillStyle=flash?'#f2d0b0':(enemy?(heavy?'#34363b':'#542f35'):'#30382f');
-  x.fillRect(-r-5,-r*.72,r*2+10,r*.38);x.fillRect(-r-5,r*.34,r*2+10,r*.38);
-  x.fillStyle=enemy?(heavy?'#554d49':'#713f43'):'#53634b';
-  x.fillRect(-r,-r*.58,r*2,r*1.16);
-  x.fillStyle=enemy?(heavy?'#6b625c':'#985052'):'#71845f';
-  x.beginPath();x.roundRect(-r*.72,-r*.72,r*1.44,r*1.44,6);x.fill();
-  // turret
+
+  const trackW=r*.42, trackH=r*1.75;
+  const bodyW=r*1.48, bodyH=r*1.22;
+
+  // Ground shadow
+  x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.28)';
+  x.beginPath();x.ellipse(2,4,r*1.15,r*.9,0,0,6.283);x.fill();x.restore();
+
+  // Left/right tracks: clearly different from the hull and visually show the tank's orientation.
+  x.fillStyle=flash?'#f2d0b0':(enemy?(heavy?'#292b2f':'#40282c'):'#252b25');
+  x.roundRect(-bodyW/2-trackW,-trackH/2,trackW,trackH,5);x.fill();
+  x.roundRect(bodyW/2,-trackH/2,trackW,trackH,5);x.fill();
+
+  // Track wheels and tread blocks.
+  x.fillStyle=enemy?(heavy?'#575a5d':'#654044'):'#424942';
+  for(const tx of [-bodyW/2-trackW/2,bodyW/2+trackW/2]){
+    for(let wy=-trackH*.36;wy<=trackH*.36;wy+=trackH*.36){
+      x.beginPath();x.arc(tx,wy,r*.14,0,6.283);x.fill();
+    }
+    x.strokeStyle='#171a19';x.lineWidth=2;
+    for(let ty=-trackH*.45;ty<trackH*.45;ty+=r*.25){
+      x.beginPath();x.moveTo(tx-trackW*.38,ty);x.lineTo(tx+trackW*.38,ty);x.stroke();
+    }
+  }
+
+  // Hull: rear is the rounded back, front is the pointed/sloped glacis.
+  x.fillStyle=enemy?(heavy?'#514943':'#713f43'):'#53634b';
+  x.beginPath();
+  x.moveTo(-bodyW*.48,-bodyH*.5);
+  x.lineTo(bodyW*.28,-bodyH*.5);
+  x.lineTo(bodyW*.52,-bodyH*.25);
+  x.lineTo(bodyW*.52,bodyH*.25);
+  x.lineTo(bodyW*.28,bodyH*.5);
+  x.lineTo(-bodyW*.48,bodyH*.5);
+  x.quadraticCurveTo(-bodyW*.6,0,-bodyW*.48,-bodyH*.5);
+  x.closePath();x.fill();
+
+  // Front glacis plate / nose.
+  x.fillStyle=flash?'#ffe0c0':(enemy?(heavy?'#75695f':'#9a5153'):'#71845f');
+  x.beginPath();
+  x.moveTo(bodyW*.28,-bodyH*.5);
+  x.lineTo(bodyW*.62,-bodyH*.28);
+  x.lineTo(bodyW*.62,bodyH*.28);
+  x.lineTo(bodyW*.28,bodyH*.5);
+  x.closePath();x.fill();
+
+  // Rear plate, visually flat and darker.
+  x.fillStyle=enemy?(heavy?'#393634':'#4b2e32'):'#3d473c';
+  x.fillRect(-bodyW*.55,-bodyH*.39,bodyW*.12,bodyH*.78);
+
+  // Front headlights / details.
+  x.fillStyle=enemy?'#d66b61':'#d6c777';
+  x.fillRect(bodyW*.51,-bodyH*.25,r*.08,r*.16);
+  x.fillRect(bodyW*.51,bodyH*.09,r*.08,r*.16);
+
+  // Turret ring and turret.
   x.save();x.rotate(turretAngle-hullAngle);
-  x.fillStyle=enemy?(heavy?'#514943':'#7f4548'):'#657554';
-  x.beginPath();x.arc(0,0,r*.56,0,6.283);x.fill();
-  x.fillStyle=enemy?'#29272a':'#31392e';x.fillRect(r*.1,-r*.16,r*1.25,r*.32);
-  x.fillStyle='#1c2024';x.fillRect(r*.92,-r*.10,r*.55,r*.20);x.restore();
+  x.fillStyle=enemy?(heavy?'#3f3935':'#643a3d'):'#454e40';
+  x.beginPath();x.arc(0,0,r*.62,0,6.283);x.fill();
+  x.fillStyle=enemy?(heavy?'#625951':'#88484b'):'#68785c';
+  x.beginPath();
+  x.roundRect(-r*.48,-r*.43,r*.96,r*.86,7);x.fill();
+
+  // Turret armor wedge + rear hatch.
+  x.fillStyle=enemy?(heavy?'#756a5e':'#a25859'):'#7d8d70';
+  x.beginPath();x.moveTo(-r*.38,-r*.4);x.lineTo(r*.35,-r*.34);x.lineTo(r*.48,0);
+  x.lineTo(r*.35,r*.34);x.lineTo(-r*.38,r*.4);x.closePath();x.fill();
+  x.fillStyle='#30352f';x.beginPath();x.arc(-r*.18,0,r*.16,0,6.283);x.fill();
+
+  // Mantlet + cannon. The barrel follows the turret only.
+  x.fillStyle=enemy?'#252426':'#292e29';
+  x.roundRect(r*.18,-r*.15,r*.34,r*.30,3);x.fill();
+  x.fillStyle='#171a1b';x.fillRect(r*.43,-r*.10,r*.78,r*.20);
+  x.fillStyle='#0f1213';x.fillRect(r*1.08,-r*.13,r*.16,r*.26);
+
+  // Tiny commander hatch/antenna.
+  x.strokeStyle=enemy?(heavy?'#8a7e70':'#a25b5d'):'#9aa78a';x.lineWidth=1.5;
+  x.beginPath();x.moveTo(-r*.12,-r*.18);x.lineTo(-r*.12,-r*.55);x.stroke();
+  x.restore();
+
+  // Hull front/rear markings.
+  x.save();x.rotate(-hullAngle);x.font='bold '+Math.max(7,r*.3)+'px sans-serif';x.textAlign='center';
+  x.fillStyle='rgba(255,255,255,.16)';x.fillText(enemy?'ENEMY':'',cx-cx,cy+r*1.25);x.restore();
+
   x.restore();
 }
 function draw(){

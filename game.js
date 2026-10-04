@@ -156,7 +156,7 @@ function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
-  en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
+  en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
     {x:W*.28,y:H*.55,w:190,h:30},{x:W*.58,y:H*.64,w:34,h:150},{x:W*.08,y:H*.70,w:145,h:28},
@@ -490,7 +490,8 @@ function enemyShoot(e){
 }
 function killEnemy(e,j){
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
-  burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();en.splice(j,1);
+  burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();
+  e.dead=true;e.corpseTime=5;e.hitFlash=0;deadTanks.push(e);en.splice(j,1);
 }
 function die(){saveCurrent(activeSlot);gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
@@ -592,6 +593,7 @@ function update(dt){
     }
   }
   for(let i=railBeams.length-1;i>=0;i--){railBeams[i].life-=dt;if(railBeams[i].life<=0)railBeams.splice(i,1);}
+  for(let i=deadTanks.length-1;i>=0;i--){deadTanks[i].corpseTime-=dt;if(deadTanks[i].corpseTime<=0)deadTanks.splice(i,1);}
 
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
@@ -1009,6 +1011,19 @@ function draw(){
     x.save();x.globalAlpha=a;
     x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.restore();
+  }
+  // Destroyed tanks remain as burning wrecks for 5 seconds.
+  for(const e of deadTanks){
+    const fade=Math.min(1,e.corpseTime/1);
+    x.save();x.globalAlpha=fade;
+    x.translate(e.x,e.y);x.rotate(e.angle);
+    x.fillStyle='#171a1b';x.beginPath();x.arc(0,0,e.r*1.02,0,6.283);x.fill();
+    x.strokeStyle='#454b4d';x.lineWidth=3;x.stroke();
+    x.fillStyle='#ff7a22';x.globalAlpha=.7*fade;
+    x.beginPath();x.arc(-e.r*.18,0,e.r*.28,0,6.283);x.fill();
+    x.fillStyle='#ffd27a';x.globalAlpha=.8*fade;
+    x.beginPath();x.arc(e.r*.12,-e.r*.12,e.r*.14,0,6.283);x.fill();
     x.restore();
   }
   // shell trails / explosions

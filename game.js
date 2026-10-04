@@ -41,7 +41,8 @@ let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
 let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
 let equippedBarrel=localStorage.getItem('tankEquippedBarrel')||'85mm';
 let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
-let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);\nlet railgunOwnedTier=Math.max(railgunTier,Number(localStorage.getItem('tankRailgunOwnedTier')||0));
+let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);
+let railgunOwnedTier=Math.max(railgunTier,Number(localStorage.getItem('tankRailgunOwnedTier')||0));
 
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
@@ -623,7 +624,11 @@ function renderShop(){
       }else if(type==='engine'){
         addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');
       }else{
-        const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;\n        const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;\n        const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;\n        const displayedPenetration=item.id==='122mmLong'?(activeRailTier?.penetration||item.penetration):item.penetration;\n        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Penetration',displayedPenetration);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
+        const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
+        const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
+        const displayedPenetration=item.id==='122mmLong'?(activeRailTier?.penetration||item.penetration):item.penetration;
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Penetration',displayedPenetration);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       if(type==='barrel'&&item.id==='122mmLong'){
@@ -664,7 +669,11 @@ function renderShop(){
           d.innerHTML='<span><strong>Tier '+t.tier+'</strong> <small>'+t.name+'</small></span><b>DMG '+dm+' • PEN '+t.penetration+' • RELOAD '+(railItem.reloadTime*t.reloadMult).toFixed(1)+'s</b>';
           const btn=document.createElement('button');
           btn.className='tierInlineButton';
-          const owned=t.tier<=railgunOwnedTier;\n          btn.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';\n          btn.disabled=t.tier===railgunTier||(!owned&&t.tier!==railgunOwnedTier+1);\n          btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===railgunOwnedTier+1)railgunOwnedTier=t.tier;railgunTier=t.tier;saveShop();renderShop()};\n          d.appendChild(btn);up.appendChild(d);
+          const owned=t.tier<=railgunOwnedTier;
+          btn.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';
+          btn.disabled=t.tier===railgunTier||(!owned&&t.tier!==railgunOwnedTier+1);
+          btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===railgunOwnedTier+1)railgunOwnedTier=t.tier;railgunTier=t.tier;saveShop();renderShop()};
+          d.appendChild(btn);up.appendChild(d);
         });
         details.appendChild(up);
       }

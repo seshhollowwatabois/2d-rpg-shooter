@@ -1,8 +1,7 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
-let gameScreen='menu',activeSlot=0,autoSaveTimer=0,hasContinue=false;
-const SAVE_KEY='tankSaveSlotsV1';
+let gameScreen='menu',autoSaveTimer=0;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
@@ -138,11 +137,9 @@ function stopEngineSound(){
 
 
 function saveCurrent(){ saveShop(); }
-function applySave(){ return false; }
 function showMenu(){
   stopEngineSound();
-  hasContinue=!!p&&gameScreen==='game'&&!over;
-  gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;renderSaveSlots();updateContinueButton();
+  gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;
 }
 function showGame(){
   gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;
@@ -175,14 +172,12 @@ addEventListener('pointercancel',()=>mouse.down=false);
 addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space')&&gameScreen==='game')reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 $('mainMenuButton').onclick=()=>{initAudio();soundUi();showMenu()};
-$('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false;renderSaveSlots()};
+$('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false};
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
 $('startGame').onclick=startNewGame;
-$('continueGame').onclick=()=>showGame();
 $('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
-$('deathMenu').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
-renderSaveSlots();updateContinueButton();
+$('deathMenu').onclick=()=>{initAudio();soundUi();showMenu()};
 
 function burst(a,b,col,n=8){
   for(let i=0;i<n;i++){let q=Math.random()*6.283,s=40+Math.random()*150;

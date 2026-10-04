@@ -24,7 +24,7 @@ const engines=[
 ];
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,reloadTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.2,scale:1,length:1},
+  {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
@@ -439,7 +439,7 @@ function shoot(){
   const fireAngle=p.turretAngle;
   const ca=Math.cos(fireAngle),sa=Math.sin(fireAngle);
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
-  const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
+  const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300);
   if(p.turretId==='rapid'){
     // Twins: one click fires ONE barrel. Alternate left/right on each shot.
     const side=.12*p.r;

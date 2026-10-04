@@ -7,9 +7,9 @@ const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
 const hulls=[
-  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12,armor:{front:120,side:60,rear:45}},
+  {id:'scout',name:'BT-7 Scout',cost:50,hp:270,speed:155,reverse:95,turn:2.1,scale:.92,armor:{front:45,side:22,rear:15}},
   {id:'standard',name:'T-34',cost:0,hp:370,speed:120,reverse:75,turn:1.65,scale:1,armor:{front:80,side:32,rear:25}},
-  {id:'scout',name:'BT-7 Scout',cost:50,hp:270,speed:155,reverse:95,turn:2.1,scale:.92,armor:{front:45,side:22,rear:15}}
+  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12,armor:{front:120,side:60,rear:45}}
 ];
 const turrets=[
   {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},

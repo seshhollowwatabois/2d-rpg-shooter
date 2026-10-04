@@ -716,23 +716,11 @@ function update(dt){
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   // World-of-Tanks-style dispersion: the reticle continuously expands while the hull
   // is moving and smoothly contracts while stationary. The value is never reset every frame.
-  const moving=drive!==0;
-  const movingFloor=.02;
-  const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-  const aimTime=Math.max(.1,(barrel.aimTime||1)*(activeRailTier?.aimMult||1));
-
-  // Aim time is separate from hull-movement dispersion:
-  // turret movement makes the gun less aimed, then it converges back toward the
-  // barrel's normal precision over the configured aim time.
+  // Turret movement no longer adds dispersion. Aim precision is affected only by
+  // the hull's current movement speed when the shot is fired.
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
-  const turretMoveRatio=Math.min(1,Math.abs(turretDa)/Math.max(.0001,playerTurretTurnRate*dt));
-  if(turretMoveRatio>.05){
-    p.aimPrecision=Math.max(movingFloor,p.aimPrecision-(1-movingFloor)*turretMoveRatio*dt/aimTime);
-  }else{
-    p.aimPrecision=Math.min(barrel.precision,p.aimPrecision+(barrel.precision-movingFloor)*dt/aimTime);
-  }
 
   // Fire using the turret's current facing BEFORE applying this frame's aim rotation.
   // This prevents the fire input itself from causing even one frame of apparent turret snapping.

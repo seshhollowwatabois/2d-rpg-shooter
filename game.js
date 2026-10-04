@@ -206,7 +206,7 @@ function makeEnemy(){
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,turretId,enemyBarrelId,engineId,mass,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,ramCd:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -566,7 +566,7 @@ function update(dt){
 
   for(const e of en){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
-    e.fire-=dt;e.hitFlash=Math.max(0,e.hitFlash-dt);
+    e.fire-=dt;e.ramCd=Math.max(0,(e.ramCd||0)-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);
     if(e.burnTime>0){
       const burnTick=Math.min(e.burnDamage,e.max*.40/10*dt);
       e.hp-=burnTick;e.burnDamage-=burnTick;e.burnTime=Math.max(0,e.burnTime-dt);
@@ -639,18 +639,23 @@ function update(dt){
       safeSeparateTanks(p,e);
       const playerDamage=collisionDamage(p,p.speed);
       const enemyDamage=collisionDamage(e,e.speed);
-      if(p.inv<=0&&playerDamage>0){
-        e.hp-=playerDamage;e.hitFlash=.08;p.inv=.25;shake=7;
+      // Player invincibility is only for incoming damage. It must NOT also block
+      // the enemy from taking collision damage at the same time.
+      let dealt=false;
+      if(playerDamage>0&&p.inv<=0){
+        e.hp-=playerDamage;e.hitFlash=.08;p.inv=.25;shake=7;dealt=true;
         dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(playerDamage),life:.7});
-        burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);
-        if(e.hp<=0){const idx=en.indexOf(e);if(idx>=0)killEnemy(e,idx);}
       }
-      if(e.hp>0&&enemyDamage>0&&p.inv<=0){
-        p.hp-=enemyDamage;p.inv=.25;shake=7;
+      if(enemyDamage>0&&(e.ramCd||0)<=0){
+        p.hp-=enemyDamage;e.ramCd=.25;shake=7;dealt=true;
         dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(enemyDamage),life:.7});
-        burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);
-        if(p.hp<=0)die();
       }
+      if(dealt)burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);
+      if(e.hp<=0){
+        const idx=en.indexOf(e);
+        if(idx>=0)killEnemy(e,idx);
+      }
+      if(p.hp<=0){die();return;}
     }
   }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}

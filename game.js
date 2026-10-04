@@ -411,7 +411,8 @@ function shoot(){
     return;
   }
   const fireAngle=p.turretAngle;
-  const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
+  const muzzleDistance=p.r*(.38+1.16*(barrel.length||1));
+  const muzzleX=p.x+Math.cos(fireAngle)*muzzleDistance,muzzleY=p.y+Math.sin(fireAngle)*muzzleDistance;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});

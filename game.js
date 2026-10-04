@@ -3,7 +3,7 @@ let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[]
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 const hulls=[
-  {id:'standard',name:'T-34 Standard',cost:0,hp:100,speed:120,reverse:75,turn:1.65,scale:1},
+  {id:'standard',name:'T-34',cost:0,hp:100,speed:120,reverse:75,turn:1.65,scale:1},
   {id:'scout',name:'BT-7 Scout',cost:50,hp:80,speed:155,reverse:95,turn:2.1,scale:.92},
   {id:'heavy',name:'KV-1 Heavy',cost:80,hp:140,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];

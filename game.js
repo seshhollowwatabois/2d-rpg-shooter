@@ -13,9 +13,9 @@ const turrets=[
   {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,damage:40,precision:.68,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,damage:50,precision:.88,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,damage:80,precision:1,scale:1.22,length:1.12}
+  {id:'57mm',name:'57mm Barrel',cost:0,damage:40,precision:.68,dispersionTime:2,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,damage:50,precision:.88,dispersionTime:3,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,damage:80,precision:1,dispersionTime:0,scale:1.22,length:1.12}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -184,7 +184,7 @@ function renderShop(){
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
     else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp
-    else stat='DMG '+item.damage+' • Precision '+Math.round(item.precision*100)+'%';
+    else stat='DMG '+item.damage+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
     const btn=document.createElement('button');
@@ -253,7 +253,7 @@ function update(dt){
   // Moving throws off the gun. Accuracy recovers while the hull is stationary.
   const moving=drive!==0;
   // Accuracy takes about 4 seconds to fully settle after movement stops.
-  const aimChangeRate=moving?1.8:.35;
+  const aimChangeRate=moving?1.8:(barrel.dispersionTime>0?(.75/barrel.dispersionTime):999);
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;

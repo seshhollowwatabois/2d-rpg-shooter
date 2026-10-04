@@ -1,6 +1,8 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
+let gameScreen='menu',activeSlot=0,autoSaveTimer=0;
+const SAVE_KEY='tankSaveSlotsV1';
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
@@ -95,6 +97,58 @@ function stopEngineSound(){
 }
 
 
+function getSaveSlots(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'[]')}catch(e){return []}}
+function writeSaveSlots(slots){localStorage.setItem(SAVE_KEY,JSON.stringify(slots.slice(0,3)))}
+function saveCurrent(slot=activeSlot){
+  if(!p||!slot)return;
+  const slots=getSaveSlots();
+  slots[slot-1]={
+    version:1,level:p.lv,xp:p.xp,next:p.next,coins:p.coins,kills:p.kills,
+    hullId:equippedHull,turretId:equippedTurret,barrelId:equippedBarrel,engineId:equippedEngine,
+    ownedHulls:[...ownedHulls],ownedTurrets:[...ownedTurrets],ownedBarrels:[...ownedBarrels],ownedEngines:[...ownedEngines],
+    savedAt:Date.now()
+  };
+  writeSaveSlots(slots);renderSaveSlots();
+}
+function applySave(slot){
+  const slots=getSaveSlots(),data=slots[slot-1];
+  if(!data)return false;
+  activeSlot=slot;
+  ownedHulls=data.ownedHulls||ownedHulls;ownedTurrets=data.ownedTurrets||ownedTurrets;ownedBarrels=data.ownedBarrels||ownedBarrels;ownedEngines=data.ownedEngines||ownedEngines;
+  equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedBarrel=data.barrelId||'85mm';equippedEngine=data.engineId||'standard';
+  saveShop();
+  reset();
+  p.lv=Math.max(1,data.level||1);p.xp=Math.max(0,data.xp||0);p.next=Math.max(120,data.next||120);p.coins=Math.max(0,data.coins||0);p.kills=Math.max(0,data.kills||0);
+  return true;
+}
+function renderSaveSlots(){
+  const box=$('saveSlots');if(!box)return;
+  const slots=getSaveSlots();box.innerHTML='';
+  for(let i=1;i<=3;i++){
+    const d=slots[i-1],row=document.createElement('div');row.className='saveSlot';
+    const info=document.createElement('div');
+    info.innerHTML=d?'<b>Slot '+i+'</b><small>Level '+d.level+' • '+d.coins+' coins • '+d.kills+' kills</small>':'<b>Slot '+i+'</b><small>Empty</small>';
+    row.appendChild(info);
+    const actions=document.createElement('div');
+    if(d){const load=document.createElement('button');load.textContent='LOAD';load.onclick=()=>{initAudio();soundUi();if(applySave(i))showGame()};actions.appendChild(load)}
+    const save=document.createElement('button');save.textContent='SAVE';save.disabled=!p;save.onclick=()=>{initAudio();soundUi();activeSlot=i;saveCurrent(i)};
+    actions.appendChild(save);row.appendChild(actions);box.appendChild(row);
+  }
+}
+function showMenu(){
+  stopEngineSound();gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;renderSaveSlots();
+}
+function showGame(){
+  gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;
+}
+function openMenuShop(){
+  initAudio();soundUi();$('mainMenu').hidden=true;$('shop').classList.add('open');renderShop();
+}
+function startNewGame(){
+  initAudio();soundUi();
+  const slots=getSaveSlots();let slot=activeSlot||slots.findIndex(v=>!v)+1;if(!slot)slot=1;
+  activeSlot=slot;reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveCurrent(slot);showGame();
+}
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
@@ -106,6 +160,7 @@ function reset(){
     {x:W*.42,y:H*.40,w:95,h:26}
   ];
   $('death').hidden=true;
+  $('cursorReload').hidden=true;
 }
 
 function pos(e){const r=c.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top}
@@ -113,10 +168,15 @@ c.addEventListener('pointermove',pos);
 c.addEventListener('pointerdown',e=>{initAudio();pos(e);mouse.down=true;c.setPointerCapture?.(e.pointerId)});
 addEventListener('pointerup',()=>mouse.down=false);
 addEventListener('pointercancel',()=>mouse.down=false);
-addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space'))reset()});
+addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space')&&gameScreen==='game')reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-$('shopToggle').onclick=()=>{initAudio();soundUi();$('shop').classList.toggle('open');renderShop()};
-$('restart').onclick=()=>{initAudio();soundUi();reset()};
+$('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false;renderSaveSlots()};
+$('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
+$('menuShop').onclick=openMenuShop;
+$('startGame').onclick=startNewGame;
+$('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
+$('deathMenu').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
+renderSaveSlots();
 
 function burst(a,b,col,n=8){
   for(let i=0;i<n;i++){let q=Math.random()*6.283,s=40+Math.random()*150;
@@ -402,7 +462,7 @@ function killEnemy(e,j){
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();en.splice(j,1);
 }
-function die(){reset()}
+function die(){saveCurrent(activeSlot);gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
 function saveShop(){
   localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
@@ -486,7 +546,8 @@ function renderShop(){
 }
 
 function update(dt){
-  if(over){stopEngineSound();return;}
+  if(over||gameScreen!=='game'){stopEngineSound();return;}
+  autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent(activeSlot);}
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
@@ -876,6 +937,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.restore();
 }
 function draw(){
+  if(!p)return;
   x.save();x.clearRect(0,0,W,H);x.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
   // Cold snowy battlefield background.
   x.fillStyle='#d9dee1';x.fillRect(-20,-20,W+40,H+40);
@@ -939,7 +1001,7 @@ function draw(){
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.barrelId,p.turretId,p.hullId);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-  const reloadPct=Math.max(0,Math.min(1,1-p.cd/4));
+  const reloadPct=Math.max(0,Math.min(1,1-p.cd/barrel.reloadTime));
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
   for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle='#ffd27a';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
@@ -1006,4 +1068,4 @@ if(fireButton){
   fireButton.addEventListener('touchcancel',stopFire,{passive:false});
 }
 function frame(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(frame)}
-reset();requestAnimationFrame(frame);
+reset();showMenu();requestAnimationFrame(frame);

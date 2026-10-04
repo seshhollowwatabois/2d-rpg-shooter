@@ -531,6 +531,21 @@ function renderShop(){
       q.fillStyle=item.id==='fast'?'#526149':item.id==='rapid'?'#4b5748':'#424d3f';
       q.beginPath();q.roundRect(-15*sc,-10*sc,30*sc,20*sc,8*sc);q.fill();
       q.fillStyle='#292f2a';q.fillRect(12*sc,-4*sc,12*sc,8*sc);
+    }else if(type==='engine'){
+      const sc=1;
+      // Compact top-down engine illustration for the engine shop cards.
+      q.save();q.scale(1.15,1.15);
+      q.fillStyle='#252a27';q.beginPath();q.roundRect(-32,-17,64,34,7);q.fill();
+      q.fillStyle='#3f493e';q.beginPath();q.roundRect(-25,-12,50,24,5);q.fill();
+      q.fillStyle='#687264';
+      for(let i=-1;i<=1;i++){q.beginPath();q.arc(i*15,-7,5,0,6.283);q.fill();q.beginPath();q.arc(i*15,7,5,0,6.283);q.fill()}
+      q.fillStyle='#181c1a';q.fillRect(-36,-7,8,14);q.fillRect(28,-7,8,14);
+      q.fillStyle=item.id==='better'?'#9b7348':item.id==='upgraded'?'#6f7f65':'#555d57';
+      q.beginPath();q.arc(0,0,9,0,6.283);q.fill();
+      q.fillStyle='#c8cfcc';q.beginPath();q.arc(0,0,3.5,0,6.283);q.fill();
+      q.strokeStyle='#151819';q.lineWidth=3;q.beginPath();q.moveTo(0,-14);q.lineTo(0,-21);q.stroke();
+      q.restore();
+      q.fillStyle='#e3e8e8';q.font='bold 9px system-ui';q.textAlign='center';q.fillText('ENGINE',0,27);
     }else{
       const sc=item.scale;
       q.strokeStyle='#292f2a';q.lineWidth=7*sc;q.lineCap='round';q.beginPath();q.moveTo(-12,0);q.lineTo(34*item.length,0);q.stroke();

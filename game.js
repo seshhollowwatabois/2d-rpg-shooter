@@ -631,11 +631,6 @@ function renderShop(){
         addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Penetration',displayedPenetration);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
-      if(type==='barrel'&&item.id==='122mmLong'){
-        const up=document.createElement('div');up.className='shopUpgradeDetails';up.innerHTML='<b>RAILGUN TIER UPGRADES</b>';
-        railgunTiers.forEach(t=>{const d=document.createElement('div');const owned=t.tier<=railgunOwnedTier;
-          d.className='shopUpgradeRow'+(t.tier===railgunTier?' current':'')+(t.tier===railgunTier+1&&!owned?' next':'');const dm=Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult);d.innerHTML='<span>Tier '+t.tier+' <small>'+t.name+'</small></span><b>DMG '+dm+' • PEN '+t.penetration+' • RELOAD '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</b>';up.appendChild(d)});details.appendChild(up);
-      }
       box.appendChild(details);
     }
   };
@@ -654,32 +649,6 @@ function renderShop(){
     shopCategory==='barrel'?equippedBarrel===v.id:
     shopCategory==='turret'?equippedTurret===v.id:equippedEngine===v.id
   ));
-
-  // Railgun tiers live inside the expanded Railgun item card.
-  if(shopCategory==='barrel'){
-    const railItem=barrels.find(v=>v.id==='122mmLong')||barrels[3];
-    if(selectedShopItem===railItem.id){
-      const details=[...box.querySelectorAll('.shopDetails')].pop();
-      if(details){
-        const up=document.createElement('div');up.className='shopUpgradeDetails';
-        up.innerHTML='<b>RAILGUN TIER PROGRESSION</b>';
-        railgunTiers.forEach(t=>{
-          const d=document.createElement('div');
-          d.className='shopUpgradeRow'+(t.tier===railgunTier?' current':'')+(t.tier===railgunTier+1?' next':'');
-          const dm=Math.round(railItem.minDamage*t.damageMult)+'-'+Math.round(railItem.maxDamage*t.damageMult);
-          d.innerHTML='<span><strong>Tier '+t.tier+'</strong> <small>'+t.name+'</small></span><b>DMG '+dm+' • PEN '+t.penetration+' • RELOAD '+(railItem.reloadTime*t.reloadMult).toFixed(1)+'s</b>';
-          const btn=document.createElement('button');
-          btn.className='tierInlineButton';
-          const owned=t.tier<=railgunOwnedTier;
-          btn.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';
-          btn.disabled=t.tier===railgunTier||(!owned&&t.tier!==railgunOwnedTier+1);
-          btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===railgunOwnedTier+1)railgunOwnedTier=t.tier;railgunTier=t.tier;saveShop();renderShop()};
-          d.appendChild(btn);up.appendChild(d);
-        });
-        details.appendChild(up);
-      }
-    }
-  }
 
   // Second tier row: reserved for future higher-tier equipment.
   const coming=document.createElement('div');

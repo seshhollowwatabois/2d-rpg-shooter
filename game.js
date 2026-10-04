@@ -91,7 +91,7 @@ function shoot(){
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
-  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage),penetration:barrel.penetration,trail:[]});
+  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300),vy:Math.sin(fireAngle)*({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300),r:2.8,life:1.8,dmg:barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage),penetration:barrel.penetration,trail:[]});
   p.cd=barrel.reloadTime;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getArmor(target,zone){

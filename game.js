@@ -13,9 +13,9 @@ const hulls=[
 ];
 const turrets=[
   {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},
-  {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,hp:50,scale:.9},
-  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82},
-  {id:'railgun',name:'Railgun Turret',cost:0,turn:1.05,hp:120,scale:1.08}
+  {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,scale:.9},
+  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,scale:.82},
+  {id:'railgun',name:'Railgun Turret',cost:0,turn:1.05,scale:1.08}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
@@ -175,7 +175,7 @@ function startNewGame(){
 }
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
-  const totalHp=hull.hp+turret.hp;
+  const totalHp=hull.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
@@ -336,9 +336,9 @@ function makeEnemy(){
   const heavy=hullId==='heavy';
   const mass=hullId==='heavy'?1.8:hullId==='scout'?.65:1;
 
-  // Enemy HP keeps the existing combat balance, while turret HP is part of the loadout.
+  // Enemy HP comes from the hull only; turrets provide no HP bonus.
   const baseHp=heavy?360:hullId==='standard'?240:170;
-  const hp=baseHp+turret.hp;
+  const hp=baseHp;
 
   en.push({
     x:a,y:b,
@@ -572,7 +572,7 @@ function renderShop(){
       if(type==='hull'){
         equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max);
       }else if(type==='turret'){
-        equippedTurret=item.id;p.turretId=item.id;const newMax=hullForPlayer().hp+item.hp;p.max=newMax;p.hp=Math.min(p.hp,newMax);
+        equippedTurret=item.id;p.turretId=item.id;p.max=hullForPlayer().hp;p.hp=Math.min(p.hp,p.max);
       }else if(type==='barrel'){
         equippedBarrel=item.id;p.barrelId=item.id;
       }else equippedEngine=item.id;
@@ -589,7 +589,7 @@ function renderShop(){
         addStat('Hit Points',item.hp,true);addStat('Forward Speed',item.speed);addStat('Reverse Speed',item.reverse);addStat('Hull Turn',item.turn.toFixed(2));
         addStat('Size',item.scale.toFixed(2)+'x');
       }else if(type==='turret'){
-        addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Turret HP',item.hp);addStat('Size',item.scale.toFixed(2)+'x');
+        addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Size',item.scale.toFixed(2)+'x');
       }else if(type==='engine'){
         addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');
       }else{

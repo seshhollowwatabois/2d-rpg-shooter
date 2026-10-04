@@ -1,5 +1,5 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
+let W,H,last=0,spawn=0,over=false,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',activeSlot=0,autoSaveTimer=0,hasContinue=false;
 const SAVE_KEY='tankSaveSlotsV1';
@@ -962,7 +962,7 @@ function update(dt){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);
         const damage=b.dmg;
-        p.hp-=damage;p.inv=.28;shake=10; soundHit();
+        p.hp-=damage;p.inv=.28; soundHit();
         dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
         if(profile.rear&&p.burnTime<=0&&Math.random()<.01){
           p.burnTime=10;p.burnDamage=p.max*.40;burst(p.x,p.y,'#ff9b55',16);
@@ -1055,7 +1055,7 @@ function update(dt){
       if(p.ramCd<=0&&(e.ramCd||0)<=0){
         const damageToEnemy=collisionDamage(p,Math.max(18,p.speed));
         const damageToPlayer=collisionDamage(e,Math.max(18,e.speed));
-        e.hp-=damageToEnemy;p.hp-=damageToPlayer;p.ramCd=.3;e.ramCd=.3;e.hitFlash=.08;shake=8;
+        e.hp-=damageToEnemy;p.hp-=damageToPlayer;p.ramCd=.3;e.ramCd=.3;e.hitFlash=.08;
         dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(damageToEnemy),life:.7});dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damageToPlayer),life:.7});
         burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',8);soundHit();
         if(e.hp<=0){const idx=en.indexOf(e);if(idx>=0)killEnemy(e,idx)}
@@ -1065,7 +1065,6 @@ function update(dt){
   }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
-  shake=Math.max(0,shake-dt*25);
 }
 
 function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard'){
@@ -1291,7 +1290,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 }
 function draw(){
   if(!p)return;
-  x.save();x.clearRect(0,0,W,H);x.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  x.save();x.clearRect(0,0,W,H);x.translate(0,0);
   // Cold snowy battlefield background.
   x.fillStyle='#d9dee1';x.fillRect(-20,-20,W+40,H+40);
   x.fillStyle='rgba(255,255,255,.42)';x.fillRect(-20,-20,W+40,H+40);

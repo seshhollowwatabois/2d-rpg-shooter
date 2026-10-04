@@ -1494,9 +1494,11 @@ function draw(){
     : barrel.reloadTime;
   // Railgun charge drains the reload bar toward zero before the shot,
   // then the normal reload cycle starts from empty after firing.
-  const reloadPct=p.railCharging
-    ?Math.max(0,Math.min(1,p.railCharge))
-    :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
+  const reloadPct=barrel.id==='122mm'&&barrel.flame
+    ?Math.max(0,Math.min(1,p.firebirdFuel/(p.firebirdMaxFuel||8)))
+    :p.railCharging
+      ?Math.max(0,Math.min(1,p.railCharge))
+      :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
   for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle=q.col||'#ff3b3b';x.font='bold 18px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
@@ -1506,7 +1508,14 @@ function draw(){
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';$('coinsText').textContent=p.coins;
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
-  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
+  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;
+  if(barrel.id==='122mm'&&barrel.flame){
+    $('reloadText').textContent='FUEL';
+    $('reloadText').style.color='#ffd21a';
+  }else{
+    $('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';
+    $('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
+  }
   // Reload countdown only; aiming/dispersion UI removed.
   const cursorReload=$('cursorReload');
   if(cursorReload){
@@ -1515,29 +1524,12 @@ function draw(){
     const actualReloadTime=activeBarrel.id==='122mmLong'
       ? activeBarrel.reloadTime*(activeRailTier?.reloadMult||1)
       : activeBarrel.reloadTime;
-    if(activeBarrel.id==='122mm'&&activeBarrel.flame){
-      const fuel=Math.max(0,Math.min(p.firebirdFuel,p.firebirdMaxFuel||8));
-      const fuelPct=fuel/(p.firebirdMaxFuel||8);
-      cursorReload.textContent='';
-      cursorReload.hidden=false;
-      cursorReload.style.width='58px';
-      cursorReload.style.height='7px';
-      cursorReload.style.padding='0';
-      cursorReload.style.borderRadius='5px';
-      cursorReload.style.background='#252525';
-      cursorReload.style.border='1px solid #111';
-      cursorReload.style.boxShadow='0 0 5px rgba(255,190,40,.45)';
-      cursorReload.style.backgroundImage='linear-gradient(to right,#ffd21f 0%,#ffb000 '+(fuelPct*100)+'%,#252525 '+(fuelPct*100)+'%,#252525 100%)';
-      cursorReload.title='Firebird fuel: '+fuel.toFixed(1)+'s / '+(p.firebirdMaxFuel||8)+'s';
-    }else{
-      cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
-      cursorReload.hidden=false;
-      cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
-      cursorReload.style.width='auto';
-    }
+    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
+    cursorReload.hidden=false;
+    cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';
     cursorReload.style.top=(mouse.y+8)+'px';
-  }
+  }  }
 }
 function setMobileButton(id,key){
   const el=$(id); if(!el)return;

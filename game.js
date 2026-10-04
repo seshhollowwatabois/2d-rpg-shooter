@@ -722,6 +722,17 @@ function update(dt){
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
 
+  // Turret movement no longer adds shot dispersion. Aim time controls how quickly the gun settles.
+  const barrelForAim=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  const railAimTier=p.barrelId==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
+  const aimTime=barrelForAim.aimTime*(railAimTier?.aimMult||1);
+  const turretAligned=Math.abs(turretDa)<.012;
+  if(turretAligned){
+    p.aimPrecision=Math.min(barrelForAim.precision,p.aimPrecision+(barrelForAim.precision-p.aimPrecision)*Math.min(1,dt/Math.max(.05,aimTime)));
+  }else{
+    p.aimPrecision=Math.max(.02,p.aimPrecision-dt*Math.max(.5,barrelForAim.precision/Math.max(.05,aimTime))*2.5);
+  }
+
   // Fire using the turret's current facing BEFORE applying this frame's aim rotation.
   // This prevents the fire input itself from causing even one frame of apparent turret snapping.
   if(mouse.down||mobileFire||keys.has(' '))shoot();
@@ -1161,14 +1172,22 @@ function draw(){
   const liveBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   const liveMoveDispersion=(liveBarrel.hullMoveDispersion||0)*(liveRailTier?.hullMoveMult||1);
   const liveHullSpeedRatio=Math.min(1,Math.abs(p.currentDriveSpeed||0)/Math.max(1,p.speed));
-  const accuracy=Math.max(.02,Math.min(1,p.aimPrecision*(1-liveHullSpeedRatio*liveMoveDispersion)));
+  const hullAccuracy=Math.max(.02,Math.min(1,p.aimPrecision*(1-liveHullSpeedRatio*liveMoveDispersion)));
+  const turretAngleToMouse=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+  const turretError=Math.abs(((turretAngleToMouse-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
+  const turretAlignment=Math.max(0,1-turretError/.18);
+  const accuracy=Math.max(.02,Math.min(1,hullAccuracy*turretAlignment));
   const precisionRadius=18+122*(1-accuracy);
+  const aimReady=turretError<.012&&liveHullSpeedRatio<.001&&p.aimPrecision>=liveBarrel.precision-.002;
+  const aimCenterDist=Math.max(90,Math.min(520,precisionRadius*2.4));
+  const aimCenterX=p.x+Math.cos(p.turretAngle)*aimCenterDist;
+  const aimCenterY=p.y+Math.sin(p.turretAngle)*aimCenterDist;
   x.save();
-  x.strokeStyle=accuracy<.5?'#ff4b4b':accuracy<1?'#ffd21a':'#39e66b';
-  x.lineWidth=accuracy<.5?2.5:accuracy<1?2:1.5;
+  x.strokeStyle=aimReady?'#39e66b':accuracy<.5?'#ff4b4b':'#ffd21a';
+  x.lineWidth=aimReady?1.5:accuracy<.5?2.5:2;
   x.globalAlpha=.9;
-  x.beginPath();x.arc(mouse.x,mouse.y,precisionRadius,0,6.283);x.stroke();
-  x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
+  x.beginPath();x.arc(aimCenterX,aimCenterY,precisionRadius,0,6.283);x.stroke();
+  x.beginPath();x.moveTo(aimCenterX-precisionRadius-5,aimCenterY);x.lineTo(aimCenterX-precisionRadius+4,aimCenterY);x.moveTo(aimCenterX+precisionRadius-4,aimCenterY);x.lineTo(aimCenterX+precisionRadius+5,aimCenterY);x.moveTo(aimCenterX,aimCenterY-precisionRadius-5);x.lineTo(aimCenterX,aimCenterY-precisionRadius+4);x.moveTo(aimCenterX,aimCenterY+precisionRadius-4);x.lineTo(aimCenterX,aimCenterY+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');
   if(cursorReload){
     const activeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];

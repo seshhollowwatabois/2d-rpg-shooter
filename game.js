@@ -1515,9 +1515,18 @@ function draw(){
     const actualReloadTime=activeBarrel.id==='122mmLong'
       ? activeBarrel.reloadTime*(activeRailTier?.reloadMult||1)
       : activeBarrel.reloadTime;
-    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
-    cursorReload.hidden=false;
-    cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
+    if(activeBarrel.id==='122mm'&&activeBarrel.flame){
+      const fuel=Math.max(0,Math.min(p.firebirdFuel,p.firebirdMaxFuel||8));
+      cursorReload.textContent=`🔥 ${fuel.toFixed(1)}s`;
+      cursorReload.hidden=false;
+      cursorReload.style.color=fuel>0?'#ffb52e':'#ff3b3b';
+      cursorReload.style.width='auto';
+    }else{
+      cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
+      cursorReload.hidden=false;
+      cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
+      cursorReload.style.width='auto';
+    }
     cursorReload.style.left=(mouse.x+18)+'px';
     cursorReload.style.top=(mouse.y+8)+'px';
   }

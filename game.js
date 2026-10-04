@@ -1020,9 +1020,7 @@ function draw(){
     x.translate(e.x,e.y);
     x.rotate(e.angle);
     x.globalAlpha=1;
-    x.fillStyle='#050505';
-    x.beginPath();x.arc(0,0,e.r*1.02,0,6.283);x.fill();
-    x.strokeStyle='#000000';x.lineWidth=4;x.stroke();
+    x.fillStyle='#000000';
     x.fillStyle='#000000';
     x.fillRect(-e.r*.9,-e.r*.42,e.r*1.8,e.r*.84);
     x.fillStyle='#000000';

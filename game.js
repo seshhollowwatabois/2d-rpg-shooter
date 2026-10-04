@@ -888,7 +888,7 @@ function update(dt){
     if(e.corpseTime<=0)deadTanks.splice(i,1);
   }
 
-  // Firebird fuel: 8 seconds of firing capacity, recovering fully in 16 seconds when not firing.
+  // Firebird fuel: 5 seconds of firing capacity, recovering fully in 10 seconds when not firing.
   if(p.turretId==='fast' && p.firebirdFuel<8 && !mouse.down && !mobileFire && !keys.has(' ')){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
   }

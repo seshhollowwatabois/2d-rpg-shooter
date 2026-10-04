@@ -198,7 +198,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -285,7 +285,7 @@ function safeSeparateTanks(a,b){
 }
 function hullMassMultiplier(obj){
   const id=obj.hullId||'standard';
-  return id==='heavy'?1.8:id==='scout'?.65:1;
+  return id==='heavy'?1.8:id==='scout'?0.65:1;
 }
 function collisionDamage(attacker,speed){
   if(speed<18)return 0;
@@ -348,7 +348,7 @@ function makeEnemy(){
   const turret=turrets.find(v=>v.id===turretId)||turrets[0];
   const engine=engines.find(v=>v.id===engineId)||engines[0];
   const heavy=hullId==='heavy';
-  const mass=hullId==='heavy'?1.8:hullId==='scout'?.65:1;
+  const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
 
   // Enemy HP comes from the hull only; turrets provide no HP bonus.
   const baseHp=heavy?360:hullId==='standard'?240:170;
@@ -448,7 +448,7 @@ function applyBulletHit(target,baseDamage,bx,by,b=null){
   target.hp-=damage;
   target.hitFlash=.08;
   dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
-  const fireChance=profile.rear?.05:profile.zone==='side'?.02:0;
+  const fireChance=profile.rear?0.05:profile.zone==='side'?0.02:0;
   if(fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
     target.burnTime=10;
     target.burnDamage=target.max*.60;
@@ -961,14 +961,14 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // Classic Tanki-style hull silhouettes: Wasp = tiny/agile, Hornet = sleek medium,
   // Titan = broad/heavy. Each keeps the same hit radius while getting a distinct body.
   const isWasp=hullId==='scout', isHornet=hullId==='standard', isTitan=hullId==='heavy';
-  const hullScale=isWasp?.92:isTitan?1.12:1;
+  const hullScale=isWasp?0.92:isTitan?1.12:1;
   const L=r*2.55*hullScale, B=r*1.18*hullScale;
-  const trackW=r*(isWasp?.29:isTitan?.39:.34)*hullScale;
-  const trackL=L*(isWasp?.86:isTitan?.98:.92);
-  const hullB=r*(isWasp?.78:isTitan?.98:.88)*hullScale;
+  const trackW=r*(isWasp?0.29:isTitan?0.39:0.34)*hullScale;
+  const trackL=L*(isWasp?0.86:isTitan?0.98:0.92);
+  const hullB=r*(isWasp?0.78:isTitan?0.98:0.88)*hullScale;
 
   x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.34)';
-  x.beginPath();x.ellipse(2,5,r*(isTitan?1.58:1.42),r*(isTitan?.94:.82),0,0,6.283);x.fill();x.restore();
+  x.beginPath();x.ellipse(2,5,r*(isTitan?1.58:1.42),r*(isTitan?0.94:0.82),0,0,6.283);x.fill();x.restore();
 
   const trackDark=flash?'#b89d84':(enemy?(heavy?'#292b2c':'#4b3033'):'#202520');
   const trackEdge=enemy?(heavy?'#5b5954':'#704347'):'#4a5148';
@@ -983,7 +983,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     const wheels=isWasp?4:isTitan?6:5;
     for(let i=0;i<wheels;i++){
       const wx=-trackL*.34+i*(trackL*.68/Math.max(1,wheels-1));
-      const wr=r*(isTitan?.175:isWasp?.145:.16);
+      const wr=r*(isTitan?0.175:isWasp?0.145:0.16);
       x.fillStyle=wheelOuter;x.beginPath();x.arc(wx,ty,wr,0,6.283);x.fill();
       x.strokeStyle='#202320';x.lineWidth=1.5;x.stroke();
       x.fillStyle=wheelInner;x.beginPath();x.arc(wx,ty,wr*.34,0,6.283);x.fill();
@@ -1069,7 +1069,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // Turret ring; Wasp's is visibly rear-mounted.
   x.fillStyle=enemy?(heavy?'#363432':'#513033'):'#343c34';
-  x.beginPath();x.arc(turretX,0,r*(isTitan?.60:.55),0,6.283);x.fill();
+  x.beginPath();x.arc(turretX,0,r*(isTitan?0.60:0.55),0,6.283);x.fill();
   x.strokeStyle=enemy?(heavy?'#696258':'#8c4b4f'):'#697760';x.lineWidth=1.4;x.stroke();
   x.fillStyle=enemy?(heavy?'#363432':'#513033'):'#343c34';
   x.beginPath();x.arc(-L*.02,0,r*.57,0,6.283);x.fill();

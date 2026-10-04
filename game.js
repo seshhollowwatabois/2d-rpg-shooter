@@ -703,9 +703,12 @@ function update(dt){
     moveWithWalls(p,Math.cos(p.angle)*drive*moveSpeed*dt,Math.sin(p.angle)*drive*moveSpeed*dt);
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
-  // The turret follows the cursor directly. There is no aim time or dispersion system.
+  // Turret movement is gradual again, but there is no accuracy/dispersion penalty.
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
-  p.turretAngle=targetTurret;
+  let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
+  const playerTurretTurnRate=turret.turn;
+  const turretStep=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
+  p.turretAngle+=turretStep;
 
   if(mouse.down||mobileFire||keys.has(' '))shoot();
 

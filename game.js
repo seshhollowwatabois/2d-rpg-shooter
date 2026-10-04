@@ -478,7 +478,7 @@ function applyBurn(target){
     burst(target.x,target.y,'#ff9b55',10);
   }
   // Every flame hit keeps the burn alive while the target is being sprayed.
-  target.burnTime=8;
+  target.burnTime=10;
   target.burnTick=0;
   target.hitFlash=.05;
 }
@@ -905,13 +905,13 @@ function update(dt){
   if(p.burnTime>0){
     const burnStacks=p.burnStacks||0;
     p.burnTick=(p.burnTick||0)-dt;
-    // Burn deals damage in the same 0.5s hit rhythm as Firebird: 2 hits per second per stack.
+    // Burn deals one damage tick every 2 seconds per stack.
     if(burnStacks>0&&p.burnTick<=0){
-      const burnHit=3*0.5*burnStacks;
+      const burnHit=6*burnStacks;
       p.hp-=burnHit;
-      dmgTexts.push({x:p.x+(Math.random()-.5)*p.r,y:p.y-p.r-8,text:'-'+burnHit.toFixed(1),life:.55,col:'#ff8a3d'});
+      dmgTexts.push({x:p.x+(Math.random()-.5)*p.r,y:p.y-p.r-8,text:'-'+burnHit.toFixed(0),life:.55,col:'#ff8a3d'});
       p.hitFlash=.05;
-      p.burnTick=.5;
+      p.burnTick=2;
     }
     p.burnGrace=Math.max(0,(p.burnGrace||0)-dt);
     if(p.burnGrace<=0){
@@ -1058,13 +1058,13 @@ function update(dt){
     if(e.burnTime>0){
       const burnStacks=e.burnStacks||0;
       e.burnTick=(e.burnTick||0)-dt;
-      // Burn deals damage in 0.5s hits: 2 hits per second per stack.
+      // Burn deals one damage tick every 2 seconds per stack.
       if(burnStacks>0&&e.burnTick<=0){
-        const burnHit=3*0.5*burnStacks;
+        const burnHit=6*burnStacks;
         e.hp-=burnHit;
-        dmgTexts.push({x:e.x+(Math.random()-.5)*e.r,y:e.y-e.r-8,text:'-'+burnHit.toFixed(1),life:.55,col:'#ff8a3d'});
+        dmgTexts.push({x:e.x+(Math.random()-.5)*e.r,y:e.y-e.r-8,text:'-'+burnHit.toFixed(0),life:.55,col:'#ff8a3d'});
         e.hitFlash=.05;
-        e.burnTick=.5;
+        e.burnTick=2;
       }
       e.burnGrace=Math.max(0,(e.burnGrace||0)-dt);
       if(e.burnGrace<=0){

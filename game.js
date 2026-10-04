@@ -23,16 +23,16 @@ const engines=[
   {id:'better',name:'Better Engine',cost:0,speed:1.20,turn:1.20}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,reloadTime:4,dispersionTime:4,aimTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,reloadTime:9,dispersionTime:3,aimTime:6,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,reloadTime:16,dispersionTime:2,aimTime:10,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,precision:1,reloadTime:20,dispersionTime:1,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,reloadTime:4,hullMoveDispersion:1,aimTime:4,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,reloadTime:9,hullMoveDispersion:.75,aimTime:6,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,reloadTime:16,hullMoveDispersion:.55,aimTime:10,scale:1.22,length:1.12},
+  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,precision:1,reloadTime:20,hullMoveDispersion:.40,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 const railgunTiers=[
-  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,dispersionMult:1,aimMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.925,dispersionMult:.90,aimMult:.90},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.85,dispersionMult:.80,aimMult:.80},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.775,dispersionMult:.70,aimMult:.70}
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,hullMoveMult:1,aimMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.925,hullMoveMult:.80,aimMult:.90},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.85,hullMoveMult:.60,aimMult:.80},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.775,hullMoveMult:.40,aimMult:.70}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -409,7 +409,12 @@ function shoot(){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
   }
-  const maxDispersion=140,dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
+  const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
+  const hullMoveDispersion=barrel.hullMoveDispersion*(activeRailTier?.hullMoveMult||1);
+  const maxSpeed=Math.max(1,p.speed);
+  const hullSpeedRatio=Math.min(1,Math.abs(p.currentDriveSpeed||0)/maxSpeed);
+  const effectivePrecision=Math.max(.02,p.aimPrecision*(1-hullSpeedRatio*hullMoveDispersion));
+  const maxDispersion=140,dispersionRadius=maxDispersion*(1-effectivePrecision);
   const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
   const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
@@ -597,7 +602,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierce Damage Reduction',item.id==='122mmLong'?Math.round((1-(activeRailTier?.pierceDamageMult??.5))*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');const detailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;addStat('Aim Time',item.id==='122mmLong'?(item.aimTime*(detailTier?.aimMult||1)).toFixed(2)+'s':(item.aimTime||0)+'s');addStat('Dispersion Time',item.id==='122mmLong'?(item.dispersionTime*(detailTier?.dispersionMult||1)).toFixed(2)+'s':(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierce Damage Reduction',item.id==='122mmLong'?Math.round((1-(activeRailTier?.pierceDamageMult??.5))*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');const detailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;addStat('Aim Time',item.id==='122mmLong'?(item.aimTime*(detailTier?.aimMult||1)).toFixed(2)+'s':(item.aimTime||0)+'s');addStat('Hull Movement Dispersion',Math.round((item.hullMoveDispersion||0)*(detailTier?.hullMoveMult||1)*100)+'%');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);
@@ -633,7 +638,12 @@ function update(dt){
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
-      const maxDispersion=140,dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
+      const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+      const hullMoveDispersion=barrelNow.hullMoveDispersion*(activeRailTier?.hullMoveMult||1);
+      const maxSpeed=Math.max(1,p.speed);
+      const hullSpeedRatio=Math.min(1,Math.abs(p.currentDriveSpeed||0)/maxSpeed);
+      const effectivePrecision=Math.max(.02,p.aimPrecision*(1-hullSpeedRatio*hullMoveDispersion));
+      const maxDispersion=140,dispersionRadius=maxDispersion*(1-effectivePrecision);
       const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
       const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
       const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
@@ -693,6 +703,7 @@ function update(dt){
   const hullTurnRate=hull.turn*engine.turn;
   const driveSpeed=hull.speed*engine.speed;
   const reverseSpeed=hull.reverse*engine.speed;
+  p.currentDriveSpeed=drive* (drive>=0?driveSpeed:reverseSpeed);
   if(drive||turn)startEngineSound();else stopEngineSound();
   if(turn){
     // When reversing, left/right steering reverses naturally.
@@ -709,22 +720,25 @@ function update(dt){
   const moving=drive!==0;
   const movingFloor=.02;
   const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-  const dispersionTime=Math.max(.1,(barrel.dispersionTime||1)*(activeRailTier?.dispersionMult||1));
-  const aimTime=Math.max(.1,(barrel.aimTime||dispersionTime)*(activeRailTier?.aimMult||1));
-  const movingRate=(1-movingFloor)/dispersionTime;
-  const aimRate=(1-movingFloor)/aimTime;
-  if(moving){
-    p.aimPrecision=Math.max(movingFloor,p.aimPrecision-movingRate*dt);
+  const aimTime=Math.max(.1,(barrel.aimTime||1)*(activeRailTier?.aimMult||1));
+
+  // Aim time is separate from hull-movement dispersion:
+  // turret movement makes the gun less aimed, then it converges back toward the
+  // barrel's normal precision over the configured aim time.
+  const targetTurret=Math.atan2(mouse.x?mouse.y:mouse.y,mouse.x-p.x);
+  let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
+  const playerTurretTurnRate=turret.turn;
+  const turretMoveRatio=Math.min(1,Math.abs(turretDa)/Math.max(.0001,playerTurretTurnRate*dt));
+  if(turretMoveRatio>.05){
+    p.aimPrecision=Math.max(movingFloor,p.aimPrecision-(1-movingFloor)*turretMoveRatio*dt/aimTime);
   }else{
-    p.aimPrecision=Math.min(1,p.aimPrecision+aimRate*dt);
+    p.aimPrecision=Math.min(barrel.precision,p.aimPrecision+(barrel.precision-movingFloor)*dt/aimTime);
   }
+
   // Fire using the turret's current facing BEFORE applying this frame's aim rotation.
   // This prevents the fire input itself from causing even one frame of apparent turret snapping.
   if(mouse.down||mobileFire||keys.has(' '))shoot();
 
-  const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
-  let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
-  const playerTurretTurnRate=turret.turn;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
 
   for(let i=bs.length-1;i>=0;i--){

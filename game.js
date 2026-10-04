@@ -26,7 +26,7 @@ const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,reloadTime:4,scale:.82,length:.82},
   {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,reloadTime:9,scale:1,length:1},
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,reloadTime:20,scale:1.28,length:1.65,instant:true,railTier:0}
+  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 function gunForTurret(turretId){
   if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];
@@ -44,9 +44,9 @@ function turretForPlayer(){
 }
 const railgunTiers=[
   {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,turnMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.85,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.70,pierceDamageMult:.83,hullMoveMult:.60,turnMult:2.8},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.55,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.75,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.50,pierceDamageMult:.83,hullMoveMult:.60,turnMult:2.8},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');

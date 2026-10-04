@@ -1,5 +1,6 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
+let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 const hulls=[
@@ -39,7 +40,7 @@ function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
-  en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
+  en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
     {x:W*.28,y:H*.55,w:190,h:30},{x:W*.58,y:H*.64,w:34,h:150},{x:W*.08,y:H*.70,w:145,h:28},
@@ -79,19 +80,25 @@ function addXp(n){
   p.xp+=n;
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
+function waveSize(w){return 3+w*2;}
+function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;}
+
 function makeEnemy(){
-  if(en.length>=4)return;
+  if(waveRemaining<=0)return;
   const side=Math.floor(Math.random()*4);let a,b;
   if(side===0){a=-45;b=Math.random()*H}else if(side===1){a=W+45;b=Math.random()*H}
   else if(side===2){a=Math.random()*W;b=-45}else{a=Math.random()*W;b=H+45}
-  const heavy=Math.random()<Math.min(.35,.08+p.lv*.02);
+  // Higher waves add more KV-1s, and each KV-1 carries a 122mm gun.
+  const kvChance=Math.min(.85,.12+(wave-1)*.09);
+  const heavy=Math.random()<kvChance;
   const hp=100;
   en.push({
     x:a,y:b,r:heavy?23:19,speed:heavy?48:64,hp,max:hp,dmg:heavy?35:20,
-    heavy,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
+    heavy,enemyBarrelId:heavy?'122mm':'85mm',angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
+  waveRemaining--;
 }
 function shoot(){
   if(p.cd>0)return;
@@ -299,7 +306,14 @@ function update(dt){
     if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
     if(p.hp<=0){p.hp=0;die();return;}
   }
-  spawn-=dt;if(spawn<=0){makeEnemy();spawn=Math.max(2.8,5.2-p.lv*.10)}
+  // A wave cannot advance until every enemy from the current wave is destroyed.
+  if(waveRemaining>0){
+    spawn-=dt;
+    if(spawn<=0 && en.length<4){makeEnemy();spawn=Math.max(2.2,4.2-wave*.06)}
+  }else if(en.length===0){
+    waveClearTimer+=dt;
+    if(waveClearTimer>=2)startNextWave();
+  }
   // Tank controls: W/S drive forward and backward; A/D rotate the hull in place.
   let drive=0,turn=0;
   if(keys.has('w')||keys.has('arrowup'))drive+=1;

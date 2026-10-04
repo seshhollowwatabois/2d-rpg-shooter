@@ -15,7 +15,7 @@ const turrets=[
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,damage:40,precision:.68,dispersionTime:2,scale:.82,length:.82},
   {id:'85mm',name:'85mm Barrel',cost:0,damage:50,precision:.88,dispersionTime:3,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,damage:80,precision:1,dispersionTime:0,scale:1.22,length:1.12}
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,damage:80,precision:1,dispersionTime:4,scale:1.22,length:1.12}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');

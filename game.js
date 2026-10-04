@@ -536,8 +536,8 @@ function enemyShoot(e){
       const offset=e.twinsNextBarrel===1?side:-side;
       const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
-      ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
-      burst(mx,my,'#ff875f',3);
+      ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:'#3da9ff'});
+      burst(mx,my,'#3da9ff',3);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
     }else{
@@ -1009,7 +1009,7 @@ function update(dt){
         if(profile.rear&&p.burnTime<=0&&Math.random()<.01){
           p.burnTime=10;p.burnDamage=p.max*.40;burst(p.x,p.y,'#ff9b55',16);
         }
-        burst(b.x,b.y,'#ff765d',14);
+        burst(b.x,b.y,b.col||'#ff765d',14);
         if(p.hp<=0)die();
       }
       ebs.splice(i,1);continue;      ebs.splice(i,1);continue;

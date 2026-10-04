@@ -161,7 +161,7 @@ function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -313,8 +313,8 @@ function makeEnemy(){
     speed:hull.speed*.4*engine.speed,
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
-    heavy,hullId,turretId,engineId,mass,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnStacks:0,burnDamage:3,burnGrace:0,ramCd:0,firebirdTier:enemyFirebirdTier,
+    heavy,hullId,turretId,engineId,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -585,7 +585,7 @@ function killEnemy(e,j){
   e.deathVy=Number.isFinite(e.vy)?e.vy:0;
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();
-  e.dead=true;e.corpseTime=5;e.hitFlash=0;e.burnTime=0;e.fire=0;
+  e.dead=true;e.corpseTime=5;e.hitFlash=0;e.fire=0;
   deadTanks.push(e);en.splice(j,1);
 }
 function die(){saveCurrent();gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
@@ -995,7 +995,7 @@ function renderShop(){
 function update(dt){
   if(over||gameScreen!=='game'){stopEngineSound();return;}
   autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent();}
-  p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);p.ramCd=Math.max(0,(p.ramCd||0)-dt);
+  p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
@@ -1156,21 +1156,20 @@ function update(dt){
     b.x=nx;b.y=ny;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
-        const profile=getHitProfile(p,b.x,b.y);
         const damage=b.dmg;
         p.hp-=damage;p.inv=.28; soundHit();
         dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
         burst(b.x,b.y,b.col||'#ff765d',14);
         if(p.hp<=0)die();
       }
-      ebs.splice(i,1);continue;      ebs.splice(i,1);continue;
+      ebs.splice(i,1);continue;
     }
     if(b.life<=0||b.x<-60||b.x>W+60||b.y<-60||b.y>H+60)ebs.splice(i,1);
   }
 
   for(const e of en){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
-    e.fire-=dt;e.ramCd=Math.max(0,(e.ramCd||0)-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);
+    e.fire-=dt;e.hitFlash=Math.max(0,e.hitFlash-dt);
     if(e.burnStacks>0){
       e.burnTick=(e.burnTick||1)-dt;
       if(e.burnTick<=0){
@@ -1635,24 +1634,8 @@ function draw(){
     x.textBaseline='bottom';
     x.fillStyle='#20252a';
     x.fillText(enemyHull.name+' • '+enemyTurret.name.replace(' Turret','')+' • '+enemyGun.name.replace(' Barrel','')+' • '+enemyEngine.name.replace(' Engine',''),e.x,e.y-e.r-15);
-    if(e.burnTime>0){
-      x.globalAlpha=.9;
-      x.fillStyle='#ff7a2f';
-      x.beginPath();x.arc(e.x-e.r*.25,e.y-e.r*.1,e.r*.32,0,6.283);x.fill();
-      x.fillStyle='#ffd35a';
-      x.beginPath();x.arc(e.x+e.r*.05,e.y-e.r*.28,e.r*.18,0,6.283);x.fill();
-      x.globalAlpha=1;
-    }
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
-  }
-  if(p.burnTime>0){
-    x.globalAlpha=.9;
-    x.fillStyle='#ff7a2f';
-    x.beginPath();x.arc(p.x-p.r*.25,p.y-p.r*.1,p.r*.32,0,6.283);x.fill();
-    x.fillStyle='#ffd35a';
-    x.beginPath();x.arc(p.x+p.r*.05,p.y-p.r*.28,p.r*.18,0,6.283);x.fill();
-    x.globalAlpha=1;
   }
   tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;

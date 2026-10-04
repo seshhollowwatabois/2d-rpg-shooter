@@ -707,11 +707,14 @@ function update(dt){
   }else{
     p.aimPrecision=Math.min(1,p.aimPrecision+aimRate*dt);
   }
+  // Fire using the turret's current facing BEFORE applying this frame's aim rotation.
+  // This prevents the fire input itself from causing even one frame of apparent turret snapping.
+  if(mouse.down||mobileFire||keys.has(' '))shoot();
+
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
-  if(mouse.down||mobileFire||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
     const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();

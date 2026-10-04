@@ -491,22 +491,30 @@ function enemyShoot(e){
   const barrel=gunForTurret(e.turretId);
   const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.id==='122mm'&&barrel.flame){
+    // Enemy Firebird is a true continuous flamethrower: update it every frame
+    // while the enemy is engaging. Damage/burn stacks still tick at 0.50s.
     const range=barrel.range||230,cone=barrel.cone||.42;
+    let inFlame=false;
     for(const target of [p]){
       const dx=target.x-e.x,dy=target.y-e.y,dist=Math.hypot(dx,dy);
       const da=Math.abs(((Math.atan2(dy,dx)-a+Math.PI*3)%(Math.PI*2))-Math.PI);
-      if(dist<=range&&da<=cone&&!wallRayHit(e.x,e.y,a,Math.min(dist,range))){
+      inFlame=dist<=range&&da<=cone&&!wallRayHit(e.x,e.y,a,Math.min(dist,range));
+      if(inFlame&&e.fire<=0){
         const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
         applyBulletHit(p,damage,p.x,p.y,null,0);
         applyBurn(p);
+        e.fire=barrel.reloadTime;
         if(p.hp<=0){p.hp=0;die();return;}
       }
     }
-    for(let i=0;i<30;i++){
-      const fa=a+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
-      ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:Math.cos(fa)*20,vy:Math.sin(fa)*20,life:.14+Math.random()*.22,col:Math.random()<.55?'#ff5a18':Math.random()<.7?'#ffb52e':'#fff1a6',size:5+Math.random()*4});
+    if(inFlame){
+      for(let i=0;i<10;i++){
+        const fa=a+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
+        ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:Math.cos(fa)*20,vy:Math.sin(fa)*20,life:.14+Math.random()*.22,col:Math.random()<.55?'#ff5a18':Math.random()<.7?'#ffb52e':'#fff1a6',size:5+Math.random()*4});
+      }
+      burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
     }
-    burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',5);
+    return;
   }else if(barrel.instant){
     const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
@@ -1101,7 +1109,12 @@ function update(dt){
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Bots can engage from range without needing to chase the player.
-    if(d<620&&e.fire<=0)enemyShoot(e);
+    // Firebird is called every frame so its flame remains visually continuous;
+    // enemyShoot() itself controls the actual 0.50s damage/burn tick.
+    const enemyBarrel=gunForTurret(e.turretId);
+    if(enemyBarrel.id==='122mm'&&enemyBarrel.flame){
+      if(d<620)enemyShoot(e);
+    }else if(d<620&&e.fire<=0)enemyShoot(e);
     // Ram damage is handled once below for both tanks.
   }
 

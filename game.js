@@ -13,9 +13,9 @@ const turrets=[
   {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,dispersionTime:2,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,dispersionTime:3,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,dispersionTime:4,scale:1.22,length:1.12}
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,reloadTime:5,dispersionTime:2,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,reloadTime:9,dispersionTime:3,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,reloadTime:17,dispersionTime:4,scale:1.22,length:1.12}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -92,7 +92,7 @@ function shoot(){
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
   bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage),trail:[]});
-  p.cd=4;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+  p.cd=barrel.reloadTime;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -184,7 +184,7 @@ function renderShop(){
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
     else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp
-    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s';
+    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s • Reload '+item.reloadTime+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
     const btn=document.createElement('button');

@@ -491,7 +491,8 @@ function enemyShoot(e){
 function killEnemy(e,j){
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();
-  e.dead=true;e.corpseTime=5;e.hitFlash=0;deadTanks.push(e);en.splice(j,1);
+  e.dead=true;e.corpseTime=5;e.hitFlash=0;e.burnTime=0;e.fire=0;
+  deadTanks.push(e);en.splice(j,1);
 }
 function die(){saveCurrent(activeSlot);gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
@@ -1013,17 +1014,21 @@ function draw(){
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
-  // Destroyed tanks remain as burning wrecks for 5 seconds.
+  // Destroyed tanks remain as completely black, frozen wrecks for 5 seconds.
   for(const e of deadTanks){
-    const fade=Math.min(1,e.corpseTime/1);
-    x.save();x.globalAlpha=fade;
-    x.translate(e.x,e.y);x.rotate(e.angle);
-    x.fillStyle='#171a1b';x.beginPath();x.arc(0,0,e.r*1.02,0,6.283);x.fill();
-    x.strokeStyle='#454b4d';x.lineWidth=3;x.stroke();
-    x.fillStyle='#ff7a22';x.globalAlpha=.7*fade;
-    x.beginPath();x.arc(-e.r*.18,0,e.r*.28,0,6.283);x.fill();
-    x.fillStyle='#ffd27a';x.globalAlpha=.8*fade;
-    x.beginPath();x.arc(e.r*.12,-e.r*.12,e.r*.14,0,6.283);x.fill();
+    x.save();
+    x.translate(e.x,e.y);
+    x.rotate(e.angle);
+    x.globalAlpha=1;
+    x.fillStyle='#050505';
+    x.beginPath();x.arc(0,0,e.r*1.02,0,6.283);x.fill();
+    x.strokeStyle='#000000';x.lineWidth=4;x.stroke();
+    x.fillStyle='#000000';
+    x.fillRect(-e.r*.9,-e.r*.42,e.r*1.8,e.r*.84);
+    x.fillStyle='#000000';
+    x.beginPath();x.arc(0,0,e.r*.58,0,6.283);x.fill();
+    x.fillStyle='#000000';
+    x.fillRect(e.r*.25,-e.r*.11,e.r*.95,e.r*.22);
     x.restore();
   }
   // shell trails / explosions

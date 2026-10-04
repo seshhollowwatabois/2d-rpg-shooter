@@ -1049,19 +1049,15 @@ function draw(){
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
-  // Destroyed tanks remain as completely black, frozen wrecks for 5 seconds.
+  // Destroyed tanks keep the exact normal tank design and geometry; only the rendered colors are blacked out.
   for(const e of deadTanks){
     x.save();
-    x.translate(e.x,e.y);
-    x.rotate(e.angle);
     x.globalAlpha=1;
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.enemyBarrelId||'85mm',e.turretId||'standard',e.hullId||'standard');
+    x.globalCompositeOperation='source-atop';
     x.fillStyle='#000000';
-    x.fillStyle='#000000';
-    x.fillRect(-e.r*.9,-e.r*.42,e.r*1.8,e.r*.84);
-    x.fillStyle='#000000';
-    x.beginPath();x.arc(0,0,e.r*.58,0,6.283);x.fill();
-    x.fillStyle='#000000';
-    x.fillRect(e.r*.25,-e.r*.11,e.r*.95,e.r*.22);
+    x.fillRect(e.x-e.r*2,e.y-e.r*2,e.r*4,e.r*4);
+    x.globalCompositeOperation='source-over';
     x.restore();
   }
   // shell trails / explosions

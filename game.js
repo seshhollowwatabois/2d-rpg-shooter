@@ -1041,7 +1041,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // Long side guards.
   x.fillStyle=bodyDark;
-  const guard=isTitan?.13:isWasp?.09:.11;
+  const guard=isTitan?0.13:isWasp?0.09:0.11;
   x.fillRect(-L*.34,-hullB*.50,L*.62,hullB*guard);
   x.fillRect(-L*.34,hullB*(.50-guard),L*.62,hullB*guard);
 

@@ -180,7 +180,8 @@ function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
 
   // A penetrating rear hit has a 1% chance to ignite the tank. Burning deals 40% of
   // its max HP over 10 seconds, at a steady rate.
-  if(penetrates&&profile.rear&&target.burnTime<=0&&Math.random()<.01){
+  const fireChance=profile.rear?.05:profile.zone==='side'?.02:0;
+  if(penetrates&&fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
     target.burnTime=10;
     target.burnDamage=target.max*.40;
     burst(target.x,target.y,'#ff9b55',16);

@@ -911,7 +911,7 @@ function update(dt){
       p.hp-=burnHit;
       dmgTexts.push({x:p.x+(Math.random()-.5)*p.r+24,y:p.y-p.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
       p.hitFlash=.05;
-      p.burnTick=2;
+      p.burnTick=3;
     }
     p.burnGrace=Math.max(0,(p.burnGrace||0)-dt);
     if(p.burnGrace<=0){
@@ -1064,7 +1064,7 @@ function update(dt){
         e.hp-=burnHit;
         dmgTexts.push({x:e.x+(Math.random()-.5)*e.r+24,y:e.y-e.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
         e.hitFlash=.05;
-        e.burnTick=2;
+        e.burnTick=3;
       }
       e.burnGrace=Math.max(0,(e.burnGrace||0)-dt);
       if(e.burnGrace<=0){

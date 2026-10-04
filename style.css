@@ -5,13 +5,17 @@
 @media(pointer:coarse){#mainMenuButton{top:10px;right:10px;padding:9px 12px;font-size:12px}}
 
 /* Railgun upgrade tiers */
-.railTierRow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px}
-.railTierCard{background:rgba(20,27,32,.9);border:1px solid #56616a;border-radius:8px;padding:8px;text-align:center;min-width:0}
-.railTierCard.selected{border-color:#8eeaff;box-shadow:0 0 0 1px rgba(142,234,255,.35)}
-.railTierBeam{height:7px;border-radius:999px;background:var(--rail-color);box-shadow:0 0 10px var(--rail-glow);margin-bottom:8px}
+.railTierRow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 16px}
+.railTierCard{position:relative;background:linear-gradient(180deg,rgba(28,36,44,.98),rgba(13,18,23,.98));border:2px solid #56616a;border-radius:10px;padding:10px 8px;text-align:center;min-width:0;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.railTierCard.selected{border-color:var(--rail-color);box-shadow:0 0 0 2px rgba(142,234,255,.2),0 0 18px var(--rail-glow);transform:translateY(-2px)}
+.railTierCard.upgradeAvailable{border-color:#ffd23f;box-shadow:0 0 0 2px rgba(255,210,63,.18),0 0 16px rgba(255,210,63,.3)}
+.railTierCard.upgradeAvailable::after{content:'NEXT UPGRADE';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#ffd23f;color:#101318;font-size:8px;font-weight:900;letter-spacing:.8px;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.railTierBeam{height:9px;border-radius:999px;background:var(--rail-color);box-shadow:0 0 12px var(--rail-glow);margin-bottom:9px}
 .railTierCard b,.railTierCard small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.railTierCard small{font-size:10px;opacity:.75;margin:3px 0 7px}
-.railTierCard button{width:100%;font-size:10px;padding:5px 3px}
+.railTierCard b{font-size:13px}
+.railTierCard small{font-size:10px;opacity:.82;margin:4px 0 7px}
+.railTierCard button{width:100%;font-size:10px;padding:7px 3px}
+.railTierCard.upgradeAvailable button{background:#735d18;border-color:#ffd23f;color:#fff}
 @media(max-width:600px){.railTierRow{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .railStatsPanel{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:rgba(12,18,23,.82);border:1px solid #4b5963;border-radius:7px;padding:8px 10px;margin:8px 0 10px;font-size:11px}

@@ -367,13 +367,25 @@ function makeEnemy(){
   });
   waveRemaining--;
 }
+function playerTurretWorldPosition(){
+  const hull=p?.hullId||equippedHull||'standard';
+  const isWasp=hull==='scout',isTitan=hull==='heavy';
+  const L=p.r*2.55*(isTitan?1.10:isWasp?.94:1);
+  const turretX=isWasp?-L*.22:isTitan?L*.18:0;
+  const ca=Math.cos(p.angle),sa=Math.sin(p.angle);
+  return {x:p.x+ca*turretX,y:p.y+sa*turretX};
+}
+function playerMuzzlePosition(barrel,angle){
+  const t=playerTurretWorldPosition();
+  const d=p.r*(.35+1.16*(barrel.length||1));
+  return {x:t.x+Math.cos(angle)*d,y:t.y+Math.sin(angle)*d};
+}
 function fireRailgun(){
   const barrel=gunForTurret(p.turretId);
   const fireAngle=p.turretAngle;
   // Start the beam at the actual end of the long gun barrel, not at the turret center.
-  const gunMuzzleDistance=p.r*(.38+1.16*(barrel.length||1));
-  const muzzleX=p.x+Math.cos(fireAngle)*gunMuzzleDistance;
-  const muzzleY=p.y+Math.sin(fireAngle)*gunMuzzleDistance;
+  const muzzle=playerMuzzlePosition(barrel,fireAngle);
+  const muzzleX=muzzle.x,muzzleY=muzzle.y;
   const range=1400,cos=Math.cos(fireAngle),sin=Math.sin(fireAngle);
   let wallDist=range;
 
@@ -426,8 +438,8 @@ function shoot(){
     return;
   }
   const fireAngle=p.turretAngle;
-  const muzzleDistance=p.r*(.38+1.16*(barrel.length||1));
-  const muzzleX=p.x+Math.cos(fireAngle)*muzzleDistance,muzzleY=p.y+Math.sin(fireAngle)*muzzleDistance;
+  const muzzle=playerMuzzlePosition(barrel,fireAngle);
+  const muzzleX=muzzle.x,muzzleY=muzzle.y;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});
@@ -1257,8 +1269,8 @@ function draw(){
     // Charge effect is attached to the actual gun direction, not the cursor.
     const a=p.turretAngle;
     const chargeBarrel=gunForTurret(p.turretId);
-    const muzzleDistance=p.r*(.38+1.16*(chargeBarrel.length||1));
-    const mx=p.x+Math.cos(a)*muzzleDistance,my=p.y+Math.sin(a)*muzzleDistance;
+    const muzzle=playerMuzzlePosition(chargeBarrel,a);
+    const mx=muzzle.x,my=muzzle.y;
     const progress=1-p.railCharge;
     x.save();x.translate(mx,my);x.rotate(a);x.globalAlpha=.35+.65*progress;
     const chargeTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

@@ -546,6 +546,36 @@ function renderShop(){
     return cv;
   };
 
+  const equipShopItem=(type,item)=>{
+    // Equipment can be switched directly from the shop. Keep the button usable
+    // even when the shop was opened from the main menu before a game is running.
+    if(type==='hull'){
+      if(!ownedHulls.includes(item.id))ownedHulls.push(item.id);
+      equippedHull=item.id;
+      if(p){
+        const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
+        p.hullId=item.id;
+        p.r=20*item.scale;
+        p.max=item.hp;
+        p.hp=Math.min(p.hp,p.max);
+      }
+    }else if(type==='turret'){
+      if(!ownedTurrets.includes(item.id))ownedTurrets.push(item.id);
+      equippedTurret=item.id;
+      if(p){
+        p.turretId=item.id;
+        p.railCharging=false;
+        p.railCharge=0;
+      }
+    }else if(type==='engine'){
+      if(!ownedEngines.includes(item.id))ownedEngines.push(item.id);
+      equippedEngine=item.id;
+    }
+    saveShop();
+    if(p&&activeSlot)saveCurrent(activeSlot);
+    renderShop();
+  };
+
   const add=(type,item,owned,equipped)=>{
     const row=document.createElement('div');
     const isSelected=selectedShopItem===item.id;
@@ -574,23 +604,9 @@ function renderShop(){
     }
     row.appendChild(info);
     const btn=document.createElement('button');
-    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';btn.disabled=equipped;
-    btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();
-      if(!owned){
-        if(type==='hull'&&!ownedHulls.includes(item.id))ownedHulls.push(item.id);
-        else if(type==='turret'&&!ownedTurrets.includes(item.id))ownedTurrets.push(item.id);
-        else if(type==='engine'&&!ownedEngines.includes(item.id))ownedEngines.push(item.id);
-      }
-      if(type==='hull'){
-        equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max);
-      }else if(type==='turret'){
-        equippedTurret=item.id;p.turretId=item.id;p.max=hullForPlayer().hp;p.hp=Math.min(p.hp,p.max);
-        p.railCharging=false;p.railCharge=0;
-      }else{
-        equippedEngine=item.id;
-      }
-      saveShop();renderShop();
-    };
+    btn.textContent=equipped?'EQUIPPED':'EQUIP';
+    btn.disabled=equipped;
+    btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();equipShopItem(type,item)};
     row.onclick=()=>{selectedShopItem=isSelected?null:item.id;renderShop()};
     box.appendChild(row);
     if(isSelected){

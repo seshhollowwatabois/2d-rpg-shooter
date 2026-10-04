@@ -380,7 +380,7 @@ function update(dt){
   // is moving and smoothly contracts while stationary. The value is never reset every frame.
   const moving=drive!==0;
   const dispersionTime=Math.max(.1,barrel.dispersionTime||1);
-  const movingFloor=.10;
+  const movingFloor=.02;
   const dispersionRate=(1-movingFloor)/dispersionTime;
   if(moving){
     p.aimPrecision=Math.max(movingFloor,p.aimPrecision-dispersionRate*dt);

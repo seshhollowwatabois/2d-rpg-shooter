@@ -57,6 +57,15 @@ let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
 let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);
 let railgunOwnedTier=Math.max(railgunTier,Number(localStorage.getItem('tankRailgunOwnedTier')||0));
 
+// All turret variants are free equipment. Normalize older saves so newer turrets
+// (including Railgun) cannot disappear from the player's equipment list.
+function normalizeOwnedEquipment(){
+  for(const t of turrets)if(!ownedTurrets.includes(t.id))ownedTurrets.push(t.id);
+  for(const h of hulls)if(h.cost===0&&!ownedHulls.includes(h.id))ownedHulls.push(h.id);
+  for(const e of engines)if(e.cost===0&&!ownedEngines.includes(e.id))ownedEngines.push(e.id);
+}
+normalizeOwnedEquipment();
+
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
@@ -139,6 +148,7 @@ function applySave(slot){
   if(!data)return false;
   activeSlot=slot;
   ownedHulls=data.ownedHulls||ownedHulls;ownedTurrets=data.ownedTurrets||ownedTurrets;ownedEngines=data.ownedEngines||ownedEngines;
+  normalizeOwnedEquipment();
   equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedEngine=data.engineId||'standard';railgunTier=Math.max(0,Math.min(3,Number(data.railgunTier)||0));
   saveShop();
   reset();

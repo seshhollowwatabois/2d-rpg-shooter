@@ -83,18 +83,32 @@ function addXp(n){
 function waveSize(w){return 3+w*2;}
 function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;}
 
+function pickEnemyGun(){
+  const roll=Math.random();
+  if(roll<.55)return '57mm';
+  if(roll<.85)return '85mm';
+  if(roll<.97)return '122mm';
+  return '122mmLong';
+}
+function pickEnemyHull(){
+  const r=Math.random();
+  if(wave<=2)return r<.65?'scout':(r<.95?'standard':'heavy');
+  if(wave<=5)return r<.25?'scout':(r<.85?'standard':'heavy');
+  const kvChance=Math.min(.85,.45+(wave-6)*.08);
+  return r<kvChance?'heavy':(r<.5?'scout':'standard');
+}
 function makeEnemy(){
   if(waveRemaining<=0)return;
   const side=Math.floor(Math.random()*4);let a,b;
   if(side===0){a=-45;b=Math.random()*H}else if(side===1){a=W+45;b=Math.random()*H}
   else if(side===2){a=Math.random()*W;b=-45}else{a=Math.random()*W;b=H+45}
-  // Higher waves add more KV-1s, and each KV-1 carries a 122mm gun.
-  const kvChance=Math.min(.85,.12+(wave-1)*.09);
-  const heavy=Math.random()<kvChance;
+  const hullId=pickEnemyHull();
+  const heavy=hullId==='heavy', hull=hulls.find(v=>v.id===hullId)||hulls[0];
+  const enemyBarrelId=pickEnemyGun();
   const hp=100;
   en.push({
-    x:a,y:b,r:heavy?23:19,speed:heavy?48:64,hp,max:hp,dmg:heavy?35:20,
-    heavy,enemyBarrelId:heavy?'122mm':'85mm',angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
+    x:a,y:b,r:20*hull.scale,speed:hull.speed*.4,hp,max:hp,dmg:heavy?35:20,
+    heavy,hullId,enemyBarrelId,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -205,12 +219,18 @@ function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  const isKV=e.enemyBarrelId==='122mm';
-  const damage=isKV?390+Math.random()*50:50;
-  const penetration=isKV?140:70;
-  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*900,vy:Math.sin(a)*900,r:2.5,life:2.4,dmg:damage,penetration,trail:[]});
-  e.fire=isKV?5.5:4;
-  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,isKV?'#ffd27a':'#ff875f',isKV?7:4);
+  const barrel=barrels.find(v=>v.id===e.enemyBarrelId)||barrels[0];
+  const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+  if(barrel.instant){
+    const range=1400,cos=Math.cos(a),sin=Math.sin(a);
+    const dx=p.x-e.x,dy=p.y-e.y,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
+    if(along>0&&along<range&&side<=p.r)applyBulletHit(p,damage,p.x,p.y,barrel.penetration,null);
+  }else{
+    const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
+    ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:2.5,life:2.4,dmg:damage,penetration:barrel.penetration,trail:[]});
+  }
+  e.fire=barrel.reloadTime;
+  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);
 }
 function killEnemy(e,j){
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);

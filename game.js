@@ -595,7 +595,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierced Tank Damage',item.id==='122mmLong'?Math.round((activeRailTier?.pierceDamageMult??.5)*100)+'%':'—');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(activeRailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierced Tank Damage',item.id==='122mmLong'?Math.round((activeRailTier?.pierceDamageMult??.5)*100)+'%':'—');addStat('Reload Time',item.id==='122mmLong'?((Number(item.reloadTime)||0)*(activeRailTier?.reloadMult||1)).toFixed(2)+'s':((Number(item.reloadTime)||0).toFixed(2)+'s'));addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);

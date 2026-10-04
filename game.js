@@ -463,6 +463,10 @@ function shoot(){
       const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       applyBulletHit(best,dmg,hitX,hitY,null,barrel.critChance||0);
       impactExplosion(hitX,hitY,'#ffd27a',24);
+      if(best.hp<=0){
+        const j=en.indexOf(best);
+        if(j>=0)killEnemy(best,j);
+      }
     }else{
       impactExplosion(muzzle.x+ca*34,muzzle.y+sa*34,'#ffd27a',10);
     }

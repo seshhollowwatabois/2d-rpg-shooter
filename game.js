@@ -73,9 +73,29 @@ function wallHitCircle(cx,cy,r){
   return false;
 }
 function moveWithWalls(obj,dx,dy){
-  const ox=obj.x,oy=obj.y;
-  obj.x+=dx;if(wallHitCircle(obj.x,obj.y,obj.r))obj.x=ox;
-  obj.y+=dy;if(wallHitCircle(obj.x,obj.y,obj.r))obj.y=oy;
+  // Move in small swept steps so a fast tank cannot tunnel through a wall in one frame.
+  const dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/3));
+  const sx=dx/steps,sy=dy/steps;
+  for(let i=0;i<steps;i++){
+    const nx=obj.x+sx,ny=obj.y+sy;
+    if(!wallHitCircle(nx,ny,obj.r)){
+      obj.x=nx;obj.y=ny;
+    }else{
+      // Try each axis separately so tanks can slide along a wall instead of stopping dead.
+      if(!wallHitCircle(obj.x+sx,obj.y,obj.r))obj.x+=sx;
+      if(!wallHitCircle(obj.x,obj.y+sy,obj.r))obj.y+=sy;
+      break;
+    }
+  }
+}
+function wallSegmentHit(x1,y1,x2,y2,r){
+  // Swept wall test for shells: sample at <=2px intervals, including the full shell radius.
+  const dist=Math.hypot(x2-x1,y2-y1),steps=Math.max(1,Math.ceil(dist/2));
+  for(let i=1;i<=steps;i++){
+    const t=i/steps,px=x1+(x2-x1)*t,py=y1+(y2-y1)*t;
+    if(wallHitCircle(px,py,r))return true;
+  }
+  return false;
 }
 function addXp(n){
   p.xp+=n;
@@ -399,8 +419,17 @@ function update(dt){
   if(mouse.down||mobileFire||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
-    const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);let hit=false;
-    if(wallHitCircle(b.x,b.y,b.r)){hit=true;burst(b.x,b.y,'#b8c0c8',7);break;}
+    const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();
+    const ox=b.x,oy=b.y,nx=b.x+b.vx*dt,ny=b.y+b.vy*dt;
+    let hit=false;
+    if(wallSegmentHit(ox,oy,nx,ny,b.r)){
+      // Stop the shell at the wall: shells can never cross or damage through cover.
+      hit=true;
+      burst(ox+(nx-ox)*.5,oy+(ny-oy)*.5,'#b8c0c8',7);
+    }else{
+      b.x=nx;b.y=ny;
+    }
+    b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
@@ -413,8 +442,12 @@ function update(dt){
   }
 
   for(let i=ebs.length-1;i>=0;i--){
-    const b=ebs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
-    if(wallHitCircle(b.x,b.y,b.r)){burst(b.x,b.y,'#b8c0c8',7);ebs.splice(i,1);continue;}
+    const b=ebs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();
+    const ox=b.x,oy=b.y,nx=b.x+b.vx*dt,ny=b.y+b.vy*dt;
+    if(wallSegmentHit(ox,oy,nx,ny,b.r)){
+      burst(ox+(nx-ox)*.5,oy+(ny-oy)*.5,'#b8c0c8',7);ebs.splice(i,1);continue;
+    }
+    b.x=nx;b.y=ny;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);

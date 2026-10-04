@@ -491,6 +491,11 @@ function enemyShoot(e){
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);soundFire(barrel.id);
 }
 function killEnemy(e,j){
+  // Keep the tank's momentum for one second after death, then ease it smoothly to a stop.
+  // This makes moving tanks feel like they have weight instead of freezing instantly.
+  e.deathDrift=1;
+  e.deathVx=Number.isFinite(e.vx)?e.vx:0;
+  e.deathVy=Number.isFinite(e.vy)?e.vy:0;
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();
   e.dead=true;e.corpseTime=5;e.hitFlash=0;e.burnTime=0;e.fire=0;
@@ -629,7 +634,19 @@ function update(dt){
     }
   }
   for(let i=railBeams.length-1;i>=0;i--){railBeams[i].life-=dt;if(railBeams[i].life<=0)railBeams.splice(i,1);}
-  for(let i=deadTanks.length-1;i>=0;i--){deadTanks[i].corpseTime-=dt;if(deadTanks[i].corpseTime<=0)deadTanks.splice(i,1);}
+  // Dead tanks coast for one extra second. Their momentum is reduced linearly to zero,
+  // while walls still block the wreck so it cannot slide through cover.
+  for(let i=deadTanks.length-1;i>=0;i--){
+    const e=deadTanks[i];
+    if((e.deathDrift||0)>0){
+      const factor=Math.max(0,e.deathDrift);
+      moveWithWalls(e,(e.deathVx||0)*factor*dt,(e.deathVy||0)*factor*dt);
+      e.deathDrift=Math.max(0,e.deathDrift-dt);
+      const slow=Math.max(0,e.deathDrift);
+      e.deathVx=(e.deathVx||0)*Math.max(0,1-dt);
+      e.deathVy=(e.deathVy||0)*Math.max(0,1-dt);
+    }
+  }
 
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
@@ -792,6 +809,7 @@ function update(dt){
 
     const oldEx=e.x,oldEy=e.y;
     if(recoverBotFromWall(e)){}
+    e.vx=0;e.vy=0;
     if(!e.idle){
       const wa=Math.atan2(e.wanderY-e.y,e.wanderX-e.x);
       const wda=((wa-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
@@ -799,7 +817,10 @@ function update(dt){
       e.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,wda));
       const wd=Math.hypot(e.wanderX-e.x,e.wanderY-e.y);
       if(wd>28){
-        const moved=moveWithWalls(e,Math.cos(e.angle)*e.speed*dt,Math.sin(e.angle)*e.speed*dt);
+        const moveVx=Math.cos(e.angle)*e.speed;
+        const moveVy=Math.sin(e.angle)*e.speed;
+        const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);
+        if(moved){e.vx=moveVx;e.vy=moveVy;}
         if(!moved){
           const point=findOpenPoint(e.r);
           e.wanderX=point.x;e.wanderY=point.y;e.wanderTime=1.5+Math.random()*2;

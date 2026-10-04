@@ -1052,7 +1052,8 @@ function draw(){
   }
   // 122mm Long charge animation: energy builds around the muzzle for 1 second.
   if(p.railCharging){
-    const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+    // Charge effect is attached to the actual gun direction, not the cursor.
+    const a=p.turretAngle;
     const chargeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[3];
     const muzzleDistance=p.r*(.38+1.16*(chargeBarrel.length||1));
     const mx=p.x+Math.cos(a)*muzzleDistance,my=p.y+Math.sin(a)*muzzleDistance;

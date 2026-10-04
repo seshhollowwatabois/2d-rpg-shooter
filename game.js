@@ -25,7 +25,13 @@ const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:4,dispersionTime:4,aimTime:4,scale:.82,length:.82},
   {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:9,dispersionTime:3,aimTime:6,scale:1,length:1},
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:16,dispersionTime:2,aimTime:10,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:1,aimTime:3,scale:1.28,length:1.65,instant:true}
+  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:1,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
+];
+const railgunTiers=[
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,penetration:160,reloadMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,penetration:165,reloadMult:.97},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,penetration:172,reloadMult:.94},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,penetration:180,reloadMult:.90}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -35,6 +41,7 @@ let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
 let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
 let equippedBarrel=localStorage.getItem('tankEquippedBarrel')||'85mm';
 let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
+let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);
 
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
@@ -108,7 +115,7 @@ function saveCurrent(slot=activeSlot){
   slots[slot-1]={
     version:1,level:p.lv,xp:p.xp,next:p.next,coins:p.coins,kills:p.kills,
     hullId:equippedHull,turretId:equippedTurret,barrelId:equippedBarrel,engineId:equippedEngine,
-    ownedHulls:[...ownedHulls],ownedTurrets:[...ownedTurrets],ownedBarrels:[...ownedBarrels],ownedEngines:[...ownedEngines],
+    ownedHulls:[...ownedHulls],ownedTurrets:[...ownedTurrets],ownedBarrels:[...ownedBarrels],ownedEngines:[...ownedEngines],railgunTier,
     savedAt:Date.now()
   };
   writeSaveSlots(slots);renderSaveSlots();
@@ -118,7 +125,7 @@ function applySave(slot){
   if(!data)return false;
   activeSlot=slot;
   ownedHulls=data.ownedHulls||ownedHulls;ownedTurrets=data.ownedTurrets||ownedTurrets;ownedBarrels=data.ownedBarrels||ownedBarrels;ownedEngines=data.ownedEngines||ownedEngines;
-  equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedBarrel=data.barrelId||'85mm';equippedEngine=data.engineId||'standard';
+  equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedBarrel=data.barrelId||'85mm';equippedEngine=data.engineId||'standard';railgunTier=Math.max(0,Math.min(3,Number(data.railgunTier)||0));
   saveShop();
   reset();
   p.lv=Math.max(1,data.level||1);p.xp=Math.max(0,data.xp||0);p.next=Math.max(120,data.next||120);p.coins=Math.max(0,data.coins||0);p.kills=Math.max(0,data.kills||0);
@@ -361,12 +368,13 @@ function fireRailgun(fireAngle,barrel){
   }
   pierced.sort((a,b)=>a.along-b.along);
 
-  const baseDamage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+  const railTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+  const baseDamage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*railTier.damageMult;
   for(let i=0;i<pierced.length;i++){
     const target=pierced[i].e;
     if(!en.includes(target))continue;
     const damage=baseDamage*Math.pow(.5,i);
-    applyBulletHit(target,damage,target.x,target.y,barrel.penetration,null);
+    applyBulletHit(target,damage,target.x,target.y,railTier.penetration,null);
     if(target.hp<=0)killEnemy(target,en.indexOf(target));
   }
 
@@ -511,6 +519,7 @@ function saveShop(){
   localStorage.setItem('tankEquippedBarrel',equippedBarrel);
   localStorage.setItem('tankOwnedEngines',JSON.stringify(ownedEngines));
   localStorage.setItem('tankEquippedEngine',equippedEngine);
+  localStorage.setItem('tankRailgunTier',String(railgunTier));
 }
 let shopCategory='hull';
 
@@ -609,6 +618,21 @@ function renderShop(){
     shopCategory==='turret'?equippedTurret===v.id:equippedEngine===v.id
   ));
 
+  if(shopCategory==='barrel'){
+    const railTitle=document.createElement('div');railTitle.className='shopSectionTitle';railTitle.textContent='RAILGUN UPGRADES';box.appendChild(railTitle);
+    const railRow=document.createElement('div');railRow.className='railTierRow';
+    railgunTiers.forEach(t=>{
+      const card=document.createElement('div');card.className='railTierCard'+(t.tier===railgunTier?' selected':'');
+      const sw=document.createElement('div');sw.className='railTierBeam';sw.style.setProperty('--rail-color',t.beam);sw.style.setProperty('--rail-glow',t.glow);
+      const title=document.createElement('b');title.textContent='Tier '+t.tier;
+      const name=document.createElement('small');name.textContent=t.name;
+      const btn=document.createElement('button');btn.textContent=t.tier===railgunTier?'EQUIPPED':t.tier===0?'SELECT':'UPGRADE';btn.disabled=t.tier===railgunTier;
+      btn.onclick=()=>{initAudio();soundUi();railgunTier=t.tier;saveShop();renderShop()};
+      card.append(sw,title,name,btn);railRow.appendChild(card);
+    });
+    box.appendChild(railRow);
+  }
+
   // Second tier row: reserved for future higher-tier equipment.
   const coming=document.createElement('div');
   coming.className='shopTierComing';
@@ -627,7 +651,7 @@ function update(dt){
       const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
       const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
       const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
-      fireRailgun(fireAngle,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime;
+      fireRailgun(fireAngle,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1);
     }
   }
   for(let i=railBeams.length-1;i>=0;i--){railBeams[i].life-=dt;if(railBeams[i].life<=0)railBeams.splice(i,1);}
@@ -1059,7 +1083,8 @@ function draw(){
     const mx=p.x+Math.cos(a)*muzzleDistance,my=p.y+Math.sin(a)*muzzleDistance;
     const progress=1-p.railCharge;
     x.save();x.translate(mx,my);x.rotate(a);x.globalAlpha=.35+.65*progress;
-    x.strokeStyle='#79faff';x.lineWidth=3+5*progress;x.beginPath();x.arc(0,0,8+14*progress,0,6.283);x.stroke();
+    const chargeTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+    x.strokeStyle=chargeTier.beam;x.lineWidth=3+5*progress;x.beginPath();x.arc(0,0,8+14*progress,0,6.283);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=2;x.beginPath();x.moveTo(5,0);x.lineTo(22+18*progress,0);x.stroke();
     x.fillStyle='#dfffff';x.globalAlpha=.5+.5*progress;x.beginPath();x.arc(0,0,4+7*progress,0,6.283);x.fill();
     x.restore();
@@ -1068,7 +1093,8 @@ function draw(){
   for(const b of railBeams){
     const a=Math.max(0,b.life/b.maxLife);
     x.save();x.globalAlpha=a;
-    x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.lineCap='round';const railTierVisual=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+    x.strokeStyle=railTierVisual.beam;x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }

@@ -993,7 +993,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // More faithful top-down Tanki-style hull artwork.
   const body=flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):(isTitan?'#4b5747':isWasp?'#506347':'#566b4c'));
   const bodyDark=enemy?(heavy?'#373532':'#593337'):(isTitan?'#30382f':isWasp?'#354238':'#384337');
-  const bodyLight=enemy?(heavy?'#625a50':'#758267');
+  const bodyLight=enemy?(heavy?'#625a50':'#758267'):(isTitan?'#687563':isWasp?'#758267':'#74836a');
   const metal=enemy?(heavy?'#756f66':'#9b5559'):'#9aa09a';
   const turretX=isWasp?-L*.22:isTitan?L*.02:-L*.03;
 

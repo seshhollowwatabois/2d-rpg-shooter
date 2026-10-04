@@ -565,17 +565,20 @@ function renderShop(){
     row.appendChild(info);
     const btn=document.createElement('button');
     btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';btn.disabled=equipped;
-    btn.onclick=e=>{e.stopPropagation();
+    btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();
       if(!owned){
-        if(type==='hull')ownedHulls.push(item.id);
-        else if(type==='turret')ownedTurrets.push(item.id);
-                else ownedEngines.push(item.id);
+        if(type==='hull'&&!ownedHulls.includes(item.id))ownedHulls.push(item.id);
+        else if(type==='turret'&&!ownedTurrets.includes(item.id))ownedTurrets.push(item.id);
+        else if(type==='engine'&&!ownedEngines.includes(item.id))ownedEngines.push(item.id);
       }
       if(type==='hull'){
         equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max);
       }else if(type==='turret'){
         equippedTurret=item.id;p.turretId=item.id;p.max=hullForPlayer().hp;p.hp=Math.min(p.hp,p.max);
-      }else equippedEngine=item.id;
+        p.railCharging=false;p.railCharge=0;
+      }else{
+        equippedEngine=item.id;
+      }
       saveShop();renderShop();
     };
     row.onclick=()=>{selectedShopItem=isSelected?null:item.id;renderShop()};

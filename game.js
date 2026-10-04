@@ -1529,7 +1529,7 @@ function draw(){
     cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';
     cursorReload.style.top=(mouse.y+8)+'px';
-  }  }
+  }
 }
 function setMobileButton(id,key){
   const el=$(id); if(!el)return;

@@ -153,7 +153,7 @@ function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:3,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:2,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -471,7 +471,7 @@ function getHitProfile(target,bx,by){
 function applyBurn(target){
   // Each Firebird hit applies 1 burn stack, up to 5 stacks.
   target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
-  target.burnTick=3;
+  target.burnTick=2;
   burst(target.x,target.y,'#ff9b55',10);
   target.hitFlash=.05;
 }
@@ -896,14 +896,14 @@ function update(dt){
   }
   // Burning tanks take 3 damage per second per stack for 8 seconds, up to 5 stacks.
   if(p.burnStacks>0){
-    p.burnTick=(p.burnTick||3)-dt;
+    p.burnTick=(p.burnTick||2)-dt;
     if(p.burnTick<=0){
       const burnHit=3*p.burnStacks;
       p.hp-=burnHit;
       dmgTexts.push({x:p.x+(Math.random()-.5)*p.r+24,y:p.y-p.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
       p.hitFlash=.05;
       p.burnStacks=Math.max(0,p.burnStacks-1);
-      p.burnTick=3;
+      p.burnTick=2;
     }
     if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
     if(p.hp<=0){p.hp=0;die();return;}
@@ -1041,14 +1041,14 @@ function update(dt){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
     e.fire-=dt;e.ramCd=Math.max(0,(e.ramCd||0)-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);
     if(e.burnStacks>0){
-      e.burnTick=(e.burnTick||3)-dt;
+      e.burnTick=(e.burnTick||2)-dt;
       if(e.burnTick<=0){
         const burnHit=3*e.burnStacks;
         e.hp-=burnHit;
         dmgTexts.push({x:e.x+(Math.random()-.5)*e.r+24,y:e.y-e.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
         e.hitFlash=.05;
         e.burnStacks=Math.max(0,e.burnStacks-1);
-        e.burnTick=3;
+        e.burnTick=2;
       }
       if(Math.random()<dt*10)burst(e.x+(Math.random()-.5)*e.r,e.y+(Math.random()-.5)*e.r,'#ff8a3d',2);
       if(e.hp<=0){

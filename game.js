@@ -436,7 +436,6 @@ function shoot(){
     }
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
-    p.firebirdFuel=Math.max(0,p.firebirdFuel-barrel.reloadTime);
     return;
   }
 
@@ -969,6 +968,9 @@ function update(dt){
     }else{
       p.firebirdActive=false;
     }
+  }
+  if(firebird.id==='122mm'&&firebird.flame&&fireHeld&&p.firebirdFuel>0){
+    p.firebirdFuel=Math.max(0,p.firebirdFuel-dt);
   }
   if(fireHeld)shoot();
 

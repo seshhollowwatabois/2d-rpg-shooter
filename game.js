@@ -144,6 +144,8 @@ function showMenu(){
 function showGame(){
   gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;
 }
+document.querySelectorAll('.shopTab').forEach(tab=>{tab.onclick=()=>{initAudio();soundUi();shopCategory=tab.dataset.shopCategory;renderShop()}});
+
 function openMenuShop(){
   initAudio();soundUi();$('mainMenu').hidden=true;$('shop').classList.add('open');renderShop();
 }
@@ -506,9 +508,13 @@ function saveShop(){
   localStorage.setItem('tankOwnedEngines',JSON.stringify(ownedEngines));
   localStorage.setItem('tankEquippedEngine',equippedEngine);
 }
+let shopCategory='hull';
+
 function renderShop(){
   const box=$('shopItems'); if(!box)return;
   box.innerHTML='';
+  document.querySelectorAll('.shopTab').forEach(tab=>tab.classList.toggle('active',tab.dataset.shopCategory===shopCategory));
+
   const preview=(type,item)=>{
     const cv=document.createElement('canvas');cv.width=120;cv.height=64;cv.className='shopPreview';
     const q=cv.getContext('2d');q.clearRect(0,0,120,64);q.translate(60,32);
@@ -519,8 +525,7 @@ function renderShop(){
       const sc=item.scale;
       q.fillStyle=item.id==='heavy'?'#4e4942':item.id==='scout'?'#526149':'#56644c';
       q.beginPath();q.roundRect(-28*sc,-13*sc,56*sc,26*sc,7*sc);q.fill();
-      q.fillStyle='#252923';
-      q.fillRect(-32*sc,-18*sc,64*sc,5*sc);q.fillRect(-32*sc,13*sc,64*sc,5*sc);
+      q.fillStyle='#252923';q.fillRect(-32*sc,-18*sc,64*sc,5*sc);q.fillRect(-32*sc,13*sc,64*sc,5*sc);
       q.fillStyle='#687264';
       for(let i=-2;i<=2;i++){q.beginPath();q.arc(i*11*sc,-15.5*sc,4*sc,0,6.283);q.fill();q.beginPath();q.arc(i*11*sc,15.5*sc,4*sc,0,6.283);q.fill()}
       q.fillStyle='#3f493e';q.beginPath();q.arc(-2,0,12*sc,0,6.283);q.fill();
@@ -532,8 +537,6 @@ function renderShop(){
       q.beginPath();q.roundRect(-15*sc,-10*sc,30*sc,20*sc,8*sc);q.fill();
       q.fillStyle='#292f2a';q.fillRect(12*sc,-4*sc,12*sc,8*sc);
     }else if(type==='engine'){
-      const sc=1;
-      // Compact top-down engine illustration for the engine shop cards.
       q.save();q.scale(1.15,1.15);
       q.fillStyle='#252a27';q.beginPath();q.roundRect(-32,-17,64,34,7);q.fill();
       q.fillStyle='#3f493e';q.beginPath();q.roundRect(-25,-12,50,24,5);q.fill();
@@ -555,6 +558,7 @@ function renderShop(){
     }
     return cv;
   };
+
   const add=(type,item,owned,equipped)=>{
     const row=document.createElement('div');row.className='shopItem';
     const info=document.createElement('div');info.className='shopInfo';
@@ -562,8 +566,8 @@ function renderShop(){
     const text=document.createElement('div');
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
-    else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp
-    else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%'
+    else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp;
+    else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%';
     else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s • Reload '+item.reloadTime+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
@@ -585,11 +589,27 @@ function renderShop(){
     };
     row.appendChild(btn);box.appendChild(row);
   };
-  const section=t=>{const z=document.createElement('div');z.className='shopSectionTitle';z.textContent=t;box.appendChild(z)};
-  section('HULLS');hulls.forEach(v=>add('hull',v,ownedHulls.includes(v.id),equippedHull===v.id));
-  section('TURRETS');turrets.forEach(v=>add('turret',v,ownedTurrets.includes(v.id),equippedTurret===v.id));
-  section('CANNON BARRELS');barrels.forEach(v=>add('barrel',v,ownedBarrels.includes(v.id),equippedBarrel===v.id));
-  section('ENGINES');engines.forEach(v=>add('engine',v,ownedEngines.includes(v.id),equippedEngine===v.id));
+
+  const sectionTitle=document.createElement('div');
+  sectionTitle.className='shopSectionTitle';
+  sectionTitle.textContent=shopCategory==='hull'?'HULLS':shopCategory==='barrel'?'GUNS':shopCategory==='turret'?'TURRETS':'ENGINES';
+  box.appendChild(sectionTitle);
+
+  const list=shopCategory==='hull'?hulls:shopCategory==='barrel'?barrels:shopCategory==='turret'?turrets:engines;
+  list.forEach(v=>add(shopCategory,v,
+    shopCategory==='hull'?ownedHulls.includes(v.id):
+    shopCategory==='barrel'?ownedBarrels.includes(v.id):
+    shopCategory==='turret'?ownedTurrets.includes(v.id):ownedEngines.includes(v.id),
+    shopCategory==='hull'?equippedHull===v.id:
+    shopCategory==='barrel'?equippedBarrel===v.id:
+    shopCategory==='turret'?equippedTurret===v.id:equippedEngine===v.id
+  ));
+
+  // Second tier row: reserved for future higher-tier equipment.
+  const coming=document.createElement('div');
+  coming.className='shopTierComing';
+  coming.innerHTML='<b>HIGHER TIER</b><span>COMING SOON</span>';
+  box.appendChild(coming);
 }
 
 function update(dt){

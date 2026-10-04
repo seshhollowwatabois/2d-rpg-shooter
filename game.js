@@ -894,7 +894,9 @@ function update(dt){
   }
   // Burning tanks take 3 damage per second per stack for 8 seconds, up to 5 stacks.
   if(p.burnTime>0){
-    p.hp-=3*(p.burnStacks||0)*dt;
+    const burnDps=3*(p.burnStacks||0);
+    p.hp-=burnDps*dt;
+    if(burnDps>0&&Math.random()<dt*4)dmgTexts.push({x:p.x+(Math.random()-.5)*p.r,y:p.y-p.r-8,text:'-'+burnDps.toFixed(0),life:.55,col:'#ff8a3d'});
     p.burnGrace=Math.max(0,(p.burnGrace||0)-dt);
     if(p.burnGrace<=0){
       p.burnStacks=Math.max(0,(p.burnStacks||0)-1);
@@ -1041,7 +1043,9 @@ function update(dt){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
     e.fire-=dt;e.ramCd=Math.max(0,(e.ramCd||0)-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);
     if(e.burnTime>0){
-      e.hp-=3*(e.burnStacks||0)*dt;
+      const burnDps=3*(e.burnStacks||0);
+      e.hp-=burnDps*dt;
+      if(burnDps>0&&Math.random()<dt*4)dmgTexts.push({x:e.x+(Math.random()-.5)*e.r,y:e.y-e.r-8,text:'-'+burnDps.toFixed(0),life:.55,col:'#ff8a3d'});
       e.burnGrace=Math.max(0,(e.burnGrace||0)-dt);
       if(e.burnGrace<=0){
         e.burnStacks=Math.max(0,(e.burnStacks||0)-1);

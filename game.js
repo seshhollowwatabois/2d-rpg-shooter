@@ -341,7 +341,8 @@ function update(dt){
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
   // Accuracy starts low while moving and settles toward 100% while stopped.
   p.aimPrecision=barrel.precision;
-  const aimTarget=moving?0.25:1;
+  const is122=barrel.id==='122mm'||barrel.id==='122mmLong';
+  const aimTarget=moving?(is122?0.05:0.25):1;
   p.aimPrecision+=Math.sign(aimTarget-p.aimPrecision)*Math.min(Math.abs(aimTarget-p.aimPrecision),aimChangeRate*dt);
   if(mouse.down||keys.has(' '))shoot();
 

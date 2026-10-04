@@ -492,21 +492,17 @@ function enemyShoot(e){
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
     if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y);
   }else{
-    const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
+    const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300);
     if(e.turretId==='rapid'){
-      // Enemy Twins also stagger the two barrels by 0.2s.
+      // Enemy Twins: one projectile per reload, alternating barrels.
       const side=.12*e.r;
-      const fireTwin=(offset)=>{
-        const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-        const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
-        ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
-        burst(mx,my,'#ff875f',3);
-        soundFire(barrel.id);
-      };
-      fireTwin(-side);
-      setTimeout(()=>{
-        if(e&&!e.dead&&en.includes(e)&&e.turretId==='rapid')fireTwin(side);
-      },200);
+      const offset=e.twinsNextBarrel===1?side:-side;
+      const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
+      ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
+      burst(mx,my,'#ff875f',3);
+      soundFire(barrel.id);
+      e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
     }else{
       const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       ebs.push({x:e.x+ca*(e.r+10),y:e.y+sa*(e.r+10),vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});

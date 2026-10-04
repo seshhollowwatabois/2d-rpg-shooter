@@ -1517,10 +1517,18 @@ function draw(){
       : activeBarrel.reloadTime;
     if(activeBarrel.id==='122mm'&&activeBarrel.flame){
       const fuel=Math.max(0,Math.min(p.firebirdFuel,p.firebirdMaxFuel||8));
-      cursorReload.textContent=`🔥 ${fuel.toFixed(1)}s`;
+      const fuelPct=fuel/(p.firebirdMaxFuel||8);
+      cursorReload.textContent='';
       cursorReload.hidden=false;
-      cursorReload.style.color=fuel>0?'#ffb52e':'#ff3b3b';
-      cursorReload.style.width='auto';
+      cursorReload.style.width='58px';
+      cursorReload.style.height='7px';
+      cursorReload.style.padding='0';
+      cursorReload.style.borderRadius='5px';
+      cursorReload.style.background='#252525';
+      cursorReload.style.border='1px solid #111';
+      cursorReload.style.boxShadow='0 0 5px rgba(255,190,40,.45)';
+      cursorReload.style.backgroundImage='linear-gradient(to right,#ffd21f 0%,#ffb000 '+(fuelPct*100)+'%,#252525 '+(fuelPct*100)+'%,#252525 100%)';
+      cursorReload.title='Firebird fuel: '+fuel.toFixed(1)+'s / '+(p.firebirdMaxFuel||8)+'s';
     }else{
       cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
       cursorReload.hidden=false;

@@ -790,15 +790,9 @@ function update(dt){
     for(let i=0;i<en.length;i++)for(let j=i+1;j<en.length;j++){
       const a=en[i],b=en[j];
       if(Math.hypot(a.x-b.x,a.y-b.y)<a.r+b.r){
+        // Enemy tanks physically collide and separate, but never damage each other.
+        // Their collision is only a movement/position constraint.
         safeSeparateTanks(a,b);
-        if((a.ramCd||0)<=0&&(b.ramCd||0)<=0){
-          const da=collisionDamage(b,Math.max(18,b.speed)),db=collisionDamage(a,Math.max(18,a.speed));
-          a.hp-=da;b.hp-=db;a.ramCd=.3;b.ramCd=.3;a.hitFlash=.08;b.hitFlash=.08;shake=5;
-          dmgTexts.push({x:a.x,y:a.y-a.r-8,text:Math.round(da),life:.7});dmgTexts.push({x:b.x,y:b.y-b.r-8,text:Math.round(db),life:.7});
-          burst((a.x+b.x)/2,(a.y+b.y)/2,'#ff9b55',6);soundHit();
-          if(a.hp<=0){const ia=en.indexOf(a);if(ia>=0)killEnemy(a,ia)}
-          if(b.hp<=0){const ib=en.indexOf(b);if(ib>=0)killEnemy(b,ib)}
-        }
       }
     }
   }

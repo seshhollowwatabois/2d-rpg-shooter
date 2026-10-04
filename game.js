@@ -1300,8 +1300,16 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.moveTo(-r*.50,-r*.30);x.lineTo(r*.08,-r*.36);x.quadraticCurveTo(r*.42,-r*.27,r*.48,0);
     x.quadraticCurveTo(r*.42,r*.27,r*.08,r*.36);x.lineTo(-r*.50,r*.30);x.quadraticCurveTo(-r*.60,0,-r*.50,-r*.30);
   }else if(visualTurret.id==='fast'){
-    x.moveTo(-r*.43,-r*.27);x.lineTo(r*.22,-r*.31);x.quadraticCurveTo(r*.48,-r*.16,r*.48,0);
-    x.quadraticCurveTo(r*.48,r*.16,r*.22,r*.31);x.lineTo(-r*.43,r*.27);x.quadraticCurveTo(-r*.53,0,-r*.43,-r*.27);
+    // Firebird: old Tanki-style low, armored flamethrower body.
+    // Broad wedge, sloped nose, recessed center channel and heavy side armor.
+    x.moveTo(-r*.52,-r*.36);
+    x.lineTo(-r*.12,-r*.49);
+    x.lineTo(r*.34,-r*.40);
+    x.quadraticCurveTo(r*.55,-r*.20,r*.55,0);
+    x.quadraticCurveTo(r*.55,r*.20,r*.34,r*.40);
+    x.lineTo(-r*.12,r*.49);
+    x.lineTo(-r*.52,r*.36);
+    x.quadraticCurveTo(-r*.63,0,-r*.52,-r*.36);
   }else if(visualTurret.id==='rapid'){
     // Twins: compact rounded turret with a broad front and twin gun mounts.
     x.moveTo(-r*.50,-r*.34);x.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
@@ -1320,6 +1328,24 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.strokeStyle=railAccent||'#8eeaff';x.lineWidth=1.7;
     x.beginPath();x.moveTo(-r*.34,-r*.27);x.lineTo(r*.20,-r*.23);x.lineTo(r*.35,-r*.10);x.stroke();
     x.beginPath();x.moveTo(-r*.34,r*.27);x.lineTo(r*.20,r*.23);x.lineTo(r*.35,r*.10);x.stroke();
+  }else if(visualTurret.id==='fast'){
+    // Recessed top armor and the perforated heat vents characteristic of the old Firebird.
+    x.fillStyle=enemy?'#352d29':'#343a31';
+    x.beginPath();
+    x.moveTo(-r*.34,-r*.27);x.lineTo(r*.18,-r*.31);x.lineTo(r*.38,-r*.15);
+    x.lineTo(r*.38,r*.15);x.lineTo(r*.18,r*.31);x.lineTo(-r*.34,r*.27);
+    x.closePath();x.fill();
+    x.fillStyle='#151918';
+    for(const sy of [-1,1]){
+      for(let j=0;j<4;j++){
+        const vx=-r*.20+j*r*.105;
+        x.beginPath();x.ellipse(vx,sy*r*.30,r*.028,r*.055,0,0,6.283);x.fill();
+      }
+    }
+    // Raised twin fuel/heat channels running toward the nozzle.
+    x.strokeStyle='#8a9382';x.lineWidth=r*.055;
+    x.beginPath();x.moveTo(-r*.18,-r*.22);x.lineTo(r*.28,-r*.12);x.stroke();
+    x.beginPath();x.moveTo(-r*.18,r*.22);x.lineTo(r*.28,r*.12);x.stroke();
   }
 
   x.strokeStyle=railAccent||(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
@@ -1343,12 +1369,23 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
       x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),yy-r*.07,r*.14,r*.14);
       x.fillStyle='#151819';
     }
+  }else if(visualTurret.id==='fast'){
+    // Thick Firebird nozzle: short armored neck ending in a flared napalm outlet.
+    x.fillStyle='#171a18';
+    x.beginPath();
+    x.moveTo(r*.30,-r*.105);x.lineTo(r*.83,-r*.115);x.lineTo(r*1.08,-r*.19);
+    x.lineTo(r*1.22,-r*.19);x.lineTo(r*1.31,-r*.11);x.lineTo(r*1.31,r*.11);
+    x.lineTo(r*1.22,r*.19);x.lineTo(r*1.08,r*.19);x.lineTo(r*.83,r*.115);
+    x.lineTo(r*.30,r*.105);x.closePath();x.fill();
+    x.fillStyle='#4a5049';x.fillRect(r*.45,-r*.13,r*.13,r*.26);
+    x.fillStyle='#0b0d0c';
+    x.beginPath();x.ellipse(r*1.28,0,r*.10,r*.105,0,0,6.283);x.fill();
+    x.strokeStyle='#72796d';x.lineWidth=1.2;
+    x.beginPath();x.moveTo(r*.58,-r*.12);x.lineTo(r*.98,-r*.17);x.stroke();
+    x.beginPath();x.moveTo(r*.58,r*.12);x.lineTo(r*.98,r*.17);x.stroke();
   }else{
     x.fillStyle='#151819';x.fillRect(r*.35,-r*barrelWidth/2,r*1.16*barrelLength,r*barrelWidth);
     if(visualBarrel.id==='122mm'){
-      x.fillStyle='#0e1112';x.fillRect(r*(1.35*barrelLength),-r*.13,r*.20,r*.26);
-      x.fillStyle='#4a5049';x.fillRect(r*.68,-r*.16,r*.16,r*.32);
-    }else if(visualBarrel.id==='57mm'){
       x.fillStyle='#0e1112';x.fillRect(r*(1.32*barrelLength),-r*.065,r*.10,r*.13);
     }else{
       x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),-r*.105,r*.14,r*.21);

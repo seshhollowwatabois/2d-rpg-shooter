@@ -153,7 +153,7 @@ function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:8,firebirdMaxFuel:8,firebirdActive:false,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:6,firebirdMaxFuel:6,firebirdActive:false,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -889,7 +889,7 @@ function update(dt){
 
   // Firebird fuel: 8 seconds of firing capacity, recovering fully in 16 seconds when not firing.
   if(p.turretId==='fast' && p.firebirdFuel<8 && !mouse.down && !mobileFire && !keys.has(' ')){
-    p.firebirdFuel=Math.min(8,p.firebirdFuel+dt*.5);
+    p.firebirdFuel=Math.min(6,p.firebirdFuel+dt*.5);
   }
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
@@ -964,7 +964,7 @@ function update(dt){
       if(!p.firebirdActive){
         p.firebirdActive=true;
         p.cd=.5;
-      }
+    }
     }else{
       p.firebirdActive=false;
     }

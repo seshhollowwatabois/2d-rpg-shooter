@@ -15,7 +15,8 @@ const turrets=[
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:5,dispersionTime:2,scale:.82,length:.82},
   {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:9,dispersionTime:3,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:17,dispersionTime:4,scale:1.22,length:1.12}
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:17,dispersionTime:4,scale:1.22,length:1.12},
+  {id:'122mmLong',name:'122mm Long Heavy Barrel',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:8,scale:1.28,length:1.65,instant:true}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -87,12 +88,29 @@ function makeEnemy(){
 }
 function shoot(){
   if(p.cd>0)return;
-  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  const barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
-  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300),vy:Math.sin(fireAngle)*({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300),r:2.8,life:1.8,dmg:barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage),penetration:barrel.penetration,trail:[]});
-  p.cd=barrel.reloadTime;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+  const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
+  const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+  if(barrel.instant){
+    const range=1400,cos=Math.cos(fireAngle),sin=Math.sin(fireAngle);
+    let hit=null,best=Infinity;
+    for(const e of en){
+      const dx=e.x-muzzleX,dy=e.y-muzzleY,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
+      if(along>0&&along<range&&side<=e.r&&along<best){hit=e;best=along}
+    }
+    if(hit){
+      const result=applyBulletHit(hit,dmg,hit.x,hit.y,barrel.penetration,null);
+      if(hit.hp<=0)killEnemy(hit,en.indexOf(hit));
+    }
+    burst(muzzleX,muzzleY,'#ffd27a',12);
+  }else{
+    const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
+    bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,penetration:barrel.penetration,trail:[]});
+  }
+  p.cd=barrel.reloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);
 }
 function getArmor(target,zone){
   if(target===p){

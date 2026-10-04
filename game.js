@@ -384,14 +384,13 @@ function shoot(){
   if(coarse&&!mobileFire)return;
   if(p.cd>0)return;
   const barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-  const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
   }
   const maxDispersion=140,dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
   const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
-  const fireAngle=Math.atan2(mouse.y+Math.sin(ra)*rr-p.y,mouse.x+Math.cos(ra)*rr-p.x);
+  const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
@@ -624,11 +623,9 @@ function update(dt){
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
-      const aimAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
       const maxDispersion=140,dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
       const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
-      const fireAngle=Math.atan2(mouse.y+Math.sin(ra)*rr-p.y,mouse.x+Math.cos(ra)*rr-p.x);
-      p.turretAngle=aimAngle;
+      const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
       const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
       fireRailgun(fireAngle,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime;
     }

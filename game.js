@@ -428,6 +428,7 @@ function shoot(){
       if(wallRayHit(muzzle.x,muzzle.y,fireAngle,Math.min(dist,range)))continue;
       const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       applyBulletHit(e,dmg,e.x,e.y,null,0);
+      applyBurn(e);
       hitAny=true;
       if(e.hp<=0){
         const j=en.indexOf(e);
@@ -468,6 +469,8 @@ function getHitProfile(target,bx,by){
   return {rear:false,zone:'side'};
 }
 function applyBurn(target){
+  // Firebird applies a real burning DoT: 3 DPS per stack, max 5 stacks.
+  // Every new flame hit refreshes the 8s lifetime and 1s stack-decay timer.
   target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
   target.burnTime=8;
   target.burnGrace=1;
@@ -497,6 +500,7 @@ function enemyShoot(e){
       if(dist<=range&&da<=cone&&!wallRayHit(e.x,e.y,a,Math.min(dist,range))){
         const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
         applyBulletHit(p,damage,p.x,p.y,null,0);
+        applyBurn(p);
         if(p.hp<=0){p.hp=0;die();return;}
       }
     }
@@ -1028,9 +1032,6 @@ function update(dt){
         const damage=b.dmg;
         p.hp-=damage;p.inv=.28; soundHit();
         dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
-        if(profile.rear&&p.burnTime<=0&&Math.random()<.01){
-          p.burnTime=10;p.burnDamage=p.max*.40;burst(p.x,p.y,'#ff9b55',16);
-        }
         burst(b.x,b.y,b.col||'#ff765d',14);
         if(p.hp<=0)die();
       }

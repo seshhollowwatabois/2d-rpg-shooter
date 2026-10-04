@@ -12,7 +12,7 @@ const hulls=[
   {id:'heavy',name:'Titan',cost:80,hp:180,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];
 const turrets=[
-  {id:'standard',name:'Standard',cost:0,turn:1.25,hp:0,scale:1},
+  {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
   {id:'rapid',name:'Twins',cost:0,turn:2.4,scale:.9},
   {id:'fast',name:'Heavy',cost:0,turn:3.4,scale:.82},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1.08}
@@ -1236,10 +1236,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.quadraticCurveTo(r*.52,-r*.24,r*.52,0);x.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
     x.quadraticCurveTo(-r*.18,r*.45,-r*.50,r*.34);x.quadraticCurveTo(-r*.58,0,-r*.50,-r*.34);
   }else{
-    x.moveTo(-r*.49,-r*.30);x.quadraticCurveTo(-r*.28,-r*.48,r*.05,-r*.45);
-    x.lineTo(r*.37,-r*.31);x.quadraticCurveTo(r*.54,-r*.16,r*.54,0);
-    x.quadraticCurveTo(r*.54,r*.16,r*.37,r*.31);x.lineTo(r*.05,r*.45);
-    x.quadraticCurveTo(-r*.28,r*.48,-r*.49,r*.30);x.quadraticCurveTo(-r*.58,0,-r*.49,-r*.30);
+    // Smoky: classic Tanki-style compact, rounded turret with a distinct sloped front.
+    x.moveTo(-r*.48,-r*.30);x.quadraticCurveTo(-r*.28,-r*.46,r*.02,-r*.43);
+    x.lineTo(r*.31,-r*.30);x.quadraticCurveTo(r*.48,-r*.15,r*.50,0);
+    x.quadraticCurveTo(r*.48,r*.15,r*.31,r*.30);x.lineTo(r*.02,r*.43);
+    x.quadraticCurveTo(-r*.28,r*.46,-r*.48,r*.30);x.quadraticCurveTo(-r*.57,0,-r*.48,-r*.30);
   }
   x.closePath();x.fill();
 

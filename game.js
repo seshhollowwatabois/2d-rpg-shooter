@@ -176,7 +176,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,turretAngularSpeed:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -714,30 +714,33 @@ function update(dt){
     moveWithWalls(p,Math.cos(p.angle)*drive*moveSpeed*dt,Math.sin(p.angle)*drive*moveSpeed*dt);
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
-  // World-of-Tanks-style dispersion: the reticle continuously expands while the hull
-  // is moving and smoothly contracts while stationary. The value is never reset every frame.
-  // Turret movement no longer adds dispersion. Aim precision is affected only by
-  // the hull's current movement speed when the shot is fired.
+  // World-of-Tanks-style dispersion: the reticle expands while the hull OR turret
+  // is moving and smoothly contracts after both settle. Aim precision is persistent.
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
+  const turretStep=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
+  const turretMotionRatio=Math.min(1,Math.abs(turretStep)/Math.max(.0001,playerTurretTurnRate*dt));
+  p.turretAngularSpeed=dt>0?Math.abs(turretStep)/dt:0;
 
-  // Turret movement no longer adds shot dispersion. Aim time controls how quickly the gun settles.
+  // Turret movement directly disturbs the gun's aim. The faster the turret is turning,
+  // the more precision is lost; once it stops, aim time controls the recovery.
   const barrelForAim=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   const railAimTier=p.barrelId==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
   const aimTime=barrelForAim.aimTime*(railAimTier?.aimMult||1);
   const turretAligned=Math.abs(turretDa)<.012;
-  if(turretAligned){
-    p.aimPrecision=Math.min(barrelForAim.precision,p.aimPrecision+(barrelForAim.precision-p.aimPrecision)*Math.min(1,dt/Math.max(.05,aimTime)));
+  if(turretMotionRatio>.001||!turretAligned){
+    const motionLoss=Math.max(.5,barrelForAim.precision/Math.max(.05,aimTime));
+    p.aimPrecision=Math.max(.02,p.aimPrecision-dt*motionLoss*(1+turretMotionRatio*2.5));
   }else{
-    p.aimPrecision=Math.max(.02,p.aimPrecision-dt*Math.max(.5,barrelForAim.precision/Math.max(.05,aimTime))*2.5);
+    p.aimPrecision=Math.min(barrelForAim.precision,p.aimPrecision+(barrelForAim.precision-p.aimPrecision)*Math.min(1,dt/Math.max(.05,aimTime)));
   }
 
   // Fire using the turret's current facing BEFORE applying this frame's aim rotation.
-  // This prevents the fire input itself from causing even one frame of apparent turret snapping.
+  // This keeps the shot tied to the same turret state used for the aim calculation.
   if(mouse.down||mobileFire||keys.has(' '))shoot();
 
-  p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
+  p.turretAngle+=turretStep;
 
   for(let i=bs.length-1;i>=0;i--){
     const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();
@@ -1176,9 +1179,10 @@ function draw(){
   const turretAngleToMouse=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   const turretError=Math.abs(((turretAngleToMouse-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
   const turretAlignment=Math.max(0,1-turretError/.18);
-  const accuracy=Math.max(.02,Math.min(1,hullAccuracy*turretAlignment));
+  const turretMotionPenalty=Math.max(0,Math.min(1,(p.turretAngularSpeed||0)/Math.max(.01,(turrets.find(v=>v.id===p.turretId)||turrets[0]).turn)));
+  const accuracy=Math.max(.02,Math.min(1,hullAccuracy*turretAlignment*(1-turretMotionPenalty*.65)));
   const precisionRadius=18+122*(1-accuracy);
-  const aimReady=turretError<.012&&liveHullSpeedRatio<.001&&p.aimPrecision>=liveBarrel.precision-.002;
+  const aimReady=turretError<.012&&liveHullSpeedRatio<.001&&turretMotionPenalty<.001&&p.aimPrecision>=liveBarrel.precision-.002;
   const aimCenterX=mouse.x;
   const aimCenterY=mouse.y;
   x.save();

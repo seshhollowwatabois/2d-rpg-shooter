@@ -12,10 +12,10 @@ const hulls=[
   {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];
 const turrets=[
-  {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},
-  {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,scale:.9},
-  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,scale:.82},
-  {id:'railgun',name:'Railgun Turret',cost:0,turn:1.05,scale:1.08}
+  {id:'standard',name:'Standard',cost:0,turn:1.25,hp:0,scale:1},
+  {id:'rapid',name:'Rapid',cost:0,turn:2.4,scale:.9},
+  {id:'fast',name:'Heavy',cost:0,turn:3.4,scale:.82},
+  {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1.08}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
@@ -28,19 +28,31 @@ const barrels=[
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,reloadTime:20,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
+function gunForTurret(turretId){
+  if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];
+  if(turretId==='fast')return barrels.find(v=>v.id==='122mm')||barrels[2];
+  if(turretId==='railgun')return barrels.find(v=>v.id==='122mmLong')||barrels[3];
+  return barrels.find(v=>v.id==='57mm')||barrels[0];
+}
+function turretForPlayer(){
+  const t=turrets.find(v=>v.id===p?.turretId)||turrets[0];
+  if(t.id==='railgun'){
+    const tier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+    return {...t,turn:t.turn*(tier.turnMult||1)};
+  }
+  return t;
+}
 const railgunTiers=[
-  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.85,pierceDamageMult:.67,hullMoveMult:.80},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.70,pierceDamageMult:.83,hullMoveMult:.60},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.55,pierceDamageMult:1,hullMoveMult:.40}
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,turnMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.85,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.70,pierceDamageMult:.83,hullMoveMult:.60,turnMult:2.8},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.55,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
-let ownedBarrels=JSON.parse(localStorage.getItem('tankOwnedBarrels')||'["85mm"]');
 let ownedEngines=JSON.parse(localStorage.getItem('tankOwnedEngines')||'["standard"]');
 let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
 let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
-let equippedBarrel=localStorage.getItem('tankEquippedBarrel')||'85mm';
 let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
 let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);
 let railgunOwnedTier=Math.max(railgunTier,Number(localStorage.getItem('tankRailgunOwnedTier')||0));
@@ -116,8 +128,8 @@ function saveCurrent(slot=activeSlot){
   const slots=getSaveSlots();
   slots[slot-1]={
     version:1,level:p.lv,xp:p.xp,next:p.next,coins:p.coins,kills:p.kills,
-    hullId:equippedHull,turretId:equippedTurret,barrelId:equippedBarrel,engineId:equippedEngine,
-    ownedHulls:[...ownedHulls],ownedTurrets:[...ownedTurrets],ownedBarrels:[...ownedBarrels],ownedEngines:[...ownedEngines],railgunTier,
+    hullId:equippedHull,turretId:equippedTurret,engineId:equippedEngine,
+    ownedHulls:[...ownedHulls],ownedTurrets:[...ownedTurrets],ownedEngines:[...ownedEngines],railgunTier,
     savedAt:Date.now()
   };
   writeSaveSlots(slots);renderSaveSlots();
@@ -126,8 +138,8 @@ function applySave(slot){
   const slots=getSaveSlots(),data=slots[slot-1];
   if(!data)return false;
   activeSlot=slot;
-  ownedHulls=data.ownedHulls||ownedHulls;ownedTurrets=data.ownedTurrets||ownedTurrets;ownedBarrels=data.ownedBarrels||ownedBarrels;ownedEngines=data.ownedEngines||ownedEngines;
-  equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedBarrel=data.barrelId||'85mm';equippedEngine=data.engineId||'standard';railgunTier=Math.max(0,Math.min(3,Number(data.railgunTier)||0));
+  ownedHulls=data.ownedHulls||ownedHulls;ownedTurrets=data.ownedTurrets||ownedTurrets;ownedEngines=data.ownedEngines||ownedEngines;
+  equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedEngine=data.engineId||'standard';railgunTier=Math.max(0,Math.min(3,Number(data.railgunTier)||0));
   saveShop();
   reset();
   p.lv=Math.max(1,data.level||1);p.xp=Math.max(0,data.xp||0);p.next=Math.max(120,data.next||120);p.coins=Math.max(0,data.coins||0);p.kills=Math.max(0,data.kills||0);
@@ -174,9 +186,9 @@ function startNewGame(){
   activeSlot=slot;reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveCurrent(slot);showGame();
 }
 function reset(){
-  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
+  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -292,13 +304,6 @@ function addXp(n){
 function waveSize(w){return 3+w*2;}
 function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;soundWave();}
 
-function pickEnemyGun(){
-  const roll=Math.random();
-  if(roll<.55)return '57mm';
-  if(roll<.85)return '85mm';
-  if(roll<.97)return '122mm';
-  return '122mmLong';
-}
 function pickEnemyTurret(){
   const roll=Math.random();
   if(roll<.55)return 'standard';
@@ -328,8 +333,7 @@ function makeEnemy(){
   // Stronger equipment is weighted to be rarer so early waves do not become unfair.
   const hullId=pickEnemyHull();
   const turretId=pickEnemyTurret();
-  const enemyBarrelId=pickEnemyGun();
-  const engineId=pickEnemyEngine();
+    const engineId=pickEnemyEngine();
   const hull=hulls.find(v=>v.id===hullId)||hulls[0];
   const turret=turrets.find(v=>v.id===turretId)||turrets[0];
   const engine=engines.find(v=>v.id===engineId)||engines[0];
@@ -346,7 +350,7 @@ function makeEnemy(){
     speed:hull.speed*.4*engine.speed,
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
-    heavy,hullId,turretId,enemyBarrelId,engineId,mass,
+    heavy,hullId,turretId,engineId,mass,
     angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,ramCd:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
@@ -405,7 +409,7 @@ function shoot(){
   const coarse=window.matchMedia?.('(pointer:coarse)').matches;
   if(coarse&&!mobileFire)return;
   if(p.cd>0)return;
-  const barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  const barrel=gunForTurret(p.turretId);
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
@@ -445,7 +449,7 @@ function applyBulletHit(target,baseDamage,bx,by,b=null){
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  const barrel=barrels.find(v=>v.id===e.enemyBarrelId)||barrels[0];
+  const barrel=gunForTurret(e.turretId);
   const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   if(barrel.instant){
     const range=1400,cos=Math.cos(a),sin=Math.sin(a);
@@ -474,11 +478,9 @@ function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
 function saveShop(){
   localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
   localStorage.setItem('tankOwnedTurrets',JSON.stringify(ownedTurrets));
-  localStorage.setItem('tankOwnedBarrels',JSON.stringify(ownedBarrels));
-  localStorage.setItem('tankEquippedHull',equippedHull);
+    localStorage.setItem('tankEquippedHull',equippedHull);
   localStorage.setItem('tankEquippedTurret',equippedTurret);
-  localStorage.setItem('tankEquippedBarrel',equippedBarrel);
-  localStorage.setItem('tankOwnedEngines',JSON.stringify(ownedEngines));
+    localStorage.setItem('tankOwnedEngines',JSON.stringify(ownedEngines));
   localStorage.setItem('tankEquippedEngine',equippedEngine);
   localStorage.setItem('tankRailgunTier',String(railgunTier));
 }
@@ -542,7 +544,7 @@ function renderShop(){
     const text=document.createElement('div');text.className='shopItemName';
     text.innerHTML='<b>'+item.name+'</b>';
     info.appendChild(text);
-    if(type==='barrel'&&item.id==='122mmLong'&&isSelected){
+    if(type==='turret'&&item.id==='railgun'&&isSelected){
       const tiers=document.createElement('div');tiers.className='railgunTierMini';
       railgunTiers.forEach(t=>{
         const owned=t.tier<=railgunOwnedTier;
@@ -566,15 +568,12 @@ function renderShop(){
       if(!owned){
         if(type==='hull')ownedHulls.push(item.id);
         else if(type==='turret')ownedTurrets.push(item.id);
-        else if(type==='barrel')ownedBarrels.push(item.id);
-        else ownedEngines.push(item.id);
+                else ownedEngines.push(item.id);
       }
       if(type==='hull'){
         equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max);
       }else if(type==='turret'){
         equippedTurret=item.id;p.turretId=item.id;p.max=hullForPlayer().hp;p.hp=Math.min(p.hp,p.max);
-      }else if(type==='barrel'){
-        equippedBarrel=item.id;p.barrelId=item.id;
       }else equippedEngine=item.id;
       saveShop();renderShop();
     };
@@ -589,7 +588,7 @@ function renderShop(){
         addStat('Hit Points',item.hp,true);addStat('Forward Speed',item.speed);addStat('Reverse Speed',item.reverse);addStat('Hull Turn',item.turn.toFixed(2));
         addStat('Size',item.scale.toFixed(2)+'x');
       }else if(type==='turret'){
-        addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Size',item.scale.toFixed(2)+'x');
+        const gun=gunForTurret(item.id);const rt=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;const turn=item.id==='railgun'?item.turn*(rt?.turnMult||1):item.turn;const min=Math.round(gun.minDamage*(rt?.damageMult||1));const max=Math.round(gun.maxDamage*(rt?.damageMult||1));const reload=gun.reloadTime*(rt?.reloadMult||1);addStat('Turret Rotation',turn.toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',min+'-'+max);addStat('Reload Time',reload.toFixed(2)+'s');addStat('Size',item.scale.toFixed(2)+'x');
       }else if(type==='engine'){
         addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');
       }else{
@@ -605,16 +604,14 @@ function renderShop(){
 
   const sectionTitle=document.createElement('div');
   sectionTitle.className='shopSectionTitle';
-  sectionTitle.textContent=shopCategory==='hull'?'HULLS':shopCategory==='barrel'?'GUNS':shopCategory==='turret'?'TURRETS':'ENGINES';
+  sectionTitle.textContent=shopCategory==='hull'?'HULLS':shopCategory==='turret'?'TURRETS':'ENGINES';
   box.appendChild(sectionTitle);
 
-  const list=shopCategory==='hull'?hulls:shopCategory==='barrel'?barrels:shopCategory==='turret'?turrets:engines;
+  const list=shopCategory==='hull'?hulls:shopCategory==='turret'?turrets:engines;
   list.forEach(v=>add(shopCategory,v,
     shopCategory==='hull'?ownedHulls.includes(v.id):
-    shopCategory==='barrel'?ownedBarrels.includes(v.id):
     shopCategory==='turret'?ownedTurrets.includes(v.id):ownedEngines.includes(v.id),
     shopCategory==='hull'?equippedHull===v.id:
-    shopCategory==='barrel'?equippedBarrel===v.id:
     shopCategory==='turret'?equippedTurret===v.id:equippedEngine===v.id
   ));
 
@@ -632,7 +629,7 @@ function update(dt){
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
-      const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
+      const barrelNow=gunForTurret(p.turretId);
       fireRailgun(barrelNow);
       p.railCharging=false;
       const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
@@ -687,7 +684,7 @@ function update(dt){
   if(mobileDrive.right)turn=1;
 
   // Keep rotation and movement as separate upgradeable stats.
-  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const hullTurnRate=hull.turn*engine.turn;
   const driveSpeed=hull.speed*engine.speed;
@@ -862,7 +859,7 @@ function update(dt){
   shake=Math.max(0,shake-dt*25);
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,barrelId='85mm',turretId='standard',hullId='standard'){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard'){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   // T-34-85-inspired top-down proportions:
@@ -966,7 +963,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // Rounded T-34-85-inspired turret, independent from hull.
   x.save();x.rotate(turretAngle-hullAngle);
-  const visualBarrel=barrels.find(v=>v.id===barrelId)||barrels[0];
+  const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';
   x.beginPath();
@@ -1054,7 +1051,7 @@ function draw(){
   if(p.railCharging){
     // Charge effect is attached to the actual gun direction, not the cursor.
     const a=p.turretAngle;
-    const chargeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[3];
+    const chargeBarrel=gunForTurret(p.turretId);
     const muzzleDistance=p.r*(.38+1.16*(chargeBarrel.length||1));
     const mx=p.x+Math.cos(a)*muzzleDistance,my=p.y+Math.sin(a)*muzzleDistance;
     const progress=1-p.railCharge;
@@ -1081,7 +1078,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.enemyBarrelId||'85mm',e.turretId||'standard',e.hullId||'standard');
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard');
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -1097,11 +1094,11 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.enemyBarrelId||'85mm',e.turretId||'standard',e.hullId||'standard');
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard');
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
-    const enemyGun=barrels.find(v=>v.id===e.enemyBarrelId)||barrels[0];
+    const enemyGun=gunForTurret(e.turretId);
     const enemyEngine=engines.find(v=>v.id===e.engineId)||engines[0];
     x.font='bold 12px system-ui';
     x.textAlign='center';
@@ -1127,9 +1124,9 @@ function draw(){
     x.beginPath();x.arc(p.x+p.r*.05,p.y-p.r*.28,p.r*.18,0,6.283);x.fill();
     x.globalAlpha=1;
   }
-  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.barrelId,p.turretId,p.hullId);
+  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
-  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
   const actualReloadTime=barrel.id==='122mmLong'
     ? barrel.reloadTime*(activeRailTier?.reloadMult||1)
@@ -1152,7 +1149,7 @@ function draw(){
   // Reload countdown only; aiming/dispersion UI removed.
   const cursorReload=$('cursorReload');
   if(cursorReload){
-    const activeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+    const activeBarrel=gunForTurret(p.turretId);
     const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
     const actualReloadTime=activeBarrel.id==='122mmLong'
       ? activeBarrel.reloadTime*(activeRailTier?.reloadMult||1)

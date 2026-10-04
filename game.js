@@ -410,7 +410,7 @@ function fireRailgun(){
   railBeams.push({
     x1:muzzleX,y1:muzzleY,
     x2:muzzleX+cos*wallDist,y2:muzzleY+sin*wallDist,
-    life:.45,maxLife:.45,angle:fireAngle
+    life:2,maxLife:2,angle:fireAngle
   });
   burst(muzzleX,muzzleY,'#bffcff',24);
   burst(muzzleX,muzzleY,'#ffffff',12);
@@ -996,6 +996,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.save();x.rotate(turretAngle-hullAngle);
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
+  const railAccent=visualTurret.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))].beam:null;
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';
   x.beginPath();
   if(visualTurret.id==='railgun'){
@@ -1016,13 +1017,13 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.closePath();x.fill();
 
   if(visualTurret.id==='railgun'){
-    x.strokeStyle=enemy?(heavy?'#9b9284':'#a95d63'):'#8eeaff';x.lineWidth=1.5;
+    x.strokeStyle=railAccent|| (enemy?(heavy?'#9b9284':'#a95d63'):'#8eeaff');x.lineWidth=1.5;
     x.beginPath();x.moveTo(-r*.34,-r*.30);x.lineTo(r*.18,-r*.27);x.lineTo(r*.34,-r*.12);x.stroke();
     x.beginPath();x.moveTo(-r*.34,r*.30);x.lineTo(r*.18,r*.27);x.lineTo(r*.34,r*.12);x.stroke();
   }
 
   // Turret facets / casting details.
-  x.strokeStyle=enemy?(heavy?'#746c61':'#925055'):'#7f8b75';x.lineWidth=1.25;
+  x.strokeStyle=railAccent|| (enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
   x.beginPath();x.moveTo(-r*.27,-r*.42);x.quadraticCurveTo(-r*.08,-r*.30,r*.02,-r*.29);x.stroke();
   x.beginPath();x.moveTo(-r*.27,r*.42);x.quadraticCurveTo(-r*.08,r*.30,r*.02,r*.29);x.stroke();
 
@@ -1051,7 +1052,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   }
 
   // Small turret fittings.
-  x.fillStyle=enemy?(heavy?'#746a5d':'#9b5458'):'#849176';
+  x.fillStyle=railAccent|| (enemy?(heavy?'#746a5d':'#9b5458'):'#849176');
   x.beginPath();x.arc(-r*.36,-r*.23,r*.04,0,6.283);x.fill();
   x.beginPath();x.arc(-r*.36,r*.23,r*.04,0,6.283);x.fill();
 

@@ -969,6 +969,16 @@ function draw(){
     x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=1;x.strokeRect(w.x+3,w.y+3,w.w-6,w.h-6);
     for(let bx=w.x+14;bx<w.x+w.w-8;bx+=28){x.beginPath();x.moveTo(bx,w.y+3);x.lineTo(bx+3,w.y+w.h-3);x.stroke()}
   }
+  // 122mm Long charge animation: energy builds around the muzzle for 1 second.
+  if(p.railCharging){
+    const a=Math.atan2(mouse.y-p.y,mouse.x-p.x),mx=p.x+Math.cos(a)*34,my=p.y+Math.sin(a)*34;
+    const progress=1-p.railCharge;
+    x.save();x.translate(mx,my);x.rotate(a);x.globalAlpha=.35+.65*progress;
+    x.strokeStyle='#79faff';x.lineWidth=3+5*progress;x.beginPath();x.arc(0,0,8+14*progress,0,6.283);x.stroke();
+    x.strokeStyle='#ffffff';x.lineWidth=2;x.beginPath();x.moveTo(5,0);x.lineTo(22+18*progress,0);x.stroke();
+    x.fillStyle='#dfffff';x.globalAlpha=.5+.5*progress;x.beginPath();x.arc(0,0,4+7*progress,0,6.283);x.fill();
+    x.restore();
+  }
   // Railgun beams linger and fade smoothly for 2 seconds.
   for(const b of railBeams){
     const a=Math.max(0,b.life/b.maxLife);

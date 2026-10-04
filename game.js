@@ -1072,15 +1072,15 @@ function draw(){
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
-  // Destroyed tanks keep the exact normal tank design and geometry, but render fully black.
-  // Use a canvas filter instead of source-atop: source-atop was painting black over the
-  // already-rendered battlefield and could leave permanent black squares behind wrecks.
+  // Destroyed tanks keep the exact normal tank geometry, but are rendered black.
+  // Multiply only affects pixels actually painted by the tank, so it cannot create
+  // rectangular black patches on the battlefield.
   for(const e of deadTanks){
     x.save();
     x.globalAlpha=1;
-    x.filter='brightness(0)';
+    x.globalCompositeOperation='multiply';
     tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.enemyBarrelId||'85mm',e.turretId||'standard',e.hullId||'standard');
-    x.filter='none';
+    x.globalCompositeOperation='source-over';
     x.restore();
   }
   // shell trails / explosions

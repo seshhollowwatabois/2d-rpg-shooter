@@ -607,6 +607,7 @@ function renderShop(){
     btn.textContent=equipped?'EQUIPPED':'EQUIP';
     btn.disabled=equipped;
     btn.onclick=e=>{e.stopPropagation();initAudio();soundUi();equipShopItem(type,item)};
+    row.appendChild(btn);
     row.onclick=()=>{selectedShopItem=isSelected?null:item.id;renderShop()};
     box.appendChild(row);
     if(isSelected){

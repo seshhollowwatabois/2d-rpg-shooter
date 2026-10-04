@@ -1179,9 +1179,8 @@ function draw(){
   const accuracy=Math.max(.02,Math.min(1,hullAccuracy*turretAlignment));
   const precisionRadius=18+122*(1-accuracy);
   const aimReady=turretError<.012&&liveHullSpeedRatio<.001&&p.aimPrecision>=liveBarrel.precision-.002;
-  const aimCenterDist=Math.max(90,Math.min(520,precisionRadius*2.4));
-  const aimCenterX=p.x+Math.cos(p.turretAngle)*aimCenterDist;
-  const aimCenterY=p.y+Math.sin(p.turretAngle)*aimCenterDist;
+  const aimCenterX=mouse.x;
+  const aimCenterY=mouse.y;
   x.save();
   x.strokeStyle=aimReady?'#39e66b':accuracy<.5?'#ff4b4b':'#ffd21a';
   x.lineWidth=aimReady?1.5:accuracy<.5?2.5:2;

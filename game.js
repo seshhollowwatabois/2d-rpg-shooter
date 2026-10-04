@@ -648,7 +648,7 @@ function renderShop(){
     box.appendChild(statsPanel);
     const railRow=document.createElement('div');railRow.className='railTierRow';
     railgunTiers.forEach(t=>{
-      const card=document.createElement('div');card.className='railTierCard'+(t.tier===railgunTier?' selected':'');
+      const card=document.createElement('div');card.className='railTierCard'+(t.tier===railgunTier?' selected':'')+(t.tier===railgunTier+1?' upgradeAvailable':'');
       const sw=document.createElement('div');sw.className='railTierBeam';sw.style.setProperty('--rail-color',t.beam);sw.style.setProperty('--rail-glow',t.glow);
       const title=document.createElement('b');title.textContent='Tier '+t.tier;
       const name=document.createElement('small');name.textContent=t.name;

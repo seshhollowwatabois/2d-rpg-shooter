@@ -742,7 +742,10 @@ function renderShop(){
     }else if(type==='turret'){
       const sc=item.scale*.95;
       const tier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-      const accent=tier?.beam||null;
+      const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
+      const accent=tier?.beam||fireTier?.accent||null;
+      const fireFlame=fireTier?.flame||null;
+      const fireCore=fireTier?.core||null;
       q.fillStyle='#343c34';q.beginPath();q.arc(-2,0,20*sc,0,6.283);q.fill();
       q.fillStyle=item.id==='fast'?'#45413b':item.id==='rapid'?'#4b5748':item.id==='railgun'?'#202725':'#424d3f';
       q.beginPath();
@@ -751,19 +754,51 @@ function renderShop(){
         q.lineTo(18*sc,5*sc);q.quadraticCurveTo(14*sc,10*sc,2*sc,13*sc);q.lineTo(-16*sc,11*sc);
         q.quadraticCurveTo(-20*sc,0,-16*sc,-11*sc);
       }else if(item.id==='fast'){
-        q.roundRect(-15*sc,-9*sc,30*sc,18*sc,5*sc);
+        // Firebird shop preview mirrors the in-game armored flamethrower.
+        q.moveTo(-16*sc,-11*sc);
+        q.lineTo(-4*sc,-14*sc);
+        q.lineTo(11*sc,-11*sc);
+        q.quadraticCurveTo(16*sc,-7*sc,16*sc,0);
+        q.quadraticCurveTo(16*sc,7*sc,11*sc,11*sc);
+        q.lineTo(-4*sc,14*sc);
+        q.lineTo(-16*sc,11*sc);
+        q.quadraticCurveTo(-20*sc,0,-16*sc,-11*sc);
       }else if(item.id==='rapid'){
         q.roundRect(-16*sc,-10*sc,32*sc,20*sc,6*sc);
       }else{
         q.roundRect(-16*sc,-10*sc,32*sc,20*sc,6*sc);
       }
       q.closePath();q.fill();
+
+      if(item.id==='fast'){
+        // Tier-colored armor, vents and core stripe.
+        q.fillStyle=fireFlame;q.globalAlpha=.95;
+        q.beginPath();q.moveTo(-14*sc,-9*sc);q.lineTo(8*sc,-11*sc);q.lineTo(11*sc,-7*sc);
+        q.lineTo(-11*sc,-5*sc);q.closePath();q.fill();
+        q.beginPath();q.moveTo(-14*sc,9*sc);q.lineTo(8*sc,11*sc);q.lineTo(11*sc,7*sc);
+        q.lineTo(-11*sc,5*sc);q.closePath();q.fill();
+        q.globalAlpha=1;
+
+        q.fillStyle=accent;
+        for(const sy of [-1,1])for(let j=0;j<4;j++){
+          q.beginPath();q.ellipse((-9+j*5)*sc,sy*9*sc,1.1*sc,2*sc,0,0,6.283);q.fill();
+        }
+        q.strokeStyle=accent;q.lineWidth=1.8*sc;
+        q.beginPath();q.moveTo(-7*sc,-7*sc);q.lineTo(11*sc,-3.5*sc);q.stroke();
+        q.beginPath();q.moveTo(-7*sc,7*sc);q.lineTo(11*sc,3.5*sc);q.stroke();
+        q.strokeStyle=fireCore;q.lineWidth=1.4*sc;
+        q.beginPath();q.moveTo(-3*sc,0);q.lineTo(13*sc,0);q.stroke();
+      }
+
       if(accent){
         q.strokeStyle=accent;q.lineWidth=1.8;
         q.beginPath();q.moveTo(-11*sc,-9*sc);q.lineTo(6*sc,-8*sc);q.lineTo(12*sc,-4*sc);q.stroke();
         q.beginPath();q.moveTo(-11*sc,9*sc);q.lineTo(6*sc,8*sc);q.lineTo(12*sc,4*sc);q.stroke();
       }
       q.fillStyle='#292f2a';q.roundRect(4*sc,-3.5*sc,13*sc,7*sc,2*sc);q.fill();
+      if(item.id==='fast'){
+        q.fillStyle=fireFlame;q.globalAlpha=.9;q.fillRect(15*sc,-3.5*sc,3*sc,7*sc);q.globalAlpha=1;
+      }
       const gun=gunForTurret(item.id);
       q.strokeStyle='#151819';q.lineWidth=Math.max(3,5*sc);q.lineCap='round';
       if(item.id==='rapid'){
@@ -1385,31 +1420,40 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     const fireFlame=fireAccentTier.flame;
     const fireCore=fireAccentTier.core;
 
-    // Recessed top armor.
+    // Strong, unmistakable Firebird tier accents.
     x.fillStyle=enemy?'#352d29':'#343a31';
     x.beginPath();
     x.moveTo(-r*.34,-r*.27);x.lineTo(r*.18,-r*.31);x.lineTo(r*.38,-r*.15);
     x.lineTo(r*.38,r*.15);x.lineTo(r*.18,r*.31);x.lineTo(-r*.34,r*.27);
     x.closePath();x.fill();
 
-    // Tier-colored heat vents.
+    // Bright tier-colored side armor plates.
     x.fillStyle=fireFlame;
+    x.globalAlpha=.95;
+    x.beginPath();x.moveTo(-r*.34,-r*.27);x.lineTo(r*.18,-r*.31);x.lineTo(r*.28,-r*.20);
+      x.lineTo(-r*.25,-r*.16);x.closePath();x.fill();
+    x.beginPath();x.moveTo(-r*.34,r*.27);x.lineTo(r*.18,r*.31);x.lineTo(r*.28,r*.20);
+      x.lineTo(-r*.25,r*.16);x.closePath();x.fill();
+    x.globalAlpha=1;
+
+    // Large tier-colored heat vents.
+    x.fillStyle=fireAccent;
     for(const sy of [-1,1]){
       for(let j=0;j<4;j++){
         const vx=-r*.20+j*r*.105;
-        x.beginPath();x.ellipse(vx,sy*r*.30,r*.028,r*.055,0,0,6.283);x.fill();
+        x.beginPath();x.ellipse(vx,sy*r*.30,r*.035,r*.065,0,0,6.283);x.fill();
       }
     }
 
-    // Raised twin fuel/heat channels matching the flame accent.
-    x.strokeStyle=fireAccent;x.lineWidth=r*.055;
-    x.beginPath();x.moveTo(-r*.18,-r*.22);x.lineTo(r*.28,-r*.12);x.stroke();
-    x.beginPath();x.moveTo(-r*.18,r*.22);x.lineTo(r*.28,r*.12);x.stroke();
+    // Raised twin fuel channels.
+    x.strokeStyle=fireAccent;x.lineWidth=r*.065;
+    x.beginPath();x.moveTo(-r*.18,-r*.22);x.lineTo(r*.30,-r*.11);x.stroke();
+    x.beginPath();x.moveTo(-r*.18,r*.22);x.lineTo(r*.30,r*.11);x.stroke();
 
-    // Small glowing core stripe at the center of the Firebird housing.
-    x.strokeStyle=fireCore;x.lineWidth=r*.032;
-    x.globalAlpha=.72;
-    x.beginPath();x.moveTo(-r*.10,0);x.lineTo(r*.34,0);x.stroke();
+    // Bright core stripe.
+    x.strokeStyle=fireCore;x.lineWidth=r*.045;
+    x.globalAlpha=.9;
+    x.beginPath();x.moveTo(-r*.08,0);x.lineTo(r*.36,0);x.stroke();
     x.globalAlpha=1;
   }
 

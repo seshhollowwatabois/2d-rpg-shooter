@@ -205,7 +205,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:8,firebirdMaxFuel:8,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:8,firebirdMaxFuel:8,firebirdActive:false,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -488,14 +488,6 @@ function shoot(){
         if(j>=0)killEnemy(e,j);
       }
     }
-  // Dense flame particles make the weapon read as a flamethrower instead of a projectile.
-    for(let i=0;i<45;i++){
-      const a=fireAngle+(Math.random()-.5)*cone*1.7;
-      const d=18+Math.random()*range;
-      const px=muzzle.x+Math.cos(a)*d,py=muzzle.y+Math.sin(a)*d;
-      ps.push({x:px,y:py,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.16+Math.random()*.24,col:Math.random()<.55?'#ff5a18':Math.random()<.7?'#ffb52e':'#fff1a6',size:5+Math.random()*5});
-    }
-    burst(muzzle.x,muzzle.y,'#ff6a22',6);
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
     p.firebirdFuel=Math.max(0,p.firebirdFuel-barrel.reloadTime);
@@ -1014,7 +1006,25 @@ function update(dt){
   const turretStep=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
   p.turretAngle+=turretStep;
 
-  if(mouse.down||mobileFire||keys.has(' '))shoot();
+  const fireHeld=mouse.down||mobileFire||keys.has(' ');
+  const firebird=gunForTurret(p.turretId);
+  if(firebird.id==='122mm'&&firebird.flame){
+    if(fireHeld&&p.firebirdFuel>0){
+      const fireAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,fireAngle);
+      const range=firebird.range||230,cone=firebird.cone||.42;
+      for(let i=0;i<8;i++){
+        const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
+        ps.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.12+Math.random()*.18,col:Math.random()<.55?'#ff5a18':Math.random()<.7?'#ffb52e':'#fff1a6',size:5+Math.random()*5});
+      }
+      if(!p.firebirdActive){
+        p.firebirdActive=true;
+        p.cd=.5;
+      }
+    }else{
+      p.firebirdActive=false;
+    }
+  }
+  if(fireHeld)shoot();
 
   for(let i=bs.length-1;i>=0;i--){
     const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();

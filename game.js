@@ -684,7 +684,7 @@ function update(dt){
   if(mobileDrive.right)turn=1;
 
   // Keep rotation and movement as separate upgradeable stats.
-  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
+  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turretForPlayer();
   const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const hullTurnRate=hull.turn*engine.turn;
   const driveSpeed=hull.speed*engine.speed;

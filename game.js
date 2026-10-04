@@ -725,7 +725,7 @@ function update(dt){
   // Aim time is separate from hull-movement dispersion:
   // turret movement makes the gun less aimed, then it converges back toward the
   // barrel's normal precision over the configured aim time.
-  const targetTurret=Math.atan2(mouse.x?mouse.y:mouse.y,mouse.x-p.x);
+  const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
   const turretMoveRatio=Math.min(1,Math.abs(turretDa)/Math.max(.0001,playerTurretTurnRate*dt));
@@ -1170,7 +1170,11 @@ function draw(){
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
   // Live dispersion reticle: its size directly represents the current shot spread.
-  const accuracy=Math.max(0,Math.min(1,p.aimPrecision));
+  const liveRailTier=p.barrelId==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
+  const liveBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  const liveMoveDispersion=(liveBarrel.hullMoveDispersion||0)*(liveRailTier?.hullMoveMult||1);
+  const liveHullSpeedRatio=Math.min(1,Math.abs(p.currentDriveSpeed||0)/Math.max(1,p.speed));
+  const accuracy=Math.max(.02,Math.min(1,p.aimPrecision*(1-liveHullSpeedRatio*liveMoveDispersion)));
   const precisionRadius=18+122*(1-accuracy);
   x.save();
   x.strokeStyle=accuracy<.5?'#ff4b4b':accuracy<1?'#ffd21a':'#39e66b';

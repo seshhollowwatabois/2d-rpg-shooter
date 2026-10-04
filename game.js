@@ -1016,8 +1016,9 @@ function update(dt){
       const fireAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,fireAngle);
       const fireTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
       const range=fireTier.range||firebird.range||230,cone=firebird.cone||.42;
-      for(let i=0;i<8;i++){
-        const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
+      const visualRange=230*(1+firebirdTier*.55);
+      for(let i=0;i<14;i++){
+        const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*visualRange;
         ps.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.12+Math.random()*.18,col:Math.random()<.55?fireTier.flame:Math.random()<.7?fireTier.accent:fireTier.core,size:5+Math.random()*5});
       }
       if(!p.firebirdActive){
@@ -1471,9 +1472,9 @@ function draw(){
     grad.addColorStop(.18,ft.flame+'dd');
     grad.addColorStop(.65,ft.flame+'88');
     grad.addColorStop(1,ft.flame+'00');
-    x.fillStyle=grad;x.globalAlpha=.72;
+    x.fillStyle=grad;x.globalAlpha=.82;
     x.beginPath();x.moveTo(0,-7);x.quadraticCurveTo(fr*.45,-fr*fc,fr,-fr*fc*.35);x.quadraticCurveTo(fr*.82,0,fr,fr*fc*.35);x.quadraticCurveTo(fr*.45,fr*fc,0,7);x.closePath();x.fill();
-    x.fillStyle=ft.core;x.globalAlpha=.75;
+    x.fillStyle=ft.core;x.globalAlpha=.88;
     x.beginPath();x.moveTo(0,-3);x.quadraticCurveTo(fr*.42,-fr*fc*.42,fr*.82,-2);x.quadraticCurveTo(fr*.42,fr*fc*.42,0,3);x.closePath();x.fill();
     x.restore();
   }

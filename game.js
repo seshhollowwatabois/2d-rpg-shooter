@@ -97,6 +97,29 @@ function wallSegmentHit(x1,y1,x2,y2,r){
   }
   return false;
 }
+function segmentCircleHit(x1,y1,x2,y2,cx,cy,r){
+  // Swept tank-hit test so fast shells cannot skip over a tank between frames.
+  const vx=x2-x1,vy=y2-y1,wx=cx-x1,wy=cy-y1;
+  const len2=vx*vx+vy*vy;
+  const t=len2?Math.max(0,Math.min(1,(wx*vx+wy*vy)/len2)):0;
+  const px=x1+vx*t,py=y1+vy*t;
+  return Math.hypot(cx-px,cy-py)<=r;
+}
+function safeSeparateTanks(a,b){
+  const d=Math.hypot(a.x-b.x,a.y-b.y),min=a.r+b.r;
+  if(d>=min)return;
+  const nx=(b.x-a.x)/(d||1),ny=(b.y-a.y)/(d||1);
+  const overlap=min-d;
+  const aPush=overlap*.5,bPush=overlap-aPush;
+  const ax=a.x-nx*aPush,ay=a.y-ny*aPush;
+  const bx=b.x+nx*bPush,by=b.y+ny*bPush;
+  const aFree=!wallHitCircle(ax,ay,a.r),bFree=!wallHitCircle(bx,by,b.r);
+  if(aFree)a.x=ax,a.y=ay;
+  if(bFree)b.x=bx,b.y=by;
+  // If both tanks are wedged against cover, do not force either one through it.
+  a.x=Math.max(a.r+8,Math.min(W-a.r-8,a.x));a.y=Math.max(a.r+8,Math.min(H-a.r-8,a.y));
+  b.x=Math.max(b.r+8,Math.min(W-b.r-8,b.x));b.y=Math.max(b.r+8,Math.min(H-b.r-8,b.y));
+}
 function addXp(n){
   p.xp+=n;
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
@@ -456,17 +479,26 @@ function update(dt){
       hit=true;
       burst(ox+(nx-ox)*.5,oy+(ny-oy)*.5,'#b8c0c8',7);
     }else{
-      b.x=nx;b.y=ny;
-    }
-    b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
-    for(let j=en.length-1;j>=0;j--){
-      const e=en[j];
-      if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
-        const result=applyBulletHit(e,b.dmg,b.x,b.y,b.penetration,b);
+      // Find the FIRST tank crossed by the shell path, not just the tank at the final frame.
+      let firstHit=null,firstT=Infinity;
+      for(const e of en){
+        const vx=nx-ox,vy=ny-oy,wx=e.x-ox,wy=e.y-oy,len2=vx*vx+vy*vy;
+        const t=len2?Math.max(0,Math.min(1,(wx*vx+wy*vy)/len2)):0;
+        const px=ox+vx*t,py=oy+vy*t;
+        if(Math.hypot(e.x-px,e.y-py)<=b.r+e.r && t<firstT){firstHit=e;firstT=t;}
+      }
+      if(firstHit){
+        b.x=ox+(nx-ox)*firstT;b.y=oy+(ny-oy)*firstT;
+        const j=en.indexOf(firstHit);
+        const result=applyBulletHit(firstHit,b.dmg,b.x,b.y,b.penetration,b);
         hit=!result.ricochet;
-        if(e.hp<=0)killEnemy(e,j);break;
+        if(firstHit.hp<=0&&j>=0)killEnemy(firstHit,j);
+        // A ricochet remains alive and is reflected from the first tank it touched.
+      }else{
+        b.x=nx;b.y=ny;
       }
     }
+    b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);
     if(hit||b.life<=0||b.x<-60||b.x>W+60||b.y<-60||b.y>H+60)bs.splice(i,1);
   }
 
@@ -559,28 +591,30 @@ function update(dt){
     if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);if(p.hp<=0)die()}
   }
 
-  // Tank-to-tank collision damage. Heavy tanks hit harder and both tanks take damage.
-  for(let i=0;i<en.length;i++){
-    const a=en[i];
-    for(let j=i+1;j<en.length;j++){
-      const b=en[j],d=Math.hypot(a.x-b.x,a.y-b.y),min=a.r+b.r;
-      if(d<min){
-        const nx=(b.x-a.x)/(d||1),ny=(b.y-a.y)/(d||1),push=(min-d)*.5;
-        a.x-=nx*push;a.y-=ny*push;b.x+=nx*push;b.y+=ny*push;
-        const impact=14*dt;
-        a.hp-=impact*(b.heavy?1.35:1);b.hp-=impact*(a.heavy?1.35:1);
-        a.hitFlash=.08;b.hitFlash=.08;
-        if(Math.random()<.12)burst((a.x+b.x)/2,(a.y+b.y)/2,'#ff9b55',3);
+  // Tank-to-tank collision: separate bots without ever pushing either one through cover.
+  // Repeat a couple of passes because three or four bots can form a tight cluster.
+  for(let pass=0;pass<3;pass++){
+    for(let i=0;i<en.length;i++){
+      const a=en[i];
+      for(let j=i+1;j<en.length;j++){
+        const b=en[j],d=Math.hypot(a.x-b.x,a.y-b.y),min=a.r+b.r;
+        if(d<min){
+          safeSeparateTanks(a,b);
+          const impact=14*dt;
+          a.hp-=impact*(b.heavy?1.35:1);b.hp-=impact*(a.heavy?1.35:1);
+          a.hitFlash=.08;b.hitFlash=.08;
+          if(Math.random()<.12)burst((a.x+b.x)/2,(a.y+b.y)/2,'#ff9b55',3);
+        }
       }
     }
   }
 
-  // Player also takes collision damage from enemy tanks.
+  // Player also collides with enemy tanks. Resolve the overlap with wall checks so
+  // the player cannot accidentally shove a bot through a wall either.
   for(const e of en){
     const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;
     if(d<min){
-      const nx=(e.x-p.x)/(d||1),ny=(e.y-p.y)/(d||1),push=(min-d)*.65;
-      p.x-=nx*push;p.y-=ny*push;e.x+=nx*push;e.y+=ny*push;
+      safeSeparateTanks(p,e);
       if(p.inv<=0){const impact=22*(e.heavy?1.4:1);p.hp-=impact;p.inv=.25;shake=7;burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);if(p.hp<=0)die()}
     }
   }

@@ -441,20 +441,15 @@ function shoot(){
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   if(p.turretId==='rapid'){
-    // Classic Twins behavior: fire one barrel, then the other 0.2s later.
-    // Each projectile deals 8-10 damage; the normal 9s reload starts immediately.
+    // Twins: one click fires ONE barrel. Alternate left/right on each shot.
     const side=.12*p.r;
-    const fireTwin=(offset)=>{
-      const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
-      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-      bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[]});
-      burst(muzzleX,muzzleY,'#ffd27a',5);
-      soundFire(barrel.id);
-    };
-    fireTwin(-side);
-    setTimeout(()=>{
-      if(p&&p.turretId==='rapid')fireTwin(side);
-    },200);
+    const offset=p.twinsNextBarrel===1?side:-side;
+    const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
+    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[]});
+    burst(muzzleX,muzzleY,'#ffd27a',5);
+    soundFire(barrel.id);
+    p.twinsNextBarrel=p.twinsNextBarrel===1?-1:1;
   }else{
     const muzzleX=muzzle.x,muzzleY=muzzle.y;
     const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);

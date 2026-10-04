@@ -1188,7 +1188,7 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard'){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
@@ -1378,23 +1378,39 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.moveTo(-r*.34,-r*.27);x.lineTo(r*.20,-r*.23);x.lineTo(r*.35,-r*.10);x.stroke();
     x.beginPath();x.moveTo(-r*.34,r*.27);x.lineTo(r*.20,r*.23);x.lineTo(r*.35,r*.10);x.stroke();
   }else if(visualTurret.id==='fast'){
-    // Recessed top armor and the perforated heat vents characteristic of the old Firebird.
+    // Firebird armor accents use the exact same palette as the active flame tier.
+    // This keeps the turret visually tied to its flame instead of using one fixed accent color.
+    const fireAccentTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTierVisual||0))]||firebirdTiers[0];
+    const fireAccent=fireAccentTier.accent;
+    const fireFlame=fireAccentTier.flame;
+    const fireCore=fireAccentTier.core;
+
+    // Recessed top armor.
     x.fillStyle=enemy?'#352d29':'#343a31';
     x.beginPath();
     x.moveTo(-r*.34,-r*.27);x.lineTo(r*.18,-r*.31);x.lineTo(r*.38,-r*.15);
     x.lineTo(r*.38,r*.15);x.lineTo(r*.18,r*.31);x.lineTo(-r*.34,r*.27);
     x.closePath();x.fill();
-    x.fillStyle='#151918';
+
+    // Tier-colored heat vents.
+    x.fillStyle=fireFlame;
     for(const sy of [-1,1]){
       for(let j=0;j<4;j++){
         const vx=-r*.20+j*r*.105;
         x.beginPath();x.ellipse(vx,sy*r*.30,r*.028,r*.055,0,0,6.283);x.fill();
       }
     }
-    // Raised twin fuel/heat channels running toward the nozzle.
-    x.strokeStyle='#8a9382';x.lineWidth=r*.055;
+
+    // Raised twin fuel/heat channels matching the flame accent.
+    x.strokeStyle=fireAccent;x.lineWidth=r*.055;
     x.beginPath();x.moveTo(-r*.18,-r*.22);x.lineTo(r*.28,-r*.12);x.stroke();
     x.beginPath();x.moveTo(-r*.18,r*.22);x.lineTo(r*.28,r*.12);x.stroke();
+
+    // Small glowing core stripe at the center of the Firebird housing.
+    x.strokeStyle=fireCore;x.lineWidth=r*.032;
+    x.globalAlpha=.72;
+    x.beginPath();x.moveTo(-r*.10,0);x.lineTo(r*.34,0);x.stroke();
+    x.globalAlpha=1;
   }
 
   x.strokeStyle=railAccent||(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
@@ -1419,7 +1435,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
       x.fillStyle='#151819';
     }
   }else if(visualTurret.id==='fast'){
-    // Thick Firebird nozzle: short armored neck ending in a flared napalm outlet.
+    // Thick Firebird nozzle with tier-matched heat bands.
+    const fireAccentTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTierVisual||0))]||firebirdTiers[0];
+    const fireAccent=fireAccentTier.accent;
+    const fireFlame=fireAccentTier.flame;
     x.fillStyle='#171a18';
     x.beginPath();
     x.moveTo(r*.30,-r*.105);x.lineTo(r*.83,-r*.115);x.lineTo(r*1.08,-r*.19);
@@ -1429,7 +1448,13 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.fillStyle='#4a5049';x.fillRect(r*.45,-r*.13,r*.13,r*.26);
     x.fillStyle='#0b0d0c';
     x.beginPath();x.ellipse(r*1.28,0,r*.10,r*.105,0,0,6.283);x.fill();
-    x.strokeStyle='#72796d';x.lineWidth=1.2;
+
+    // Hot-metal band around the nozzle and matching tier-colored rails.
+    x.fillStyle=fireFlame;
+    x.globalAlpha=.9;
+    x.fillRect(r*.78,-r*.13,r*.07,r*.26);
+    x.globalAlpha=1;
+    x.strokeStyle=fireAccent;x.lineWidth=1.6;
     x.beginPath();x.moveTo(r*.58,-r*.12);x.lineTo(r*.98,-r*.17);x.stroke();
     x.beginPath();x.moveTo(r*.58,r*.12);x.lineTo(r*.98,r*.17);x.stroke();
   }else{
@@ -1498,7 +1523,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard');
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -1516,7 +1541,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard');
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
@@ -1546,7 +1571,7 @@ function draw(){
     x.beginPath();x.arc(p.x+p.r*.05,p.y-p.r*.28,p.r*.18,0,6.283);x.fill();
     x.globalAlpha=1;
   }
-  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId);
+  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

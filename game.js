@@ -152,7 +152,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -211,14 +211,11 @@ function moveWithWalls(obj,dx,dy){
   return moved;
 }
 function wallSegmentHit(x1,y1,x2,y2,r){
-  // Swept wall test for shells: sample at <=2px intervals, including the full shell radius.
-  const dist=Math.hypot(x2-x1,y2-y1),steps=Math.max(1,Math.ceil(dist/2));
-  for(let i=1;i<=steps;i++){
-    const t=i/steps,px=x1+(x2-x1)*t,py=y1+(y2-y1)*t;
-    if(wallHitCircle(px,py,r))return true;
-  }
+  const dist=Math.hypot(x2-x1,y2-y1),steps=Math.max(1,Math.ceil(dist));
+  for(let i=0;i<=steps;i++){const t=i/steps,px=x1+(x2-x1)*t,py=y1+(y2-y1)*t;if(wallHitCircle(px,py,r))return true;}
   return false;
 }
+function wallRayHit(x1,y1,angle,maxDist){return wallSegmentHit(x1,y1,x1+Math.cos(angle)*maxDist,y1+Math.sin(angle)*maxDist,2.5);}
 function segmentCircleHit(x1,y1,x2,y2,cx,cy,r){
   // Swept tank-hit test so fast shells cannot skip over a tank between frames.
   const vx=x2-x1,vy=y2-y1,wx=cx-x1,wy=cy-y1;
@@ -450,7 +447,7 @@ function enemyShoot(e){
   if(barrel.instant){
     const range=1400,cos=Math.cos(a),sin=Math.sin(a);
     const dx=p.x-e.x,dy=p.y-e.y,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
-    if(along>0&&along<range&&side<=p.r)applyBulletHit(p,damage,p.x,p.y,barrel.penetration,null);
+    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y,barrel.penetration,null);
   }else{
     const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
     ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:2.5,life:2.4,dmg:damage,penetration:barrel.penetration,trail:[]});
@@ -548,7 +545,7 @@ function renderShop(){
 function update(dt){
   if(over||gameScreen!=='game'){stopEngineSound();return;}
   autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent(activeSlot);}
-  p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
+  p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);p.ramCd=Math.max(0,(p.ramCd||0)-dt);
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
     const burnTick=Math.min(p.burnDamage,p.max*.40/10*dt);
@@ -738,44 +735,40 @@ function update(dt){
 
     // Bots can engage from range without needing to chase the player.
     if(d<620&&e.fire<=0)enemyShoot(e);
-    if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);soundHit();if(p.hp<=0)die()}
+    // Ram damage is handled once below for both tanks.
   }
 
-  // Bot-vs-bot contact is physical only: separate them, but NEVER deal damage.
-  // This prevents bots from killing each other or forming damaging traffic jams.
+  // Every tank collision is mutual: both tanks take ram damage, with a short cooldown.
   for(let pass=0;pass<3;pass++){
-    for(let i=0;i<en.length;i++){
-      for(let j=i+1;j<en.length;j++){
-        const a=en[i],b=en[j];
-        if(Math.hypot(a.x-b.x,a.y-b.y)<a.r+b.r)safeSeparateTanks(a,b);
+    for(let i=0;i<en.length;i++)for(let j=i+1;j<en.length;j++){
+      const a=en[i],b=en[j];
+      if(Math.hypot(a.x-b.x,a.y-b.y)<a.r+b.r){
+        safeSeparateTanks(a,b);
+        if((a.ramCd||0)<=0&&(b.ramCd||0)<=0){
+          const da=collisionDamage(b,Math.max(18,b.speed)),db=collisionDamage(a,Math.max(18,a.speed));
+          a.hp-=da;b.hp-=db;a.ramCd=.3;b.ramCd=.3;a.hitFlash=.08;b.hitFlash=.08;shake=5;
+          dmgTexts.push({x:a.x,y:a.y-a.r-8,text:Math.round(da),life:.7});dmgTexts.push({x:b.x,y:b.y-b.r-8,text:Math.round(db),life:.7});
+          burst((a.x+b.x)/2,(a.y+b.y)/2,'#ff9b55',6);soundHit();
+          if(a.hp<=0){const ia=en.indexOf(a);if(ia>=0)killEnemy(a,ia)}
+          if(b.hp<=0){const ib=en.indexOf(b);if(ib>=0)killEnemy(b,ib)}
+        }
       }
     }
   }
-
-  // Player/enemy ramming uses hull mass. Heavy > standard > scout.
-  for(const e of en){
+  for(const e of [...en]){
+    if(!en.includes(e))continue;
     const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;
     if(d<min){
       safeSeparateTanks(p,e);
-      const playerDamage=collisionDamage(p,p.speed);
-      const enemyDamage=collisionDamage(e,e.speed);
-      // Player invincibility is only for incoming damage. It must NOT also block
-      // the enemy from taking collision damage at the same time.
-      let dealt=false;
-      if(playerDamage>0&&p.inv<=0){
-        e.hp-=playerDamage;e.hitFlash=.08;p.inv=.25;shake=7;dealt=true;
-        dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(playerDamage),life:.7});
+      if(p.ramCd<=0&&(e.ramCd||0)<=0){
+        const damageToEnemy=collisionDamage(p,Math.max(18,p.speed));
+        const damageToPlayer=collisionDamage(e,Math.max(18,e.speed));
+        e.hp-=damageToEnemy;p.hp-=damageToPlayer;p.ramCd=.3;e.ramCd=.3;e.hitFlash=.08;shake=8;
+        dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(damageToEnemy),life:.7});dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damageToPlayer),life:.7});
+        burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',8);soundHit();
+        if(e.hp<=0){const idx=en.indexOf(e);if(idx>=0)killEnemy(e,idx)}
+        if(p.hp<=0){die();return;}
       }
-      if(enemyDamage>0&&(e.ramCd||0)<=0){
-        p.hp-=enemyDamage;e.ramCd=.25;shake=7;dealt=true;
-        dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(enemyDamage),life:.7});
-      }
-      if(dealt){burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);soundHit();}
-      if(e.hp<=0){
-        const idx=en.indexOf(e);
-        if(idx>=0)killEnemy(e,idx);
-      }
-      if(p.hp<=0){die();return;}
     }
   }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}

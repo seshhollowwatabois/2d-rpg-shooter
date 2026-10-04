@@ -427,21 +427,16 @@ function shoot(){
   // but damage is applied only on each 0.50s tick (including the first tick).
   if(barrel.id==='122mm'&&barrel.flame){
     const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-    const range=tier.range||barrel.range||230,cone=barrel.cone||.42;
-    let hitAny=false;
+    const range=tier.range||barrel.range||230;
     for(const e of [...en]){
-      const dx=e.x-muzzle.x,dy=e.y-muzzle.y;
-      const dist=Math.hypot(dx,dy);
-      if(dist>range||dist<0.1)continue;
-      const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
-      if(da>cone)continue;
-      if(wallRayHit(muzzle.x,muzzle.y,fireAngle,Math.min(dist,range)))continue;
+      // The rendered Firebird particles are the hitbox.
+      if(!flameParticleHit(e,p))continue;
+      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
       const damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
       const dmg=minDamage+(maxDamage-minDamage)*damageFalloff;
       applyBulletHit(e,dmg,e.x,e.y,null,0);
       applyBurn(e,firebirdTier);
-      hitAny=true;
       if(e.hp<=0){
         const j=en.indexOf(e);
         if(j>=0)killEnemy(e,j);
@@ -490,6 +485,14 @@ function applyBurn(target,tierIndex=0){
   burst(target.x,target.y,tier.flame,10);
   target.hitFlash=.05;
 }
+function flameParticleHit(target,owner){
+  // Firebird damage uses the exact same particles that are rendered as flame.
+  for(const q of ps){
+    if(!q.flameHit||q.flameOwner!==owner||q.life<=0)continue;
+    if(Math.hypot(target.x-q.x,target.y-q.y)<=target.r+(q.size||5))return true;
+  }
+  return false;
+}
 function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const profile=getHitProfile(target,bx,by);
   const critical=critChance>0&&Math.random()<critChance;
@@ -506,33 +509,27 @@ function enemyShoot(e){
   const barrel=gunForTurret(e.turretId);
   const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.id==='122mm'&&barrel.flame){
-    // Enemy Firebird is a true continuous flamethrower: update it every frame
-    // while the enemy is engaging. Damage/burn stacks still tick at 0.50s.
-    const range=barrel.range||230,cone=barrel.cone||.42;
+    // The visible flame particles are also the only damage hitbox.
+    const range=(firebirdTiers[Math.max(0,Math.min(3,e.firebirdTier||0))]||firebirdTiers[0]).range||barrel.range||230;
+    const cone=barrel.cone||.42;
     const tierIndex=Math.max(0,Math.min(3,e.firebirdTier||0));
     const tier=firebirdTiers[tierIndex]||firebirdTiers[0];
-    let inFlame=false;
-    for(const target of [p]){
-      const dx=target.x-e.x,dy=target.y-e.y,dist=Math.hypot(dx,dy);
-      const da=Math.abs(((Math.atan2(dy,dx)-a+Math.PI*3)%(Math.PI*2))-Math.PI);
-      inFlame=dist<=range&&da<=cone&&!wallRayHit(e.x,e.y,a,Math.min(dist,range));
-      if(inFlame&&e.fire<=0){
-        const damageFalloff=1-Math.min(1,dist/range);
-        const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
-        const damage=minDamage+(maxDamage-minDamage)*damageFalloff;
-        applyBulletHit(p,damage,p.x,p.y,null,0);
-        applyBurn(p,tierIndex);
-        e.fire=barrel.reloadTime;
-        if(p.hp<=0){p.hp=0;die();return;}
-      }
+    for(let i=0;i<12;i++){
+      const fa=a+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
+      if(wallRayHit(e.x,e.y,fa,d))continue;
+      ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:0,vy:0,life:.14+Math.random()*.22,col:Math.random()<.55?tier.flame:Math.random()<.7?tier.accent:tier.core,size:5+Math.random()*4,flameHit:true,flameOwner:e});
     }
-    if(inFlame){
-      for(let i=0;i<10;i++){
-        const fa=a+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
-        ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:Math.cos(fa)*20,vy:Math.sin(fa)*20,life:.14+Math.random()*.22,col:Math.random()<.55?tier.flame:Math.random()<.7?tier.accent:tier.core,size:5+Math.random()*4});
-      }
-      burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
+    if(flameParticleHit(p,e)&&e.fire<=0){
+      const dist=Math.hypot(p.x-e.x,p.y-e.y);
+      const damageFalloff=1-Math.min(1,dist/range);
+      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
+      const damage=minDamage+(maxDamage-minDamage)*damageFalloff;
+      applyBulletHit(p,damage,p.x,p.y,null,0);
+      applyBurn(p,tierIndex);
+      e.fire=barrel.reloadTime;
+      if(p.hp<=0){p.hp=0;die();return;}
     }
+    if(flameParticleHit(p,e))burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
     return;
   }else if(barrel.instant){
     const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
@@ -1015,10 +1012,12 @@ function update(dt){
     if(fireHeld&&p.firebirdFuel>0){
       const fireAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,fireAngle);
       const fireTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-      const range=firebird.range||230,cone=firebird.cone||.42;
-      for(let i=0;i<8;i++){
+      const range=fireTier.range||firebird.range||230,cone=firebird.cone||.42;
+      for(let i=0;i<12;i++){
         const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
-        ps.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.12+Math.random()*.18,col:Math.random()<.55?fireTier.flame:Math.random()<.7?fireTier.accent:fireTier.core,size:5+Math.random()*5});
+        // The visible flame particle itself is now the hitbox.
+        if(wallRayHit(muzzle.x,muzzle.y,a,d))continue;
+        ps.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:0,vy:0,life:.12+Math.random()*.18,col:Math.random()<.55?fireTier.flame:Math.random()<.7?fireTier.accent:fireTier.core,size:5+Math.random()*5,flameHit:true,flameOwner:p});
       }
       if(!p.firebirdActive){
         p.firebirdActive=true;

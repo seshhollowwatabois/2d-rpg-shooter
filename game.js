@@ -510,60 +510,128 @@ function renderShop(){
     q.strokeStyle='rgba(120,130,135,.25)';q.strokeRect(-58,-30,116,60);
 
     if(type==='hull'){
-      const sc=item.scale*.9;
-      const isWasp=item.id==='scout',isTitan=item.id==='heavy';
-      const body=isTitan?'#4b5747':isWasp?'#506347':'#566b4c';
-      const dark=isTitan?'#30382f':'#354238';
-      const light=isTitan?'#687563':isWasp?'#758267':'#74836a';
-      const metal='#9aa09a';
-      const L=31*sc,B=(isWasp?12:isTitan?17:14)*sc;
-      const wheels=isWasp?4:isTitan?6:5;
+      // Shop hull preview mirrors the same chassis proportions and geometry
+      // used by tankBody(), including tracks, wheel count and turret placement.
+      const sc=item.scale*.78;
+      const isWasp=item.id==='scout',isHornet=item.id==='standard',isTitan=item.id==='heavy';
+      const rr=22*sc;
+      const L=rr*2.55*(isTitan?1.10:isWasp?.94:1);
+      const B=rr*1.18*(isTitan?1.08:isWasp?.90:1);
+      const trackW=rr*(isTitan?.42:isWasp?.25:.34);
+      const trackL=L*(isTitan?1.02:isWasp?.82:.94);
+      const hullB=B*(isTitan?1.02:isWasp?.84:1);
+      const turretX=isWasp?-L*.22:isTitan?L*.18:0;
 
-      q.fillStyle='#202520';
-      q.roundRect(-L,-B*.82,L*2,B*.22,4*sc);q.fill();
-      q.roundRect(-L,B*.60,L*2,B*.22,4*sc);q.fill();
+      q.save();
+      q.rotate(0);
+      q.fillStyle='rgba(0,0,0,.24)';
+      q.beginPath();q.ellipse(3,5,rr*(isTitan?1.65:1.40),rr*(isTitan?1.0:.80),0,0,6.283);q.fill();
+
+      const trackDark='#202520',trackEdge='#4a5148',wheelOuter='#596158',wheelInner='#303530';
+      for(const sy of [-1,1]){
+        const ty=sy*(hullB/2+trackW/2);
+        q.fillStyle=trackDark;
+        q.beginPath();q.roundRect(-trackL/2,ty-trackW/2,trackL,trackW,7);q.fill();
+        q.strokeStyle=trackEdge;q.lineWidth=1.5;q.stroke();
+        const wheels=isWasp?4:isTitan?6:5;
+        for(let i=0;i<wheels;i++){
+          const wx=-trackL*.38+i*(trackL*.76/Math.max(1,wheels-1));
+          const wr=rr*(isTitan?.18:isWasp?.13:.16);
+          q.fillStyle=wheelOuter;q.beginPath();q.arc(wx,ty,wr,0,6.283);q.fill();
+          q.strokeStyle='#202320';q.lineWidth=1;q.stroke();
+          q.fillStyle=wheelInner;q.beginPath();q.arc(wx,ty,wr*.34,0,6.283);q.fill();
+        }
+      }
+
+      const body=isTitan?'#4b5747':isWasp?'#506347':'#566b4c';
+      const bodyDark=isTitan?'#30382f':isWasp?'#354238':'#384337';
+      const bodyLight=isTitan?'#687563':isWasp?'#758267':'#74836a';
+      const metal='#a3aaa3';
 
       q.fillStyle=body;q.beginPath();
       if(isWasp){
-        q.moveTo(L*.98,-B*.16);q.quadraticCurveTo(L*.86,-B*.58,L*.35,-B*.72);
-        q.lineTo(-L*.55,-B*.68);q.quadraticCurveTo(-L*.94,-B*.48,-L*.94,0);
-        q.quadraticCurveTo(-L*.94,B*.48,-L*.55,B*.68);q.lineTo(L*.35,B*.72);
-        q.quadraticCurveTo(L*.86,B*.58,L*.98,B*.16);
+        q.moveTo(L*.54,0);q.lineTo(L*.27,-hullB*.38);q.lineTo(-L*.30,-hullB*.34);
+        q.lineTo(-L*.49,-hullB*.20);q.lineTo(-L*.49,hullB*.20);q.lineTo(-L*.30,hullB*.34);
+        q.lineTo(L*.27,hullB*.38);
       }else if(isTitan){
-        q.moveTo(L,-B*.25);q.lineTo(L*.70,-B*.72);q.lineTo(-L*.55,-B*.80);
-        q.lineTo(-L,-B*.52);q.lineTo(-L,B*.52);q.lineTo(-L*.55,B*.80);
-        q.lineTo(L*.70,B*.72);q.closePath();
+        q.moveTo(L*.43,-hullB*.30);q.lineTo(L*.22,-hullB*.52);q.lineTo(-L*.42,-hullB*.56);
+        q.lineTo(-L*.56,-hullB*.36);q.lineTo(-L*.56,hullB*.36);q.lineTo(-L*.42,hullB*.56);
+        q.lineTo(L*.22,hullB*.52);q.lineTo(L*.43,hullB*.30);
       }else{
-        q.moveTo(L,-B*.14);q.quadraticCurveTo(L*.82,-B*.58,L*.30,-B*.76);
-        q.lineTo(-L*.55,-B*.68);q.quadraticCurveTo(-L*.98,-B*.42,-L*.98,0);
-        q.quadraticCurveTo(-L*.98,B*.42,-L*.55,B*.68);q.lineTo(L*.30,B*.76);
-        q.quadraticCurveTo(L*.82,B*.58,L,B*.14);
+        q.moveTo(L*.55,-hullB*.13);q.quadraticCurveTo(L*.40,-hullB*.46,L*.08,-hullB*.50);
+        q.lineTo(-L*.35,-hullB*.42);q.lineTo(-L*.51,-hullB*.20);q.lineTo(-L*.51,hullB*.20);
+        q.lineTo(-L*.35,hullB*.42);q.lineTo(L*.08,hullB*.50);
+        q.quadraticCurveTo(L*.40,hullB*.46,L*.55,hullB*.13);
       }
       q.closePath();q.fill();
 
-      q.fillStyle=light;q.beginPath();
-      q.moveTo(L*.70,-B*.46);q.lineTo(-L*.25,-B*.52);q.lineTo(-L*.52,-B*.27);
-      q.lineTo(-L*.52,B*.27);q.lineTo(-L*.25,B*.52);q.lineTo(L*.70,B*.46);
-      q.lineTo(L*.84,B*.16);q.lineTo(L*.84,-B*.16);q.closePath();q.fill();
-
-      q.fillStyle=metal;
-      q.beginPath();q.moveTo(L*.50,-B*.62);q.lineTo(L*.94,-B*.16);q.lineTo(L*.72,-B*.08);q.lineTo(L*.38,-B*.38);q.closePath();q.fill();
-      q.beginPath();q.moveTo(L*.50,B*.62);q.lineTo(L*.94,B*.16);q.lineTo(L*.72,B*.08);q.lineTo(L*.38,B*.38);q.closePath();q.fill();
-
-      q.fillStyle=dark;
-      q.fillRect(-L*.48,-B*.78,L*.78,B*.10);
-      q.fillRect(-L*.48,B*.68,L*.78,B*.10);
-
-      const turretX=isWasp?-L*.22:isTitan?0:-L*.03;
-      q.fillStyle='#343c34';q.beginPath();q.arc(turretX,0,(isTitan?12:isWasp?9:11)*sc,0,6.283);q.fill();
-      q.strokeStyle='#7c896f';q.lineWidth=1;q.stroke();
-
-      for(let i=0;i<wheels;i++){
-        const wx=-L*.62+i*(L*1.18/Math.max(1,wheels-1));
-        q.fillStyle='#596158';q.beginPath();q.arc(wx,-B*.86,2.5*sc,0,6.283);q.fill();
-        q.beginPath();q.arc(wx,B*.86,2.5*sc,0,6.283);q.fill();
+      q.fillStyle=bodyLight;q.beginPath();
+      if(isWasp){
+        q.moveTo(L*.38,0);q.lineTo(L*.18,-hullB*.28);q.lineTo(-L*.27,-hullB*.25);
+        q.lineTo(-L*.34,0);q.lineTo(-L*.27,hullB*.25);q.lineTo(L*.18,hullB*.28);
+      }else if(isTitan){
+        q.moveTo(L*.28,-hullB*.32);q.lineTo(-L*.30,-hullB*.38);q.lineTo(-L*.43,-hullB*.24);
+        q.lineTo(-L*.43,hullB*.24);q.lineTo(-L*.30,hullB*.38);q.lineTo(L*.28,hullB*.32);
+        q.lineTo(L*.35,hullB*.15);q.lineTo(L*.35,-hullB*.15);
+      }else{
+        q.moveTo(L*.38,-hullB*.34);q.lineTo(L*.02,-hullB*.39);q.lineTo(-L*.32,-hullB*.27);
+        q.quadraticCurveTo(-L*.42,0,-L*.32,hullB*.27);q.lineTo(L*.02,hullB*.39);
+        q.lineTo(L*.38,hullB*.34);q.lineTo(L*.46,0);
       }
-      if(isWasp){q.fillStyle='#46d9df';q.fillRect(L*.72,-1.2*sc,5*sc,2.2*sc);}
+      q.closePath();q.fill();
+
+      if(isWasp){
+        q.fillStyle=metal;
+        q.beginPath();q.moveTo(L*.31,-hullB*.33);q.lineTo(L*.54,0);q.lineTo(L*.31,hullB*.33);
+        q.lineTo(L*.18,hullB*.22);q.lineTo(L*.39,0);q.lineTo(L*.18,-hullB*.22);q.closePath();q.fill();
+        q.fillStyle=bodyDark;q.fillRect(-L*.34,-hullB*.42,L*.58,hullB*.07);q.fillRect(-L*.34,hullB*.35,L*.58,hullB*.07);
+        q.fillStyle=metal;q.fillRect(-L*.40,-hullB*.29,L*.16,hullB*.58);
+      }else if(isHornet){
+        q.fillStyle=metal;
+        q.beginPath();q.moveTo(L*.27,-hullB*.47);q.lineTo(L*.02,-hullB*.36);q.lineTo(-L*.12,-hullB*.22);q.lineTo(L*.28,-hullB*.29);q.closePath();q.fill();
+        q.beginPath();q.moveTo(L*.27,hullB*.47);q.lineTo(L*.02,hullB*.36);q.lineTo(-L*.12,hullB*.22);q.lineTo(L*.28,hullB*.29);q.closePath();q.fill();
+        q.fillStyle=bodyDark;
+        q.beginPath();q.moveTo(-L*.28,-hullB*.48);q.lineTo(L*.02,-hullB*.44);q.lineTo(-L*.18,-hullB*.63);q.lineTo(-L*.46,-hullB*.48);q.closePath();q.fill();
+        q.beginPath();q.moveTo(-L*.28,hullB*.48);q.lineTo(L*.02,hullB*.44);q.lineTo(-L*.18,hullB*.63);q.lineTo(-L*.46,hullB*.48);q.closePath();q.fill();
+      }else{
+        q.fillStyle=metal;
+        q.beginPath();q.moveTo(L*.40,-hullB*.31);q.lineTo(L*.20,-hullB*.48);q.lineTo(-L*.05,-hullB*.42);q.lineTo(L*.13,-hullB*.25);q.closePath();q.fill();
+        q.beginPath();q.moveTo(L*.40,hullB*.31);q.lineTo(L*.20,hullB*.48);q.lineTo(-L*.05,hullB*.42);q.lineTo(L*.13,hullB*.25);q.closePath();q.fill();
+        q.fillStyle=bodyDark;q.fillRect(-L*.46,-hullB*.46,L*.54,hullB*.92);
+        q.fillStyle=bodyLight;q.fillRect(-L*.36,-hullB*.34,L*.26,hullB*.68);
+        q.fillStyle=metal;q.fillRect(-L*.50,-hullB*.38,L*.10,hullB*.76);
+      }
+
+      q.fillStyle=bodyDark;
+      if(isTitan){
+        q.fillRect(-L*.46,-hullB*.34,L*.30,hullB*.68);
+        q.fillStyle=metal;for(let i=0;i<5;i++)q.fillRect(-L*.42+i*L*.045,-hullB*.23,L*.018,hullB*.46);
+      }else if(isHornet){
+        q.fillRect(-L*.40,-hullB*.29,L*.22,hullB*.58);
+        q.fillStyle=metal;q.fillRect(-L*.36,-hullB*.20,L*.13,hullB*.06);q.fillRect(-L*.36,hullB*.14,L*.13,hullB*.06);
+      }else{
+        q.fillRect(-L*.39,-hullB*.22,L*.18,hullB*.44);
+        q.fillStyle=metal;for(let i=0;i<3;i++)q.fillRect(-L*.35+i*L*.045,-hullB*.15,L*.014,hullB*.30);
+      }
+
+      q.strokeStyle='#788478';q.lineWidth=1;
+      q.beginPath();q.moveTo(-L*.20,-hullB*.38);q.lineTo(-L*.20,hullB*.38);q.stroke();
+      q.beginPath();q.moveTo(L*.18,-hullB*.30);q.lineTo(L*.18,hullB*.30);q.stroke();
+      q.fillStyle='#aeb7ad';
+      for(const px of [-L*.25,L*.14])for(const py of [-hullB*.32,hullB*.32]){
+        q.beginPath();q.arc(px,py,rr*.035,0,6.283);q.fill();
+      }
+      q.fillStyle='#46d9df';q.fillRect(L*.39,-rr*.045,rr*.11,rr*.09);
+
+      // Match the actual hull's turret ring and placement.
+      q.fillStyle='#343c34';q.beginPath();q.arc(turretX,0,rr*(isTitan?.62:isWasp?.50:.57),0,6.283);q.fill();
+      q.strokeStyle='#697760';q.lineWidth=1.2;q.stroke();
+
+      q.fillStyle='#424d3f';q.beginPath();
+      q.roundRect(turretX-rr*.43,-rr*.27,rr*.86,rr*.54,rr*.16);q.fill();
+      q.fillStyle='#292f2a';q.roundRect(turretX+rr*.18,-rr*.10,rr*.38,rr*.20,rr*.05);q.fill();
+
+      q.restore();
     }else if(type==='turret'){
       const sc=item.scale*.95;
       const tier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;

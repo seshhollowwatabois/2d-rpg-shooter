@@ -19,10 +19,10 @@ const engines=[
   {id:'better',name:'Better Engine',cost:0,speed:1.20,turn:1.20}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:5,dispersionTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:9,dispersionTime:7,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:17,dispersionTime:12,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'122mm Long Heavy Barrel',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:18,scale:1.28,length:1.65,instant:true}
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:3,dispersionTime:4,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:4,dispersionTime:7,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:8,dispersionTime:12,scale:1.22,length:1.12},
+  {id:'122mmLong',name:'122mm Long Heavy Barrel',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:12,dispersionTime:18,scale:1.28,length:1.65,instant:true}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -732,8 +732,8 @@ function draw(){
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
   // Precision reticle around the cursor: smaller/tighter means more accurate.
-  const precisionRadius=28+(1-p.aimPrecision)*42;
-  x.save();x.strokeStyle=p.aimPrecision>.85?'#39e66b':p.aimPrecision>.5?'#ffd21a':'#ff4b4b';x.lineWidth=1.5;x.globalAlpha=.9;
+  const precisionRadius=p.aimPrecision<.5?64+(0.5-p.aimPrecision)*24:(p.aimPrecision<1?38+(1-p.aimPrecision)*20:22);
+  x.save();x.strokeStyle=p.aimPrecision<.5?'#ff4b4b':p.aimPrecision<1?'#ffd21a':'#39e66b';x.lineWidth=1.5;x.globalAlpha=.9;
   x.beginPath();x.arc(mouse.x,mouse.y,precisionRadius,0,6.283);x.stroke();
   x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');

@@ -746,7 +746,15 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,'85mm','standard',e.heavy?'heavy':'standard');
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.enemyBarrelId||'85mm','standard',e.hullId||'standard');
+    // Identify enemy hull and gun directly above the tank.
+    const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
+    const enemyGun=barrels.find(v=>v.id===e.enemyBarrelId)||barrels[0];
+    x.font='bold 12px system-ui';
+    x.textAlign='center';
+    x.textBaseline='bottom';
+    x.fillStyle='#20252a';
+    x.fillText(enemyHull.name+' • '+enemyGun.name.replace(' Barrel',''),e.x,e.y-e.r-15);
     if(e.burnTime>0){
       x.globalAlpha=.9;
       x.fillStyle='#ff7a2f';

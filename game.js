@@ -25,7 +25,7 @@ const engines=[
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:30,maxDamage:35,reloadTime:2,scale:.82,length:.82,instant:true,critChance:.10},
   {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
-  {id:'122mm',name:'Firebird',cost:0,minDamage:6,maxDamage:9,reloadTime:.12,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
+  {id:'122mm',name:'Firebird',cost:0,minDamage:6,maxDamage:9,reloadTime:.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 function gunForTurret(turretId){
@@ -205,7 +205,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:8,firebirdMaxFuel:8,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -431,6 +431,7 @@ function shoot(){
   if(coarse&&!mobileFire)return;
   if(p.cd>0)return;
   const barrel=gunForTurret(p.turretId);
+  if(barrel.id==='122mm'&&barrel.flame&&p.firebirdFuel<=0)return;
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
@@ -496,6 +497,7 @@ function shoot(){
     burst(muzzle.x,muzzle.y,'#ff6a22',6);
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
+    p.firebirdFuel=Math.max(0,p.firebirdFuel-barrel.reloadTime);
     return;
   }
 
@@ -947,6 +949,10 @@ function update(dt){
     if(e.corpseTime<=0)deadTanks.splice(i,1);
   }
 
+  // Firebird fuel: 8 seconds of firing capacity, recovering fully in 16 seconds when not firing.
+  if(p.turretId==='fast' && p.firebirdFuel<8 && !mouse.down && !mobileFire && !keys.has(' ')){
+    p.firebirdFuel=Math.min(8,p.firebirdFuel+dt*.5);
+  }
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
     const burnTick=Math.min(p.burnDamage,p.max*.40/10*dt);

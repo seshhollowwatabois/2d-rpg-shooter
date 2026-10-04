@@ -1210,7 +1210,11 @@ function draw(){
   const cursorReload=$('cursorReload');
   if(cursorReload){
     const activeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):activeBarrel.reloadTime.toFixed(2);
+    const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+    const actualReloadTime=activeBarrel.id==='122mmLong'
+      ? activeBarrel.reloadTime*(activeRailTier?.reloadMult||1)
+      : activeBarrel.reloadTime;
+    cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
     cursorReload.hidden=false;
     cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';
     cursorReload.style.left=(mouse.x+18)+'px';

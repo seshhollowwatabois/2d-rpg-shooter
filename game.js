@@ -126,7 +126,9 @@ function makeEnemy(){
   const hullId=pickEnemyHull();
   const heavy=hullId==='heavy', hull=hulls.find(v=>v.id===hullId)||hulls[0];
   const enemyBarrelId=pickEnemyGun();
-  const hp=100;
+  // Give each hull enough HP to survive multiple hits from the weakest cannon.
+  // Armor still determines whether the shot penetrates and how often damage gets through.
+  const hp=heavy?360:hullId==='standard'?240:170;
   en.push({
     x:a,y:b,r:20*hull.scale,speed:hull.speed*.4,hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,enemyBarrelId,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,

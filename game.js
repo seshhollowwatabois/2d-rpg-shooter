@@ -1010,8 +1010,8 @@ function draw(){
   for(const b of railBeams){
     const a=Math.max(0,b.life/b.maxLife);
     x.save();x.globalAlpha=a;
-    x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=18*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
-    x.strokeStyle='#ffffff';x.lineWidth=5*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=7*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.strokeStyle='#ffffff';x.lineWidth=2*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
   // shell trails / explosions

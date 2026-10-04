@@ -354,7 +354,7 @@ function makeEnemy(){
   waveRemaining--;
 }
 function fireRailgun(barrel){
-  const fireAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+  const fireAngle=p.turretAngle;
   // Start the beam at the actual end of the long gun barrel, not at the turret center.
   const gunMuzzleDistance=p.r*(.38+1.16*(barrel.length||1));
   const muzzleX=p.x+Math.cos(fireAngle)*gunMuzzleDistance;
@@ -410,7 +410,7 @@ function shoot(){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
   }
-  const fireAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+  const fireAngle=p.turretAngle;
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);

@@ -120,8 +120,36 @@ function getHitProfile(target,bx,by){
   if(c<=-.5)return {rear:true,zone:'rear'};
   return {rear:false,zone:'side'};
 }
-function applyBulletHit(target,baseDamage,bx,by,penetration=70){
+function ricochetChance(target,bx,by,vx,vy){
+  // 0° = shell striking the armor straight on. 90° = a grazing impact.
+  // Grazing hits become increasingly likely to bounce instead of penetrating.
+  const surfaceAngle=Math.atan2(by-target.y,bx-target.x);
+  const shellAngle=Math.atan2(vy,vx);
+  let impact=Math.abs(((shellAngle-(surfaceAngle+Math.PI)+Math.PI*3)%(Math.PI*2))-Math.PI);
+  impact=Math.min(impact,Math.PI-impact);
+  const deg=impact*180/Math.PI;
+  if(deg<55)return 0;
+  if(deg>=80)return .95;
+  return .10+(.95-.10)*(deg-55)/25;
+}
+function reflectBullet(b,target,bx,by){
+  const nx=(bx-target.x)/Math.max(.001,Math.hypot(bx-target.x,by-target.y));
+  const ny=(by-target.y)/Math.max(.001,Math.hypot(bx-target.x,by-target.y));
+  const dot=b.vx*nx+b.vy*ny;
+  b.vx=(b.vx-2*dot*nx)*.82;
+  b.vy=(b.vy-2*dot*ny)*.82;
+  b.x=bx+nx*(b.r+1.5);
+  b.y=by+ny*(b.r+1.5);
+  b.life=Math.min(b.life,.9);
+}
+function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
   const profile=getHitProfile(target,bx,by);
+  if(b&&Math.random()<ricochetChance(target,bx,by,b.vx,b.vy)){
+    reflectBullet(b,target,bx,by);
+    burst(bx,by,'#f5f7f7',12);
+    burst(bx,by,'#9aa5ad',6);
+    return {profile,ricochet:true};
+  }
   const armor=getArmor(target,profile.zone);
   const chance=penetrationChance(penetration,armor);
   const penetrates=Math.random()<chance;
@@ -140,7 +168,7 @@ function applyBulletHit(target,baseDamage,bx,by,penetration=70){
     burst(target.x,target.y,'#ff9b55',16);
   }
   burst(bx,by,penetrates?'#ffd27a':'#b8c0c8',penetrates?14:8);
-  return profile;
+  return {profile,ricochet:false};
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
@@ -290,7 +318,8 @@ function update(dt){
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
-        applyBulletHit(e,b.dmg,b.x,b.y,b.penetration);hit=true;
+        const result=applyBulletHit(e,b.dmg,b.x,b.y,b.penetration,b);
+        hit=!result.ricochet;
         if(e.hp<=0)killEnemy(e,j);break;
       }
     }
@@ -303,6 +332,12 @@ function update(dt){
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);
+        if(Math.random()<ricochetChance(p,b.x,b.y,b.vx,b.vy)){
+          reflectBullet(b,p,b.x,b.y);
+          burst(b.x,b.y,'#f5f7f7',12);
+          burst(b.x,b.y,'#9aa5ad',6);
+          continue;
+        }
         const armor=getArmor(p,profile.zone);
         const chance=penetrationChance(b.penetration,armor);
         const penetrates=Math.random()<chance;

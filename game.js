@@ -426,7 +426,8 @@ function shoot(){
       const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
       if(da>cone)continue;
       if(wallRayHit(muzzle.x,muzzle.y,fireAngle,Math.min(dist,range)))continue;
-      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const damageFalloff=1-Math.min(1,dist/(barrel.range||230));
+      const dmg=10+(21-10)*damageFalloff;
       applyBulletHit(e,dmg,e.x,e.y,null,0);
       applyBurn(e);
       hitAny=true;
@@ -500,7 +501,8 @@ function enemyShoot(e){
       const da=Math.abs(((Math.atan2(dy,dx)-a+Math.PI*3)%(Math.PI*2))-Math.PI);
       inFlame=dist<=range&&da<=cone&&!wallRayHit(e.x,e.y,a,Math.min(dist,range));
       if(inFlame&&e.fire<=0){
-        const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+        const damageFalloff=1-Math.min(1,dist/range);
+        const damage=10+(21-10)*damageFalloff;
         applyBulletHit(p,damage,p.x,p.y,null,0);
         applyBurn(p);
         e.fire=barrel.reloadTime;

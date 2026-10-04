@@ -469,14 +469,11 @@ function getHitProfile(target,bx,by){
   return {rear:false,zone:'side'};
 }
 function applyBurn(target){
-  // Firebird needs 2 flame hits to apply 1 burn stack.
-  target.burnHitCount=(target.burnHitCount||0)+1;
-  if(target.burnHitCount>=2){
-    target.burnHitCount=0;
-    target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
-    target.burnGrace=1;
-    burst(target.x,target.y,'#ff9b55',10);
-  }
+  // Each Firebird hit applies 1 burn stack, up to 5 stacks.
+  target.burnHitCount=0;
+  target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
+  target.burnGrace=1;
+  burst(target.x,target.y,'#ff9b55',10);
   // Every flame hit keeps the burn alive while the target is being sprayed.
   target.burnTime=10;
   target.burnTick=0;

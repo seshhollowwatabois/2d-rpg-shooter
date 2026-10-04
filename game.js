@@ -37,6 +37,64 @@ let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
+// Procedural sound system: no external audio files required.
+let audioCtx=null,audioMaster=null,engineOsc=null,engineGain=null;
+function initAudio(){
+  if(!audioCtx){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    audioCtx=new AC();
+    audioMaster=audioCtx.createGain();
+    audioMaster.gain.value=.28;
+    audioMaster.connect(audioCtx.destination);
+  }
+  if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+}
+function tone(freq,duration,type='square',volume=.08,endFreq=freq){
+  initAudio();if(!audioCtx||!audioMaster)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain(),now=audioCtx.currentTime;
+  o.type=type;o.frequency.setValueAtTime(freq,now);
+  o.frequency.exponentialRampToValueAtTime(Math.max(30,endFreq),now+duration);
+  g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(Math.max(.0001,volume),now+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  o.connect(g);g.connect(audioMaster);o.start(now);o.stop(now+duration+.02);
+}
+function noise(duration=.12,volume=.08,filterFreq=1800){
+  initAudio();if(!audioCtx||!audioMaster)return;
+  const len=Math.max(1,Math.floor(audioCtx.sampleRate*duration)),buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate),data=buf.getChannelData(0);
+  for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*(1-i/len);
+  const src=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),g=audioCtx.createGain(),now=audioCtx.currentTime;
+  filter.type='lowpass';filter.frequency.value=filterFreq;
+  g.gain.setValueAtTime(Math.max(.0001,volume),now);g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  src.buffer=buf;src.connect(filter);filter.connect(g);g.connect(audioMaster);src.start(now);src.stop(now+duration+.02);
+}
+function soundFire(barrelId='85mm'){
+  const f=barrelId==='57mm'?150:barrelId==='85mm'?105:barrelId==='122mm'?75:62;
+  tone(f,.12,'sawtooth',.12,Math.max(35,f*.45));noise(.16,.10,1200);
+}
+function soundImpact(penetrated=true){
+  if(penetrated){tone(85,.09,'square',.10,45);noise(.13,.10,2600)}
+  else{tone(260,.08,'triangle',.06,110);noise(.08,.06,4200)}
+}
+function soundRicochet(){tone(980,.16,'triangle',.09,1800);tone(1450,.08,'square',.045,900)}
+function soundExplosion(){noise(.34,.18,900);tone(62,.28,'sawtooth',.13,38)}
+function soundHit(){tone(95,.12,'square',.10,55);noise(.08,.05,1500)}
+function soundReloadReady(){tone(720,.07,'sine',.045,980);tone(980,.10,'sine',.035,1240)}
+function soundWave(){tone(220,.14,'sine',.07,330);setTimeout(()=>tone(330,.16,'sine',.07,520),110)}
+function soundWaveClear(){tone(520,.12,'sine',.06,660);setTimeout(()=>tone(780,.18,'sine',.06,1040),120)}
+function soundUi(){tone(500,.05,'sine',.035,620)}
+function startEngineSound(){
+  initAudio();if(!audioCtx||engineOsc)return;
+  engineOsc=audioCtx.createOscillator();engineGain=audioCtx.createGain();
+  engineOsc.type='sawtooth';engineOsc.frequency.value=68;engineGain.gain.value=.018;
+  engineOsc.connect(engineGain);engineGain.connect(audioMaster);engineOsc.start();
+}
+function stopEngineSound(){
+  if(engineOsc){try{engineOsc.stop()}catch(e){}engineOsc.disconnect();engineOsc=null}
+  if(engineGain){engineGain.disconnect();engineGain=null}
+}
+
+
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
@@ -52,13 +110,13 @@ function reset(){
 
 function pos(e){const r=c.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top}
 c.addEventListener('pointermove',pos);
-c.addEventListener('pointerdown',e=>{pos(e);mouse.down=true;c.setPointerCapture?.(e.pointerId)});
+c.addEventListener('pointerdown',e=>{initAudio();pos(e);mouse.down=true;c.setPointerCapture?.(e.pointerId)});
 addEventListener('pointerup',()=>mouse.down=false);
 addEventListener('pointercancel',()=>mouse.down=false);
 addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space'))reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-$('shopToggle').onclick=()=>{$('shop').classList.toggle('open');renderShop()};
-$('restart').onclick=reset;
+$('shopToggle').onclick=()=>{initAudio();soundUi();$('shop').classList.toggle('open');renderShop()};
+$('restart').onclick=()=>{initAudio();soundUi();reset()};
 
 function burst(a,b,col,n=8){
   for(let i=0;i<n;i++){let q=Math.random()*6.283,s=40+Math.random()*150;
@@ -149,7 +207,7 @@ function addXp(n){
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
 function waveSize(w){return 3+w*2;}
-function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;}
+function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;soundWave();}
 
 function pickEnemyGun(){
   const roll=Math.random();
@@ -246,7 +304,7 @@ function shoot(){
     const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
     bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,penetration:barrel.penetration,trail:[]});
   }
-  p.cd=barrel.reloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);
+  p.cd=barrel.reloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
 }
 function getArmor(target,zone){
   if(target===p){
@@ -301,7 +359,7 @@ function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
   if(b&&Math.random()<ricochetChance(target,bx,by,b.vx,b.vy)){
     reflectBullet(b,target,bx,by);
     burst(bx,by,'#f5f7f7',12);
-    burst(bx,by,'#9aa5ad',6);
+    burst(bx,by,'#9aa5ad',6);soundRicochet();
     return {profile,ricochet:true};
   }
   const armor=getArmor(target,profile.zone);
@@ -322,7 +380,7 @@ function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
     target.burnDamage=target.max*.60;
     burst(target.x,target.y,'#ff9b55',16);
   }
-  burst(bx,by,penetrates?'#ffd27a':'#b8c0c8',penetrates?14:8);
+  burst(bx,by,penetrates?'#ffd27a':'#b8c0c8',penetrates?14:8);soundImpact(penetrates);
   return {profile,ricochet:false};
 }
 function enemyShoot(e){
@@ -338,11 +396,11 @@ function enemyShoot(e){
     ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:2.5,life:2.4,dmg:damage,penetration:barrel.penetration,trail:[]});
   }
   e.fire=barrel.reloadTime;
-  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);
+  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);soundFire(barrel.id);
 }
 function killEnemy(e,j){
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
-  burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);en.splice(j,1);
+  burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();en.splice(j,1);
 }
 function die(){reset()}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
@@ -428,7 +486,7 @@ function renderShop(){
 }
 
 function update(dt){
-  if(over)return;
+  if(over){stopEngineSound();return;}
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
@@ -466,6 +524,7 @@ function update(dt){
   const hullTurnRate=hull.turn*engine.turn;
   const driveSpeed=hull.speed*engine.speed;
   const reverseSpeed=hull.reverse*engine.speed;
+  if(drive||turn)startEngineSound();else stopEngineSound();
   if(turn){
     // When reversing, left/right steering reverses naturally.
     const reverseFactor=drive<0?-1:1;
@@ -540,7 +599,7 @@ function update(dt){
         if(Math.random()<ricochetChance(p,b.x,b.y,b.vx,b.vy)){
           reflectBullet(b,p,b.x,b.y);
           burst(b.x,b.y,'#f5f7f7',12);
-          burst(b.x,b.y,'#9aa5ad',6);
+          burst(b.x,b.y,'#9aa5ad',6);soundRicochet();
           continue;
         }
         const armor=getArmor(p,profile.zone);
@@ -548,7 +607,7 @@ function update(dt){
         const penetrates=Math.random()<chance;
         const damage=penetrates?b.dmg:0;
         if(penetrates){
-          p.hp-=damage;p.inv=.28;shake=10;
+          p.hp-=damage;p.inv=.28;shake=10; soundHit();
           dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
         }else{
           burst(b.x,b.y,'#b8c0c8',8);
@@ -618,7 +677,7 @@ function update(dt){
 
     // Bots can engage from range without needing to chase the player.
     if(d<620&&e.fire<=0)enemyShoot(e);
-    if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);if(p.hp<=0)die()}
+    if(d<p.r+e.r&&p.inv<=0){p.hp-=e.dmg*.45;p.inv=.4;shake=9;burst(p.x,p.y,'#e15b64',10);soundHit();if(p.hp<=0)die()}
   }
 
   // Bot-vs-bot contact is physical only: separate them, but NEVER deal damage.
@@ -650,7 +709,7 @@ function update(dt){
         p.hp-=enemyDamage;e.ramCd=.25;shake=7;dealt=true;
         dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(enemyDamage),life:.7});
       }
-      if(dealt)burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);
+      if(dealt){burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',5);soundHit();}
       if(e.hp<=0){
         const idx=en.indexOf(e);
         if(idx>=0)killEnemy(e,idx);

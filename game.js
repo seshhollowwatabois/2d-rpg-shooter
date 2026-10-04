@@ -24,7 +24,7 @@ const engines=[
 ];
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,reloadTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:120,maxDamage:135,reloadTime:9,scale:1,length:1},
+  {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:9,scale:1,length:1},
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
@@ -441,16 +441,20 @@ function shoot(){
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   if(p.turretId==='rapid'){
-    // Twins fires both barrels together. Damage is split between the barrels
-    // so the pair keeps the previous 240-270 total damage profile.
+    // Classic Twins behavior: fire one barrel, then the other 0.2s later.
+    // Each projectile deals 8-10 damage; the normal 9s reload starts immediately.
     const side=.12*p.r;
-    const forward=ca*(p.r*(.35+1.16*(barrel.length||1))),forwardY=sa*(p.r*(.35+1.16*(barrel.length||1)));
-    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-    for(const offset of [-side,side]){
+    const fireTwin=(offset)=>{
       const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
+      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[]});
       burst(muzzleX,muzzleY,'#ffd27a',5);
-    }
+      soundFire(barrel.id);
+    };
+    fireTwin(-side);
+    setTimeout(()=>{
+      if(p&&p.turretId==='rapid')fireTwin(side);
+    },200);
   }else{
     const muzzleX=muzzle.x,muzzleY=muzzle.y;
     const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
@@ -458,7 +462,7 @@ function shoot(){
     burst(muzzleX,muzzleY,'#ffd27a',6);
   }
   const actualReloadTime=barrel.reloadTime;
-  p.cd=actualReloadTime;soundFire(barrel.id);
+  p.cd=actualReloadTime;if(p.turretId!=='rapid')soundFire(barrel.id);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -495,20 +499,26 @@ function enemyShoot(e){
   }else{
     const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
     if(e.turretId==='rapid'){
+      // Enemy Twins also stagger the two barrels by 0.2s.
       const side=.12*e.r;
-      const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-      for(const offset of [-side,side]){
+      const fireTwin=(offset)=>{
+        const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
         const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
         ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
         burst(mx,my,'#ff875f',3);
-      }
+        soundFire(barrel.id);
+      };
+      fireTwin(-side);
+      setTimeout(()=>{
+        if(e&&!e.dead&&en.includes(e)&&e.turretId==='rapid')fireTwin(side);
+      },200);
     }else{
       const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       ebs.push({x:e.x+ca*(e.r+10),y:e.y+sa*(e.r+10),vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
     }
   }
   e.fire=barrel.reloadTime;
-  burst(e.x+ca*e.r,e.y+sa*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);soundFire(barrel.id);
+  burst(e.x+ca*e.r,e.y+sa*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);if(e.turretId!=='rapid')soundFire(barrel.id);
 }
 function killEnemy(e,j){
   // Keep the tank's momentum for one second after death, then ease it smoothly to a stop.

@@ -509,7 +509,7 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const damage=critical?baseDamage*2:baseDamage;
   target.hp-=damage;
   target.hitFlash=.08;
-  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:.7});
+  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:.7,col:'#ff3b3b'});
   const fireChance=profile.rear?0.05:profile.zone==='side'?0.02:0;
   if(fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
     target.burnTime=10;

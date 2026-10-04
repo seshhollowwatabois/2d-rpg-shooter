@@ -396,7 +396,7 @@ function update(dt){
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
-  if(mouse.down||keys.has(' '))shoot();
+  if(mouse.down||mobileFire||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
     const b=bs[i];b.trail.unshift({x:b.x,y:b.y,life:.16});if(b.trail.length>8)b.trail.pop();b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.trail=b.trail.map(t=>({...t,life:t.life-dt})).filter(t=>t.life>0);let hit=false;
@@ -783,12 +783,14 @@ if(fireButton){
   const startFire=e=>{
     e.preventDefault();
     mobileFire=true;
+    mouse.down=true;
     if(e.pointerId!=null)fireButton.setPointerCapture?.(e.pointerId);
     shoot();
   };
   const stopFire=e=>{
     e.preventDefault();
     mobileFire=false;
+    mouse.down=false;
   };
   fireButton.addEventListener('pointerdown',startFire);
   fireButton.addEventListener('pointerup',stopFire);

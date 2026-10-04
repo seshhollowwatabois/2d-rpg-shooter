@@ -421,7 +421,6 @@ function shoot(){
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});
-  const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
   const actualReloadTime=barrel.reloadTime*(activeRailTier?.reloadMult||1);
   p.cd=actualReloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
 }
@@ -638,6 +637,7 @@ function update(dt){
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
+      const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
       const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
       const hullMoveDispersion=barrelNow.hullMoveDispersion*(activeRailTier?.hullMoveMult||1);
       const maxSpeed=Math.max(1,p.speed);
@@ -646,7 +646,6 @@ function update(dt){
       const maxDispersion=140,dispersionRadius=maxDispersion*(1-effectivePrecision);
       const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
       const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
-      const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
       fireRailgun(fireAngle,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1);
     }
   }

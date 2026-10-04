@@ -354,6 +354,7 @@ function makeEnemy(){
   waveRemaining--;
 }
 function fireRailgun(barrel){
+  const fireAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   // Start the beam at the actual end of the long gun barrel, not at the turret center.
   const gunMuzzleDistance=p.r*(.38+1.16*(barrel.length||1));
   const muzzleX=p.x+Math.cos(fireAngle)*gunMuzzleDistance;
@@ -417,7 +418,7 @@ function shoot(){
   const actualReloadTime=barrel.reloadTime;
   p.cd=actualReloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
 }
-function getHitProfilefunction getHitProfile(target,bx,by){
+function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
   const local=((hitAngle-target.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const c=Math.cos(local);

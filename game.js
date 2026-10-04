@@ -153,7 +153,7 @@ function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnStacks:0,burnGrace:0,burnTick:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnStacks:0,burnGrace:0,burnTick:0,burnHitCount:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -469,14 +469,18 @@ function getHitProfile(target,bx,by){
   return {rear:false,zone:'side'};
 }
 function applyBurn(target){
-  // Firebird applies a real burning DoT: 3 DPS per stack, max 5 stacks.
-  // Every new flame hit refreshes the 8s lifetime and 1s stack-decay timer.
-  target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
+  // Firebird needs 2 flame hits to apply 1 burn stack.
+  target.burnHitCount=(target.burnHitCount||0)+1;
+  if(target.burnHitCount>=2){
+    target.burnHitCount=0;
+    target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
+    target.burnGrace=1;
+    burst(target.x,target.y,'#ff9b55',10);
+  }
+  // Every flame hit keeps the burn alive while the target is being sprayed.
   target.burnTime=8;
-  target.burnGrace=1;
   target.burnTick=0;
   target.hitFlash=.05;
-  burst(target.x,target.y,'#ff9b55',10);
 }
 function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const profile=getHitProfile(target,bx,by);
@@ -915,7 +919,7 @@ function update(dt){
       p.burnGrace=1;
     }
     p.burnTime=Math.max(0,p.burnTime-dt);
-    if(p.burnTime<=0){p.burnStacks=0;p.burnGrace=0;p.burnTick=0;}
+    if(p.burnTime<=0){p.burnStacks=0;p.burnGrace=0;p.burnTick=0;p.burnHitCount=0;}
     if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
     if(p.hp<=0){p.hp=0;die();return;}
   }
@@ -1068,7 +1072,7 @@ function update(dt){
         e.burnGrace=1;
       }
       e.burnTime=Math.max(0,e.burnTime-dt);
-      if(e.burnTime<=0){e.burnStacks=0;e.burnGrace=0;e.burnTick=0;}
+      if(e.burnTime<=0){e.burnStacks=0;e.burnGrace=0;e.burnTick=0;e.burnHitCount=0;}
       if(Math.random()<dt*10)burst(e.x+(Math.random()-.5)*e.r,e.y+(Math.random()-.5)*e.r,'#ff8a3d',2);
       if(e.hp<=0){
         e.hp=0;

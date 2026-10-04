@@ -173,6 +173,7 @@ addEventListener('pointerup',()=>mouse.down=false);
 addEventListener('pointercancel',()=>mouse.down=false);
 addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space')&&gameScreen==='game')reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+$('mainMenuButton').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
 $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false;renderSaveSlots()};
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;

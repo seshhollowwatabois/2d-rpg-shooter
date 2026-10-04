@@ -153,7 +153,7 @@ function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?0.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnStacks:0,ramCd:0,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -305,7 +305,7 @@ function makeEnemy(){
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,turretId,engineId,mass,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,ramCd:0,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnStacks:0,ramCd:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -467,6 +467,12 @@ function getHitProfile(target,bx,by){
   if(c<=-.5)return {rear:true,zone:'rear'};
   return {rear:false,zone:'side'};
 }
+function applyBurn(target){
+  target.burnStacks=Math.min(5,(target.burnStacks||0)+1);
+  target.burnTime=8;
+  target.hitFlash=.05;
+  burst(target.x,target.y,'#ff9b55',10);
+}
 function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const profile=getHitProfile(target,bx,by);
   const critical=critChance>0&&Math.random()<critChance;
@@ -474,12 +480,6 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   target.hp-=damage;
   target.hitFlash=.08;
   dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:.7,col:'#ff3b3b'});
-  const fireChance=profile.rear?0.05:profile.zone==='side'?0.02:0;
-  if(fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
-    target.burnTime=10;
-    target.burnDamage=target.max*.60;
-    burst(target.x,target.y,'#ff9b55',16);
-  }
   impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',critical?26:18);
   soundImpact(true);
   return {profile,ricochet:false,critical};
@@ -891,10 +891,11 @@ function update(dt){
   if(p.turretId==='fast' && p.firebirdFuel<8 && !mouse.down && !mobileFire && !keys.has(' ')){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
   }
-  // Burning tanks lose exactly 40% of their max HP over 10 seconds.
+  // Burning tanks take 3 damage per second per stack for 8 seconds, up to 5 stacks.
   if(p.burnTime>0){
-    const burnTick=Math.min(p.burnDamage,p.max*.40/10*dt);
-    p.hp-=burnTick;p.burnDamage-=burnTick;p.burnTime=Math.max(0,p.burnTime-dt);
+    p.hp-=3*(p.burnStacks||0)*dt;
+    p.burnTime=Math.max(0,p.burnTime-dt);
+    if(p.burnTime<=0)p.burnStacks=0;
     if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
     if(p.hp<=0){p.hp=0;die();return;}
   }
@@ -1034,8 +1035,9 @@ function update(dt){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
     e.fire-=dt;e.ramCd=Math.max(0,(e.ramCd||0)-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);
     if(e.burnTime>0){
-      const burnTick=Math.min(e.burnDamage,e.max*.40/10*dt);
-      e.hp-=burnTick;e.burnDamage-=burnTick;e.burnTime=Math.max(0,e.burnTime-dt);
+      e.hp-=3*(e.burnStacks||0)*dt;
+      e.burnTime=Math.max(0,e.burnTime-dt);
+      if(e.burnTime<=0)e.burnStacks=0;
       if(Math.random()<dt*10)burst(e.x+(Math.random()-.5)*e.r,e.y+(Math.random()-.5)*e.r,'#ff8a3d',2);
       if(e.hp<=0){
         e.hp=0;

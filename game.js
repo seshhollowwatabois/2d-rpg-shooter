@@ -1016,9 +1016,8 @@ function update(dt){
       const fireAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,fireAngle);
       const fireTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
       const range=fireTier.range||firebird.range||230,cone=firebird.cone||.42;
-      const visualRange=230*(1+firebirdTier*.55);
-      for(let i=0;i<14;i++){
-        const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*visualRange;
+      for(let i=0;i<8;i++){
+        const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
         ps.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.12+Math.random()*.18,col:Math.random()<.55?fireTier.flame:Math.random()<.7?fireTier.accent:fireTier.core,size:5+Math.random()*5});
       }
       if(!p.firebirdActive){
@@ -1460,24 +1459,7 @@ function draw(){
     x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=1;x.strokeRect(w.x+3,w.y+3,w.w-6,w.h-6);
     for(let bx=w.x+14;bx<w.x+w.w-8;bx+=28){x.beginPath();x.moveTo(bx,w.y+3);x.lineTo(bx+3,w.y+w.h-3);x.stroke()}
   }
-  // Firebird visual cone: the visible flame length scales with its tier range.
-  if(p.turretId==='fast' && (mouse.down||mobileFire||keys.has(' ')) && p.firebirdFuel>0){
-    const fb=gunForTurret(p.turretId);
-    const ft=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-    const fa=p.turretAngle, fm=playerMuzzlePosition(fb,fa), fr=ft.range||230, fc=fb.cone||.42;
-    x.save();
-    x.translate(fm.x,fm.y);x.rotate(fa);
-    const grad=x.createLinearGradient(0,0,fr,0);
-    grad.addColorStop(0,'rgba(255,245,170,.95)');
-    grad.addColorStop(.18,ft.flame+'dd');
-    grad.addColorStop(.65,ft.flame+'88');
-    grad.addColorStop(1,ft.flame+'00');
-    x.fillStyle=grad;x.globalAlpha=.82;
-    x.beginPath();x.moveTo(0,-7);x.quadraticCurveTo(fr*.45,-fr*fc,fr,-fr*fc*.35);x.quadraticCurveTo(fr*.82,0,fr,fr*fc*.35);x.quadraticCurveTo(fr*.45,fr*fc,0,7);x.closePath();x.fill();
-    x.fillStyle=ft.core;x.globalAlpha=.88;
-    x.beginPath();x.moveTo(0,-3);x.quadraticCurveTo(fr*.42,-fr*fc*.42,fr*.82,-2);x.quadraticCurveTo(fr*.42,fr*fc*.42,0,3);x.closePath();x.fill();
-    x.restore();
-  }
+  // Firebird uses its original particle flame; tier changes reach only.
   // 122mm Long charge animation: energy builds around the muzzle for 1 second.
   if(p.railCharging){
     // Charge effect is attached to the actual gun direction, not the cursor.

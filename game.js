@@ -113,6 +113,13 @@ function soundImpact(penetrated=true){
 }
 function soundRicochet(){tone(980,.16,'triangle',.09,1800);tone(1450,.08,'square',.045,900)}
 function soundExplosion(){noise(.34,.18,900);tone(62,.28,'sawtooth',.13,38)}
+function impactExplosion(a,b,col='#ffd27a',n=20){
+  burst(a,b,col,n);
+  for(let i=0;i<6;i++){
+    const q=Math.random()*6.283,s=55+Math.random()*120;
+    ps.push({x:a,y:b,vx:Math.cos(q)*s,vy:Math.sin(q)*s,life:.18+Math.random()*.22,col});
+  }
+}
 function soundHit(){tone(95,.12,'square',.10,55);noise(.08,.05,1500)}
 function soundReloadReady(){tone(720,.07,'sine',.045,980);tone(980,.10,'sine',.035,1240)}
 function soundWave(){tone(220,.14,'sine',.07,330);setTimeout(()=>tone(330,.16,'sine',.07,520),110)}
@@ -455,9 +462,9 @@ function shoot(){
       const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
       const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       applyBulletHit(best,dmg,hitX,hitY,null,barrel.critChance||0);
-      burst(hitX,hitY,'#ffd27a',22);
+      impactExplosion(hitX,hitY,'#ffd27a',24);
     }else{
-      burst(muzzle.x+ca*34,muzzle.y+sa*34,'#ffd27a',8);
+      impactExplosion(muzzle.x+ca*34,muzzle.y+sa*34,'#ffd27a',10);
     }
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
@@ -505,7 +512,7 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
     target.burnDamage=target.max*.60;
     burst(target.x,target.y,'#ff9b55',16);
   }
-  burst(bx,by,critical?'#fff07a':'#ffd27a',critical?22:14);
+  impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',critical?26:18);
   soundImpact(true);
   return {profile,ricochet:false,critical};
 }

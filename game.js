@@ -1379,8 +1379,9 @@ function draw(){
   // shell trails / explosions
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,3.5,0,6.283);x.fill()}x.globalAlpha=1;
   for(const b of bs){
-    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.55;x.globalAlpha=a;x.fillStyle='#ff9d24';x.beginPath();x.arc(t.x,t.y,b.r*(1.0+.9*a),0,6.283);x.fill();x.fillStyle='#ffe39a';x.globalAlpha=a*.9;x.beginPath();x.arc(t.x,t.y,b.r*(.55+.7*a),0,6.283);x.fill()}
-    x.globalAlpha=1;x.fillStyle='#ff8a00';x.beginPath();x.arc(b.x,b.y,b.r*1.7,0,6.283);x.fill();x.fillStyle='#fff4c2';x.beginPath();x.arc(b.x,b.y,b.r*1.05,0,6.283);x.fill();
+    const col=b.col||'#ff8a00',trailCol=b.col?'#72c5ff':'#ff9d24',coreCol=b.col?'#d9f1ff':'#fff4c2';
+    for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.55;x.globalAlpha=a;x.fillStyle=trailCol;x.beginPath();x.arc(t.x,t.y,b.r*(1.0+.9*a),0,6.283);x.fill();x.fillStyle=coreCol;x.globalAlpha=a*.9;x.beginPath();x.arc(t.x,t.y,b.r*(.55+.7*a),0,6.283);x.fill()}
+    x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(b.x,b.y,b.r*1.7,0,6.283);x.fill();x.fillStyle=coreCol;x.beginPath();x.arc(b.x,b.y,b.r*1.05,0,6.283);x.fill();
   }
   for(const b of ebs){
     const col=b.col||'#ff3b18',trailCol=b.col?'#72c5ff':'#ff4f2f',coreCol=b.col?'#d9f1ff':'#fff0d8';

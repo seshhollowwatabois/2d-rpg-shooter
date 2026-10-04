@@ -12,6 +12,11 @@ const turrets=[
   {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,hp:50,scale:.9},
   {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82}
 ];
+const engines=[
+  {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
+  {id:'upgraded',name:'Upgraded Engine',cost:0,speed:1.10,turn:1.10},
+  {id:'better',name:'Better Engine',cost:0,speed:1.20,turn:1.20}
+];
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:5,dispersionTime:2,scale:.82,length:.82},
   {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:9,dispersionTime:3,scale:1,length:1},
@@ -21,17 +26,19 @@ const barrels=[
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
 let ownedBarrels=JSON.parse(localStorage.getItem('tankOwnedBarrels')||'["85mm"]');
+let ownedEngines=JSON.parse(localStorage.getItem('tankOwnedEngines')||'["standard"]');
 let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
 let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
 let equippedBarrel=localStorage.getItem('tankEquippedBarrel')||'85mm';
+let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
 
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
 function reset(){
-  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0];
+  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -208,6 +215,8 @@ function saveShop(){
   localStorage.setItem('tankEquippedHull',equippedHull);
   localStorage.setItem('tankEquippedTurret',equippedTurret);
   localStorage.setItem('tankEquippedBarrel',equippedBarrel);
+  localStorage.setItem('tankOwnedEngines',JSON.stringify(ownedEngines));
+  localStorage.setItem('tankEquippedEngine',equippedEngine);
 }
 function renderShop(){
   const box=$('shopItems'); if(!box)return;
@@ -251,6 +260,7 @@ function renderShop(){
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
     else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp
+    else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%'
     else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s • Reload '+item.reloadTime+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
@@ -261,11 +271,13 @@ function renderShop(){
       if(!owned){
         if(type==='hull')ownedHulls.push(item.id);
         else if(type==='turret')ownedTurrets.push(item.id);
-        else ownedBarrels.push(item.id);
+        else if(type==='barrel')ownedBarrels.push(item.id);
+        else ownedEngines.push(item.id);
       }
       if(type==='hull'){equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max)}
       else if(type==='turret'){equippedTurret=item.id;p.turretId=item.id;const newMax=hullForPlayer().hp+item.hp;p.max=newMax;p.hp=Math.min(p.hp,newMax)}
-      else {equippedBarrel=item.id;p.barrelId=item.id;p.aimPrecision=item.precision}
+      else if(type==='barrel'){equippedBarrel=item.id;p.barrelId=item.id;p.aimPrecision=item.precision}
+      else {equippedEngine=item.id;}
       saveShop();renderShop();
     };
     row.appendChild(btn);box.appendChild(row);
@@ -274,6 +286,7 @@ function renderShop(){
   section('HULLS');hulls.forEach(v=>add('hull',v,ownedHulls.includes(v.id),equippedHull===v.id));
   section('TURRETS');turrets.forEach(v=>add('turret',v,ownedTurrets.includes(v.id),equippedTurret===v.id));
   section('CANNON BARRELS');barrels.forEach(v=>add('barrel',v,ownedBarrels.includes(v.id),equippedBarrel===v.id));
+  section('ENGINES');engines.forEach(v=>add('engine',v,ownedEngines.includes(v.id),equippedEngine===v.id));
 }
 
 function update(dt){
@@ -304,9 +317,10 @@ function update(dt){
 
   // Keep rotation and movement as separate upgradeable stats.
   const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-  const hullTurnRate=hull.turn;
-  const driveSpeed=hull.speed;
-  const reverseSpeed=hull.reverse;
+  const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
+  const hullTurnRate=hull.turn*engine.turn;
+  const driveSpeed=hull.speed*engine.speed;
+  const reverseSpeed=hull.reverse*engine.speed;
   if(turn){
     // When reversing, left/right steering reverses naturally.
     const reverseFactor=drive<0?-1:1;

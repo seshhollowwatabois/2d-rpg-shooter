@@ -595,7 +595,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierce Damage Reduction',item.id==='122mmLong'?Math.round((1-(activeRailTier?.pierceDamageMult??.5))*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);

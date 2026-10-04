@@ -48,10 +48,10 @@ const railgunTiers=[
   {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];
 const firebirdTiers=[
-  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
-  {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,flame:'#b83b16',core:'#ffd08a',accent:'#d86a22'},
-  {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
-  {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
+  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
+  {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:260,flame:'#b83b16',core:'#ffd08a',accent:'#d86a22'},
+  {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:290,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
+  {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:320,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -426,7 +426,7 @@ function shoot(){
   // Firebird is a continuous flamethrower: visual flame stays active while held,
   // but damage is applied only on each 0.50s tick (including the first tick).
   if(barrel.id==='122mm'&&barrel.flame){
-    const range=barrel.range||230,cone=barrel.cone||.42;
+    const range=tier.range||barrel.range||230,cone=barrel.cone||.42;
     let hitAny=false;
     for(const e of [...en]){
       const dx=e.x-muzzle.x,dy=e.y-muzzle.y;
@@ -436,7 +436,7 @@ function shoot(){
       if(da>cone)continue;
       if(wallRayHit(muzzle.x,muzzle.y,fireAngle,Math.min(dist,range)))continue;
       const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-      const damageFalloff=1-Math.min(1,dist/(barrel.range||230));
+      const damageFalloff=1-Math.min(1,dist/(tier.range||barrel.range||230));
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
       const dmg=minDamage+(maxDamage-minDamage)*damageFalloff;
       applyBulletHit(e,dmg,e.x,e.y,null,0);
@@ -846,7 +846,7 @@ function renderShop(){
         const tier=document.createElement('div');
         tier.className='railgunTierMiniRow'+(t.tier===firebirdTier?' current':'');
         const label=document.createElement('span');
-        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+' • +'+t.directBonus+' dmg / +'+t.burnBonus+' burn</small>';
+        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
         const b=document.createElement('button');
         b.className='tierInlineButton';
         b.textContent=t.tier===firebirdTier?'CURRENT':owned?'SELECT':t.tier===firebirdOwnedTier+1?'UPGRADE':'LOCKED';

@@ -29,10 +29,10 @@ const barrels=[
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,precision:1,reloadTime:20,hullMoveDispersion:.40,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 const railgunTiers=[
-  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,hullMoveMult:1,aimMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.925,hullMoveMult:.80,aimMult:.90},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.85,hullMoveMult:.60,aimMult:.80},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.775,hullMoveMult:.40,aimMult:.70}
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,aimMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.85,pierceDamageMult:.67,hullMoveMult:.80,aimMult:.90},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.70,pierceDamageMult:.83,hullMoveMult:.60,aimMult:.80},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.55,pierceDamageMult:1,hullMoveMult:.40,aimMult:.70}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -386,7 +386,7 @@ function fireRailgun(fireAngle,barrel){
   for(let i=0;i<pierced.length;i++){
     const target=pierced[i].e;
     if(!en.includes(target))continue;
-    const damage=baseDamage*Math.pow(.5,i);
+    const damage=baseDamage*Math.pow(railTier.pierceDamageMult||.5,i);
     applyBulletHit(target,damage,target.x,target.y);
     if(target.hp<=0)killEnemy(target,en.indexOf(target));
   }
@@ -601,7 +601,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierce Damage Reduction',item.id==='122mmLong'?Math.round((1-(activeRailTier?.pierceDamageMult??.5))*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');const detailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;addStat('Aim Time',item.id==='122mmLong'?(item.aimTime*(detailTier?.aimMult||1)).toFixed(2)+'s':(item.aimTime||0)+'s');addStat('Hull Movement Dispersion',Math.round((item.hullMoveDispersion||0)*(detailTier?.hullMoveMult||1)*100)+'%');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierced Tank Damage',item.id==='122mmLong'?Math.round((activeRailTier?.pierceDamageMult??.5)*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');const detailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;addStat('Aim Time',item.id==='122mmLong'?(item.aimTime*(detailTier?.aimMult||1)).toFixed(2)+'s':(item.aimTime||0)+'s');addStat('Hull Movement Dispersion',Math.round((item.hullMoveDispersion||0)*(detailTier?.hullMoveMult||1)*100)+'%');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);

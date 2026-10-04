@@ -633,7 +633,7 @@ function renderShop(){
       details.appendChild(grid);
       if(type==='barrel'&&item.id==='122mmLong'){
         const up=document.createElement('div');up.className='shopUpgradeDetails';up.innerHTML='<b>RAILGUN TIER UPGRADES</b>';
-        railgunTiers.forEach(t=>{const d=document.createElement('div');d.className='shopUpgradeRow'+(t.tier===railgunTier?' current':'')+(t.tier===railgunTier+1?' next':'');const dm=Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult);d.innerHTML='<span>Tier '+t.tier+' <small>'+t.name+'</small></span><b>DMG '+dm+' • PEN '+t.penetration+' • RELOAD '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</b>';up.appendChild(d)});details.appendChild(up);
+        railgunTiers.forEach(t=>{const d=document.createElement('div');const owned=t.tier<=railgunOwnedTier;\n          d.className='shopUpgradeRow'+(t.tier===railgunTier?' current':'')+(t.tier===railgunTier+1&&!owned?' next':'');const dm=Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult);d.innerHTML='<span>Tier '+t.tier+' <small>'+t.name+'</small></span><b>DMG '+dm+' • PEN '+t.penetration+' • RELOAD '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</b>';up.appendChild(d)});details.appendChild(up);
       }
       box.appendChild(details);
     }

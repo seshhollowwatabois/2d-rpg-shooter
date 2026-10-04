@@ -907,7 +907,7 @@ function update(dt){
     p.burnTick=(p.burnTick||0)-dt;
     // Burn deals one damage tick every 2 seconds per stack.
     if(burnStacks>0&&p.burnTick<=0){
-      const burnHit=6*burnStacks;
+      const burnHit=3*burnStacks;
       p.hp-=burnHit;
       dmgTexts.push({x:p.x+(Math.random()-.5)*p.r,y:p.y-p.r-8,text:'-'+burnHit.toFixed(0),life:.55,col:'#ff8a3d'});
       p.hitFlash=.05;

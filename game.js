@@ -111,6 +111,18 @@ function pickEnemyGun(){
   if(roll<.97)return '122mm';
   return '122mmLong';
 }
+function pickEnemyTurret(){
+  const roll=Math.random();
+  if(roll<.55)return 'standard';
+  if(roll<.85)return 'rapid';
+  return 'fast';
+}
+function pickEnemyEngine(){
+  const roll=Math.random();
+  if(roll<.50)return 'standard';
+  if(roll<.85)return 'upgraded';
+  return 'better';
+}
 function pickEnemyHull(){
   const r=Math.random();
   if(wave<=2)return r<.65?'scout':(r<.95?'standard':'heavy');
@@ -123,15 +135,30 @@ function makeEnemy(){
   const side=Math.floor(Math.random()*4);let a,b;
   if(side===0){a=-45;b=Math.random()*H}else if(side===1){a=W+45;b=Math.random()*H}
   else if(side===2){a=Math.random()*W;b=-45}else{a=Math.random()*W;b=H+45}
+
+  // Every enemy gets a complete loadout from the same shop equipment pool as the player.
+  // Stronger equipment is weighted to be rarer so early waves do not become unfair.
   const hullId=pickEnemyHull();
-  const heavy=hullId==='heavy', hull=hulls.find(v=>v.id===hullId)||hulls[0];
+  const turretId=pickEnemyTurret();
   const enemyBarrelId=pickEnemyGun();
-  // Give each hull enough HP to survive multiple hits from the weakest cannon.
-  // Armor still determines whether the shot penetrates and how often damage gets through.
-  const hp=heavy?360:hullId==='standard'?240:170;
+  const engineId=pickEnemyEngine();
+  const hull=hulls.find(v=>v.id===hullId)||hulls[0];
+  const turret=turrets.find(v=>v.id===turretId)||turrets[0];
+  const engine=engines.find(v=>v.id===engineId)||engines[0];
+  const heavy=hullId==='heavy';
+
+  // Enemy HP keeps the existing combat balance, while turret HP is part of the loadout.
+  const baseHp=heavy?360:hullId==='standard'?240:170;
+  const hp=baseHp+turret.hp;
+
   en.push({
-    x:a,y:b,r:20*hull.scale,speed:hull.speed*.4,hp,max:hp,dmg:heavy?35:20,
-    heavy,hullId,enemyBarrelId,angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
+    x:a,y:b,
+    r:20*hull.scale,
+    speed:hull.speed*.4*engine.speed,
+    turnRate:hull.turn*engine.turn,
+    hp,max:hp,dmg:heavy?35:20,
+    heavy,hullId,turretId,enemyBarrelId,engineId,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnTime:0,burnDamage:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -746,15 +773,17 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.enemyBarrelId||'85mm','standard',e.hullId||'standard');
-    // Identify enemy hull and gun directly above the tank.
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.enemyBarrelId||'85mm',e.turretId||'standard',e.hullId||'standard');
+    // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
+    const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
     const enemyGun=barrels.find(v=>v.id===e.enemyBarrelId)||barrels[0];
+    const enemyEngine=engines.find(v=>v.id===e.engineId)||engines[0];
     x.font='bold 12px system-ui';
     x.textAlign='center';
     x.textBaseline='bottom';
     x.fillStyle='#20252a';
-    x.fillText(enemyHull.name+' • '+enemyGun.name.replace(' Barrel',''),e.x,e.y-e.r-15);
+    x.fillText(enemyHull.name+' • '+enemyTurret.name.replace(' Turret','')+' • '+enemyGun.name.replace(' Barrel','')+' • '+enemyEngine.name.replace(' Engine',''),e.x,e.y-e.r-15);
     if(e.burnTime>0){
       x.globalAlpha=.9;
       x.fillStyle='#ff7a2f';

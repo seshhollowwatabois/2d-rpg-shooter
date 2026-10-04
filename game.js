@@ -8,9 +8,9 @@ const hulls=[
   {id:'heavy',name:'KV-1 Heavy',cost:80,hp:140,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];
 const turrets=[
-  {id:'standard',name:'Standard Turret',cost:0,turn:1.25,scale:1},
-  {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,scale:.9},
-  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,scale:.82}
+  {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},
+  {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,hp:50,scale:.9},
+  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82}
 ];
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,damage:40,precision:.68,scale:.82,length:.82},
@@ -29,7 +29,8 @@ addEventListener('resize',resize);resize();
 
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0];
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed,hp:hull.hp,max:hull.hp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  const totalHp=hull.hp+turret.hp;
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -132,6 +133,7 @@ function killEnemy(e,j){
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);en.splice(j,1);
 }
 function die(){reset()}
+function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
 function saveShop(){
   localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
   localStorage.setItem('tankOwnedTurrets',JSON.stringify(ownedTurrets));
@@ -181,7 +183,7 @@ function renderShop(){
     const text=document.createElement('div');
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
-    else if(type==='turret')stat='Turn speed '+item.turn
+    else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp
     else stat='DMG '+item.damage+' • Precision '+Math.round(item.precision*100)+'%';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
@@ -195,7 +197,7 @@ function renderShop(){
         else ownedBarrels.push(item.id);
       }
       if(type==='hull'){equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max)}
-      else if(type==='turret'){equippedTurret=item.id;p.turretId=item.id}
+      else if(type==='turret'){equippedTurret=item.id;p.turretId=item.id;const newMax=hullForPlayer().hp+item.hp;p.max=newMax;p.hp=Math.min(p.hp,newMax)}
       else {equippedBarrel=item.id;p.barrelId=item.id;p.aimPrecision=item.precision}
       saveShop();renderShop();
     };

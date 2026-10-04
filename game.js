@@ -290,14 +290,6 @@ function safeSeparateTanks(a,b){
   a.x=Math.max(a.r+8,Math.min(W-a.r-8,a.x));a.y=Math.max(a.r+8,Math.min(H-a.r-8,a.y));
   b.x=Math.max(b.r+8,Math.min(W-b.r-8,b.x));b.y=Math.max(b.r+8,Math.min(H-b.r-8,b.y));
 }
-function hullMassMultiplier(obj){
-  const id=obj.hullId||'standard';
-  return id==='heavy'?1.8:id==='scout'?0.65:1;
-}
-function collisionDamage(attacker,speed){
-  if(speed<18)return 0;
-  return 22*hullMassMultiplier(attacker)*Math.min(2.2,Math.max(.65,speed/90));
-}
 function findOpenPoint(r){
   for(let i=0;i<30;i++){
     const px=r+12+Math.random()*Math.max(1,W-r*2-24),py=r+12+Math.random()*Math.max(1,H-r*2-24);
@@ -1097,21 +1089,11 @@ function update(dt){
       }
     }
   }
+  // Tank collisions are purely physical. They never deal collision/ram damage.
   for(const e of [...en]){
     if(!en.includes(e))continue;
     const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;
-    if(d<min){
-      safeSeparateTanks(p,e);
-      if(p.ramCd<=0&&(e.ramCd||0)<=0){
-        const damageToEnemy=collisionDamage(p,Math.max(18,p.speed));
-        const damageToPlayer=collisionDamage(e,Math.max(18,e.speed));
-        e.hp-=damageToEnemy;p.hp-=damageToPlayer;p.ramCd=.3;e.ramCd=.3;e.hitFlash=.08;
-        dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(damageToEnemy),life:.7});dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damageToPlayer),life:.7});
-        burst((p.x+e.x)/2,(p.y+e.y)/2,'#ff9b55',8);soundHit();
-        if(e.hp<=0){const idx=en.indexOf(e);if(idx>=0)killEnemy(e,idx)}
-        if(p.hp<=0){die();return;}
-      }
-    }
+    if(d<min)safeSeparateTanks(p,e);
   }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}

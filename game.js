@@ -1,7 +1,7 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
-let gameScreen='menu',activeSlot=0,autoSaveTimer=0;
+let gameScreen='menu',activeSlot=0,autoSaveTimer=0,hasContinue=false;
 const SAVE_KEY='tankSaveSlotsV1';
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
@@ -146,7 +146,17 @@ function renderSaveSlots(){
   }
 }
 function showMenu(){
-  stopEngineSound();gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;renderSaveSlots();
+  stopEngineSound();
+  hasContinue=!!p&&gameScreen==='game'&&!over;
+  gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;renderSaveSlots();updateContinueButton();
+}
+function updateContinueButton(){
+  const b=$('continueGame');
+  if(b)b.hidden=!hasContinue;
+}
+function continueGame(){
+  if(!p||!hasContinue)return;
+  initAudio();soundUi();showGame();
 }
 function showGame(){
   gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;
@@ -187,9 +197,10 @@ $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('op
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
 $('startGame').onclick=startNewGame;
+$('continueGame').onclick=continueGame;
 $('restart').onclick=()=>{initAudio();soundUi();if(activeSlot&&applySave(activeSlot))showGame();else{reset();showGame()}};
 $('deathMenu').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
-renderSaveSlots();
+renderSaveSlots();updateContinueButton();
 
 function burst(a,b,col,n=8){
   for(let i=0;i<n;i++){let q=Math.random()*6.283,s=40+Math.random()*150;

@@ -41,6 +41,7 @@ addEventListener('resize',resize);resize();
 
 // Procedural sound system: no external audio files required.
 let audioCtx=null,audioMaster=null,engineOsc=null,engineGain=null;
+let railBeams=[];
 function initAudio(){
   if(!audioCtx){
     const AC=window.AudioContext||window.webkitAudioContext;
@@ -70,6 +71,8 @@ function noise(duration=.12,volume=.08,filterFreq=1800){
   g.gain.setValueAtTime(Math.max(.0001,volume),now);g.gain.exponentialRampToValueAtTime(.0001,now+duration);
   src.buffer=buf;src.connect(filter);filter.connect(g);g.connect(audioMaster);src.start(now);src.stop(now+duration+.02);
 }
+function soundRailCharge(){initAudio();tone(95,.9,'sawtooth',.045,520);tone(180,.75,'sine',.035,920)}
+function soundRailFire(){initAudio();tone(48,.32,'sawtooth',.18,24);tone(180,.22,'square',.12,55);noise(.28,.16,2400)}
 function soundFire(barrelId='85mm'){
   const f=barrelId==='57mm'?150:barrelId==='85mm'?105:barrelId==='122mm'?75:62;
   tone(f,.12,'sawtooth',.12,Math.max(35,f*.45));noise(.16,.10,1200);
@@ -152,7 +155,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -327,40 +330,47 @@ function makeEnemy(){
   });
   waveRemaining--;
 }
+function fireRailgun(fireAngle,barrel){
+  const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
+  const range=1400,cos=Math.cos(fireAngle),sin=Math.sin(fireAngle);
+  let wallDist=range;
+  // The beam ends at the first wall, so it can never pass through cover.
+  const step=2;
+  for(let d=0;d<=range;d+=step){
+    const rx=muzzleX+cos*d,ry=muzzleY+sin*d;
+    if(wallHitCircle(rx,ry,2.5)){wallDist=d;break;}
+  }
+  let hit=null,best=Infinity;
+  for(const e of en){
+    const dx=e.x-muzzleX,dy=e.y-muzzleY,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
+    if(along>0&&along<wallDist&&side<=e.r&&along<best){hit=e;best=along;}
+  }
+  if(hit){
+    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    applyBulletHit(hit,dmg,hit.x,hit.y,barrel.penetration,null);
+    if(hit.hp<=0)killEnemy(hit,en.indexOf(hit));
+  }
+  railBeams.push({x1:muzzleX,y1:muzzleY,x2:muzzleX+cos*wallDist,y2:muzzleY+sin*wallDist,life:2,maxLife:2,angle:fireAngle});
+  burst(muzzleX,muzzleY,'#bffcff',24);burst(muzzleX,muzzleY,'#ffffff',12);
+  soundRailFire();
+}
 function shoot(){
   const coarse=window.matchMedia?.('(pointer:coarse)').matches;
   if(coarse&&!mobileFire)return;
   if(p.cd>0)return;
   const barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-  // Pick a random point inside the live dispersion circle, then fire toward that
-  // point. This makes shots behave like a true reticle/dispersion system rather
-  // than a simple angular spread.
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  const maxDispersion=140;
-  const dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
-  const rr=dispersionRadius*Math.sqrt(Math.random());
-  const ra=Math.random()*Math.PI*2;
-  const aimX=mouse.x+Math.cos(ra)*rr;
-  const aimY=mouse.y+Math.sin(ra)*rr;
-  const fireAngle=Math.atan2(aimY-p.y,aimX-p.x);
+  if(barrel.id==='122mmLong'){
+    if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
+    return;
+  }
+  const maxDispersion=140,dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
+  const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
+  const fireAngle=Math.atan2(mouse.y+Math.sin(ra)*rr-p.y,mouse.x+Math.cos(ra)*rr-p.x);
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-  if(barrel.instant){
-    const range=1400,cos=Math.cos(fireAngle),sin=Math.sin(fireAngle);
-    let hit=null,best=Infinity;
-    for(const e of en){
-      const dx=e.x-muzzleX,dy=e.y-muzzleY,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
-      if(along>0&&along<range&&side<=e.r&&along<best){hit=e;best=along}
-    }
-    if(hit){
-      const result=applyBulletHit(hit,dmg,hit.x,hit.y,barrel.penetration,null);
-      if(hit.hp<=0)killEnemy(hit,en.indexOf(hit));
-    }
-    burst(muzzleX,muzzleY,'#ffd27a',12);
-  }else{
-    const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
-    bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,penetration:barrel.penetration,trail:[]});
-  }
+  const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
+  bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,penetration:barrel.penetration,trail:[]});
   p.cd=barrel.reloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
 }
 function getArmor(target,zone){
@@ -546,6 +556,16 @@ function update(dt){
   if(over||gameScreen!=='game'){stopEngineSound();return;}
   autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent(activeSlot);}
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);p.ramCd=Math.max(0,(p.ramCd||0)-dt);
+  if(p.railCharging){
+    p.railCharge=Math.max(0,p.railCharge-dt);
+    if(p.railCharge<=0){
+      const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
+      const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
+      fireRailgun(a,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime;
+    }
+  }
+  for(let i=railBeams.length-1;i>=0;i--){railBeams[i].life-=dt;if(railBeams[i].life<=0)railBeams.splice(i,1);}
+
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.
   if(p.burnTime>0){
     const burnTick=Math.min(p.burnDamage,p.max*.40/10*dt);
@@ -948,6 +968,14 @@ function draw(){
     x.strokeStyle='#687176';x.lineWidth=2;x.strokeRect(w.x,w.y,w.w,w.h);
     x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=1;x.strokeRect(w.x+3,w.y+3,w.w-6,w.h-6);
     for(let bx=w.x+14;bx<w.x+w.w-8;bx+=28){x.beginPath();x.moveTo(bx,w.y+3);x.lineTo(bx+3,w.y+w.h-3);x.stroke()}
+  }
+  // Railgun beams linger and fade smoothly for 2 seconds.
+  for(const b of railBeams){
+    const a=Math.max(0,b.life/b.maxLife);
+    x.save();x.globalAlpha=a;
+    x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=18*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.strokeStyle='#ffffff';x.lineWidth=5*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.restore();
   }
   // shell trails / explosions
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,3.5,0,6.283);x.fill()}x.globalAlpha=1;

@@ -1015,7 +1015,7 @@ function update(dt){
     if(fireHeld&&p.firebirdFuel>0){
       const fireAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,fireAngle);
       const fireTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-      const range=firebird.range||230,cone=firebird.cone||.42;
+      const range=fireTier.range||firebird.range||230,cone=firebird.cone||.42;
       for(let i=0;i<8;i++){
         const a=fireAngle+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
         ps.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.12+Math.random()*.18,col:Math.random()<.55?fireTier.flame:Math.random()<.7?fireTier.accent:fireTier.core,size:5+Math.random()*5});

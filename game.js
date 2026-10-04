@@ -937,17 +937,22 @@ function update(dt){
   const reverseSpeed=hull.reverse*engine.speed;
   p.currentDriveSpeed=drive* (drive>=0?driveSpeed:reverseSpeed);
   if(drive||turn)startEngineSound();else stopEngineSound();
+  let hullTurnDelta=0;
   if(turn){
     // When reversing, left/right steering reverses naturally.
     const reverseFactor=drive<0?-1:1;
-    p.angle+=turn*hullTurnRate*dt*reverseFactor;
+    hullTurnDelta=turn*hullTurnRate*dt*reverseFactor;
+    p.angle+=hullTurnDelta;
   }
   if(drive){
     const moveSpeed=drive<0?reverseSpeed:driveSpeed;
     moveWithWalls(p,Math.cos(p.angle)*drive*moveSpeed*dt,Math.sin(p.angle)*drive*moveSpeed*dt);
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
-  // Turret movement is gradual again, but there is no accuracy/dispersion penalty.
+  // The turret is mounted to the hull, so hull rotation carries the turret with it.
+  // If the turret is also rotating toward the same direction, the two angular
+  // speeds combine instead of making the turret fight the hull rotation.
+  p.turretAngle+=hullTurnDelta;
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;

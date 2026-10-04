@@ -14,7 +14,7 @@ const hulls=[
 const turrets=[
   {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
   {id:'rapid',name:'Twins',cost:0,turn:2.4,scale:.9},
-  {id:'fast',name:'Heavy',cost:0,turn:3.4,scale:.82},
+  {id:'fast',name:'Firebird',cost:0,turn:3.4,scale:.82},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1.08}
 ];
 const engines=[
@@ -25,7 +25,7 @@ const engines=[
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:30,maxDamage:35,reloadTime:2,scale:.82,length:.82,instant:true,critChance:.10},
   {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
+  {id:'122mm',name:'Firebird',cost:0,minDamage:6,maxDamage:9,reloadTime:.12,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 function gunForTurret(turretId){
@@ -467,6 +467,38 @@ function shoot(){
     return;
   }
 
+  // Firebird is a short-range flamethrower: it damages every enemy inside a hot cone.
+  if(barrel.id==='122mm'&&barrel.flame){
+    const range=barrel.range||230,cone=barrel.cone||.42;
+    let hitAny=false;
+    for(const e of [...en]){
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y;
+      const dist=Math.hypot(dx,dy);
+      if(dist>range||dist<0.1)continue;
+      const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
+      if(da>cone)continue;
+      if(wallRayHit(muzzle.x,muzzle.y,fireAngle,Math.min(dist,range)))continue;
+      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      applyBulletHit(e,dmg,e.x,e.y,null,0);
+      hitAny=true;
+      if(e.hp<=0){
+        const j=en.indexOf(e);
+        if(j>=0)killEnemy(e,j);
+      }
+    }
+    // Dense flame particles make the weapon read as a flamethrower instead of a projectile.
+    for(let i=0;i<18;i++){
+      const a=fireAngle+(Math.random()-.5)*cone*1.7;
+      const d=18+Math.random()*range;
+      const px=muzzle.x+Math.cos(a)*d,py=muzzle.y+Math.sin(a)*d;
+      ps.push({x:px,y:py,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.10+Math.random()*.18,col:Math.random()<.55?'#ff6a22':'#ffd35a'});
+    }
+    burst(muzzle.x,muzzle.y,'#ff6a22',6);
+    soundFire(barrel.id);
+    p.cd=barrel.reloadTime;
+    return;
+  }
+
   const speed=({"85mm":900,"122mm":1600}[barrel.id]||1300);
   if(p.turretId==='rapid'){
     // Twins: one click fires ONE barrel. Alternate left/right on each shot.
@@ -516,7 +548,23 @@ function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
   const barrel=gunForTurret(e.turretId);
   const ca=Math.cos(a),sa=Math.sin(a);
-  if(barrel.instant){
+  if(barrel.id==='122mm'&&barrel.flame){
+    const range=barrel.range||230,cone=barrel.cone||.42;
+    for(const target of [p]){
+      const dx=target.x-e.x,dy=target.y-e.y,dist=Math.hypot(dx,dy);
+      const da=Math.abs(((Math.atan2(dy,dx)-a+Math.PI*3)%(Math.PI*2))-Math.PI);
+      if(dist<=range&&da<=cone&&!wallRayHit(e.x,e.y,a,Math.min(dist,range))){
+        const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+        applyBulletHit(p,damage,p.x,p.y,null,0);
+        if(p.hp<=0){p.hp=0;die();return;}
+      }
+    }
+    for(let i=0;i<12;i++){
+      const fa=a+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
+      ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:Math.cos(fa)*20,vy:Math.sin(fa)*20,life:.10+Math.random()*.16,col:Math.random()<.55?'#ff6a22':'#ffd35a'});
+    }
+    burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',5);
+  }else if(barrel.instant){
     const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
     if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){

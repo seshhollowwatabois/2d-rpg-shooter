@@ -909,7 +909,7 @@ function update(dt){
     if(burnStacks>0&&p.burnTick<=0){
       const burnHit=3*burnStacks;
       p.hp-=burnHit;
-      dmgTexts.push({x:p.x+(Math.random()-.5)*p.r,y:p.y-p.r-8,text:'-'+burnHit.toFixed(0),life:.55,col:'#ff8a3d'});
+      dmgTexts.push({x:p.x+(Math.random()-.5)*p.r+24,y:p.y-p.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
       p.hitFlash=.05;
       p.burnTick=2;
     }
@@ -1060,9 +1060,9 @@ function update(dt){
       e.burnTick=(e.burnTick||0)-dt;
       // Burn deals one damage tick every 2 seconds per stack.
       if(burnStacks>0&&e.burnTick<=0){
-        const burnHit=6*burnStacks;
+        const burnHit=3*burnStacks;
         e.hp-=burnHit;
-        dmgTexts.push({x:e.x+(Math.random()-.5)*e.r,y:e.y-e.r-8,text:'-'+burnHit.toFixed(0),life:.55,col:'#ff8a3d'});
+        dmgTexts.push({x:e.x+(Math.random()-.5)*e.r+24,y:e.y-e.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
         e.hitFlash=.05;
         e.burnTick=2;
       }
@@ -1486,7 +1486,7 @@ function draw(){
       :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
-  for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle=q.col||'#ff3b3b';x.font='bold 18px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}
+  for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/(q.kind==='burn'?.9:.7));x.fillStyle=q.col||'#ff3b3b';x.font=q.kind==='burn'?'bold 14px system-ui':'bold 18px system-ui';x.textAlign='center';x.fillText(q.kind==='burn'?'🔥 -'+q.text:'-'+q.text,q.x,q.y);x.globalAlpha=1}
   x.restore();
 
   const hp=Math.max(0,p.hp/p.max),xp=Math.max(0,p.xp/p.next);

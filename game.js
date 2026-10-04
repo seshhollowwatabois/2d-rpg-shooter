@@ -532,7 +532,7 @@ function saveShop(){
   localStorage.setItem('tankEquippedEngine',equippedEngine);
   localStorage.setItem('tankRailgunTier',String(railgunTier));
 }
-let shopCategory='hull';
+let shopCategory='hull',selectedShopItem=null;
 
 function renderShop(){
   const box=$('shopItems'); if(!box)return;
@@ -584,34 +584,54 @@ function renderShop(){
   };
 
   const add=(type,item,owned,equipped)=>{
-    const row=document.createElement('div');row.className='shopItem';
+    const row=document.createElement('div');
+    const isSelected=selectedShopItem===item.id;
+    row.className='shopItem'+(isSelected?' selected':'');
     const info=document.createElement('div');info.className='shopInfo';
     info.appendChild(preview(type,item));
     const text=document.createElement('div');
     let stat='';
-    if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
-    else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp;
+    if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed+' • Reverse '+item.reverse+' • Turn '+item.turn;
+    else if(type==='turret')stat='Turn speed '+item.turn+' • Turret HP +'+item.hp;
     else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%';
-    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s • Reload '+item.reloadTime+'s';
+    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Aim '+(item.aimTime||0)+'s • Reload '+item.reloadTime+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
     const btn=document.createElement('button');
-    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';
-    btn.disabled=equipped;
-    btn.onclick=()=>{
-      if(!owned){
-        if(type==='hull')ownedHulls.push(item.id);
-        else if(type==='turret')ownedTurrets.push(item.id);
-        else if(type==='barrel')ownedBarrels.push(item.id);
-        else ownedEngines.push(item.id);
-      }
+    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';btn.disabled=equipped;
+    btn.onclick=e=>{e.stopPropagation();
+      if(!owned){if(type==='hull')ownedHulls.push(item.id);else if(type==='turret')ownedTurrets.push(item.id);else if(type==='barrel')ownedBarrels.push(item.id);else ownedEngines.push(item.id)}
       if(type==='hull'){equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max)}
       else if(type==='turret'){equippedTurret=item.id;p.turretId=item.id;const newMax=hullForPlayer().hp+item.hp;p.max=newMax;p.hp=Math.min(p.hp,newMax)}
       else if(type==='barrel'){equippedBarrel=item.id;p.barrelId=item.id;p.aimPrecision=item.precision}
-      else {equippedEngine=item.id;}
+      else equippedEngine=item.id;
       saveShop();renderShop();
     };
-    row.appendChild(btn);box.appendChild(row);
+    row.appendChild(btn);
+    row.onclick=()=>{selectedShopItem=isSelected?null:item.id;renderShop()};
+    box.appendChild(row);
+    if(isSelected){
+      const details=document.createElement('div');details.className='shopDetails';
+      const heading=document.createElement('div');heading.className='shopDetailsTitle';heading.innerHTML='<b>'+item.name+'</b><span>'+ (equipped?'EQUIPPED':'SELECTED') +'</span>';details.appendChild(heading);
+      const grid=document.createElement('div');grid.className='shopStatGrid';
+      const addStat=(label,value,accent=false)=>{const d=document.createElement('div');d.className='shopStat'+(accent?' accent':'');d.innerHTML='<span>'+label+'</span><b>'+value+'</b>';grid.appendChild(d)};
+      if(type==='hull'){
+        addStat('Hit Points',item.hp,true);addStat('Forward Speed',item.speed);addStat('Reverse Speed',item.reverse);addStat('Hull Turn',item.turn.toFixed(2));
+        addStat('Front Armor',item.armor.front);addStat('Side Armor',item.armor.side);addStat('Rear Armor',item.armor.rear);addStat('Size',item.scale.toFixed(2)+'x');
+      }else if(type==='turret'){
+        addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Turret HP',item.hp);addStat('Size',item.scale.toFixed(2)+'x');
+      }else if(type==='engine'){
+        addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');
+      }else{
+        addStat('Damage',item.minDamage+'-'+item.maxDamage,true);addStat('Penetration',item.penetration);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+      }
+      details.appendChild(grid);
+      if(type==='barrel'&&item.id==='122mmLong'){
+        const up=document.createElement('div');up.className='shopUpgradeDetails';up.innerHTML='<b>RAILGUN TIER UPGRADES</b>';
+        railgunTiers.forEach(t=>{const d=document.createElement('div');d.className='shopUpgradeRow'+(t.tier===railgunTier?' current':'')+(t.tier===railgunTier+1?' next':'');const dm=Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult);d.innerHTML='<span>Tier '+t.tier+' <small>'+t.name+'</small></span><b>DMG '+dm+' • PEN '+t.penetration+' • RELOAD '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</b>';up.appendChild(d)});details.appendChild(up);
+      }
+      box.appendChild(details);
+    }
   };
 
   const sectionTitle=document.createElement('div');

@@ -620,15 +620,36 @@ function renderShop(){
 
   if(shopCategory==='barrel'){
     const railTitle=document.createElement('div');railTitle.className='shopSectionTitle';railTitle.textContent='RAILGUN UPGRADES';box.appendChild(railTitle);
+    const currentStats=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+    const baseRail=barrels.find(v=>v.id==='122mmLong')||barrels[3];
+    const statsPanel=document.createElement('div');statsPanel.className='railStatsPanel';
+    const currentMin=Math.round(baseRail.minDamage*currentStats.damageMult),currentMax=Math.round(baseRail.maxDamage*currentStats.damageMult);
+    statsPanel.innerHTML='<b>Current Tier: Tier '+currentStats.tier+'</b><span>Damage '+currentMin+'-'+currentMax+' • Penetration '+currentStats.penetration+' • Reload '+(baseRail.reloadTime*currentStats.reloadMult).toFixed(1)+'s</span>';
+    const next=currentStats.tier<3?railgunTiers[currentStats.tier+1]:null;
+    if(next){
+      const nextMin=Math.round(baseRail.minDamage*next.damageMult),nextMax=Math.round(baseRail.maxDamage*next.damageMult);
+      const nextPanel=document.createElement('div');nextPanel.className='railUpgradePreview';
+      nextPanel.innerHTML='<b>After Upgrade: Tier '+next.tier+'</b><span>Damage '+nextMin+'-'+nextMax+' • Penetration '+next.penetration+' • Reload '+(baseRail.reloadTime*next.reloadMult).toFixed(1)+'s</span>';
+      statsPanel.appendChild(nextPanel);
+    }else{
+      const maxPanel=document.createElement('div');maxPanel.className='railUpgradePreview';maxPanel.innerHTML='<b>MAX TIER</b><span>Tier 3 is fully upgraded.</span>';statsPanel.appendChild(maxPanel);
+    }
+    box.appendChild(statsPanel);
     const railRow=document.createElement('div');railRow.className='railTierRow';
     railgunTiers.forEach(t=>{
       const card=document.createElement('div');card.className='railTierCard'+(t.tier===railgunTier?' selected':'');
       const sw=document.createElement('div');sw.className='railTierBeam';sw.style.setProperty('--rail-color',t.beam);sw.style.setProperty('--rail-glow',t.glow);
       const title=document.createElement('b');title.textContent='Tier '+t.tier;
       const name=document.createElement('small');name.textContent=t.name;
-      const btn=document.createElement('button');btn.textContent=t.tier===railgunTier?'EQUIPPED':t.tier===0?'SELECT':'UPGRADE';btn.disabled=t.tier===railgunTier;
+      const stats=document.createElement('small');
+      const base=barrels.find(v=>v.id==='122mmLong')||barrels[3];
+      const current=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+      const dmgMin=Math.round(base.minDamage*t.damageMult),dmgMax=Math.round(base.maxDamage*t.damageMult);
+      const pen=t.penetration,reload=(base.reloadTime*t.reloadMult).toFixed(1);
+      stats.innerHTML='DMG '+dmgMin+'-'+dmgMax+' • PEN '+pen+' • Reload '+reload+'s';
+      const btn=document.createElement('button');btn.textContent=t.tier===railgunTier?'CURRENT TIER':t.tier===railgunTier+1?'UPGRADE':'SELECT';btn.disabled=t.tier===railgunTier;
       btn.onclick=()=>{initAudio();soundUi();railgunTier=t.tier;saveShop();renderShop()};
-      card.append(sw,title,name,btn);railRow.appendChild(card);
+      card.append(sw,title,name,stats,btn);railRow.appendChild(card);
     });
     box.appendChild(railRow);
   }

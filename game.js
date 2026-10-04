@@ -590,47 +590,11 @@ function renderShop(){
     row.className='shopItem'+(isSelected?' selected':'');
     const info=document.createElement('div');info.className='shopInfo';
     info.appendChild(preview(type,item));
-    const text=document.createElement('div');
-    if(type==='barrel'&&item.id==='122mmLong'){
-      text.innerHTML='<b>'+item.name+'</b>';
-    }else{
-      let stat='';
-      if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed+' • Reverse '+item.reverse+' • Turn '+item.turn;
-      else if(type==='turret')stat='Turn speed '+item.turn+' • Turret HP +'+item.hp;
-      else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%';
-      else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Aim '+(item.aimTime||0)+'s • Reload '+item.reloadTime+'s';
-      text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
-    }
+    const text=document.createElement('div');text.className='shopItemName';
+    text.innerHTML='<b>'+item.name+'</b>';
     info.appendChild(text);
-    if(type==='barrel'&&item.id==='122mmLong'&&isSelected){
-      const tiers=document.createElement('div');tiers.className='railgunTierMini';
-      railgunTiers.forEach(t=>{
-        const owned=t.tier<=railgunOwnedTier;
-        const tier=document.createElement('div');
-        tier.className='railgunTierMiniRow'+(t.tier===railgunTier?' current':'');
-        const label=document.createElement('span');
-        label.innerHTML='<b>T'+t.tier+'</b>';
-        const b=document.createElement('button');
-        b.className='tierInlineButton';
-        b.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';
-        b.disabled=t.tier===railgunTier||(!owned&&t.tier!==railgunOwnedTier+1);
-        b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===railgunOwnedTier+1)railgunOwnedTier=t.tier;railgunTier=t.tier;saveShop();renderShop()};
-        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
-      });
-      info.appendChild(tiers);
-    }
     row.appendChild(info);
-    const btn=document.createElement('button');
-    btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';btn.disabled=equipped;
-    btn.onclick=e=>{e.stopPropagation();
-      if(!owned){if(type==='hull')ownedHulls.push(item.id);else if(type==='turret')ownedTurrets.push(item.id);else if(type==='barrel')ownedBarrels.push(item.id);else ownedEngines.push(item.id)}
-      if(type==='hull'){equippedHull=item.id;p.hullId=item.id;p.r=20*item.scale;p.max=item.hp;p.hp=Math.min(p.hp,p.max)}
-      else if(type==='turret'){equippedTurret=item.id;p.turretId=item.id;const newMax=hullForPlayer().hp+item.hp;p.max=newMax;p.hp=Math.min(p.hp,newMax)}
-      else if(type==='barrel'){equippedBarrel=item.id;p.barrelId=item.id;p.aimPrecision=item.precision}
-      else equippedEngine=item.id;
-      saveShop();renderShop();
-    };
-    row.appendChild(btn);
+        row.appendChild(btn);
     row.onclick=()=>{selectedShopItem=isSelected?null:item.id;renderShop()};
     box.appendChild(row);
     if(isSelected){

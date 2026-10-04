@@ -25,7 +25,7 @@ const engines=[
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:30,maxDamage:35,reloadTime:2,scale:.82,length:.82,instant:true,critChance:.10},
   {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
-  {id:'122mm',name:'Firebird',cost:0,minDamage:6,maxDamage:9,reloadTime:.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
+  {id:'122mm',name:'Firebird',cost:0,minDamage:20,maxDamage:21,reloadTime:.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 function gunForTurret(turretId){
@@ -468,7 +468,8 @@ function shoot(){
     return;
   }
 
-  // Firebird is a short-range flamethrower: it damages every enemy inside a hot cone.
+  // Firebird is a continuous flamethrower: visual flame stays active while held,
+  // but damage is applied only on each 0.50s tick (including the first tick).
   if(barrel.id==='122mm'&&barrel.flame){
     const range=barrel.range||230,cone=barrel.cone||.42;
     let hitAny=false;
@@ -487,7 +488,7 @@ function shoot(){
         if(j>=0)killEnemy(e,j);
       }
     }
-    // Dense flame particles make the weapon read as a flamethrower instead of a projectile.
+  // Dense flame particles make the weapon read as a flamethrower instead of a projectile.
     for(let i=0;i<45;i++){
       const a=fireAngle+(Math.random()-.5)*cone*1.7;
       const d=18+Math.random()*range;

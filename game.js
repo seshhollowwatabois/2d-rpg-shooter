@@ -591,12 +591,16 @@ function renderShop(){
     const info=document.createElement('div');info.className='shopInfo';
     info.appendChild(preview(type,item));
     const text=document.createElement('div');
-    let stat='';
-    if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed+' • Reverse '+item.reverse+' • Turn '+item.turn;
-    else if(type==='turret')stat='Turn speed '+item.turn+' • Turret HP +'+item.hp;
-    else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%';
-    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Aim '+(item.aimTime||0)+'s • Reload '+item.reloadTime+'s';
-    text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
+    if(type==='barrel'&&item.id==='122mmLong'){
+      text.innerHTML='<b>'+item.name+'</b>';
+    }else{
+      let stat='';
+      if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed+' • Reverse '+item.reverse+' • Turn '+item.turn;
+      else if(type==='turret')stat='Turn speed '+item.turn+' • Turret HP +'+item.hp;
+      else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%';
+      else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Aim '+(item.aimTime||0)+'s • Reload '+item.reloadTime+'s';
+      text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
+    }
     info.appendChild(text);
     if(type==='barrel'&&item.id==='122mmLong'&&isSelected){
       const tiers=document.createElement('div');tiers.className='railgunTierMini';
@@ -605,7 +609,7 @@ function renderShop(){
         const tier=document.createElement('div');
         tier.className='railgunTierMiniRow'+(t.tier===railgunTier?' current':'');
         const label=document.createElement('span');
-        label.innerHTML='<b>T'+t.tier+'</b><small>'+Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult)+' DMG • '+t.penetration+' PEN • '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</small>';
+        label.innerHTML='<b>T'+t.tier+'</b>';
         const b=document.createElement('button');
         b.className='tierInlineButton';
         b.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';

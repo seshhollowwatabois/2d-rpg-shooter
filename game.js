@@ -13,7 +13,7 @@ const hulls=[
 ];
 const turrets=[
   {id:'standard',name:'Standard',cost:0,turn:1.25,hp:0,scale:1},
-  {id:'rapid',name:'Rapid',cost:0,turn:2.4,scale:.9},
+  {id:'rapid',name:'Twins',cost:0,turn:2.4,scale:.9},
   {id:'fast',name:'Heavy',cost:0,turn:3.4,scale:.82},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1.08}
 ];
@@ -24,7 +24,7 @@ const engines=[
 ];
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,reloadTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,reloadTime:9,scale:1,length:1},
+  {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:120,maxDamage:135,reloadTime:9,scale:1,length:1},
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
@@ -437,13 +437,28 @@ function shoot(){
     return;
   }
   const fireAngle=p.turretAngle;
+  const ca=Math.cos(fireAngle),sa=Math.sin(fireAngle);
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
-  const muzzleX=muzzle.x,muzzleY=muzzle.y;
-  const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
-  bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});
+  if(p.turretId==='rapid'){
+    // Twins fires both barrels together. Damage is split between the barrels
+    // so the pair keeps the previous 240-270 total damage profile.
+    const side=.12*p.r;
+    const forward=ca*(p.r*(.35+1.16*(barrel.length||1))),forwardY=sa*(p.r*(.35+1.16*(barrel.length||1)));
+    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    for(const offset of [-side,side]){
+      const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
+      bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[]});
+      burst(muzzleX,muzzleY,'#ffd27a',5);
+    }
+  }else{
+    const muzzleX=muzzle.x,muzzleY=muzzle.y;
+    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[]});
+    burst(muzzleX,muzzleY,'#ffd27a',6);
+  }
   const actualReloadTime=barrel.reloadTime;
-  p.cd=actualReloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
+  p.cd=actualReloadTime;soundFire(barrel.id);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -472,17 +487,28 @@ function applyBulletHit(target,baseDamage,bx,by,b=null){
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
   const barrel=gunForTurret(e.turretId);
-  const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+  const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.instant){
-    const range=1400,cos=Math.cos(a),sin=Math.sin(a);
-    const dx=p.x-e.x,dy=p.y-e.y,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
+    const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
     if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y);
   }else{
     const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
-    ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
+    if(e.turretId==='rapid'){
+      const side=.12*e.r;
+      const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      for(const offset of [-side,side]){
+        const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
+        ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
+        burst(mx,my,'#ff875f',3);
+      }
+    }else{
+      const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      ebs.push({x:e.x+ca*(e.r+10),y:e.y+sa*(e.r+10),vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
+    }
   }
   e.fire=barrel.reloadTime;
-  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);soundFire(barrel.id);
+  burst(e.x+ca*e.r,e.y+sa*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);soundFire(barrel.id);
 }
 function killEnemy(e,j){
   // Keep the tank's momentum for one second after death, then ease it smoothly to a stop.
@@ -670,9 +696,16 @@ function renderShop(){
       q.fillStyle='#292f2a';q.roundRect(4*sc,-3.5*sc,13*sc,7*sc,2*sc);q.fill();
       const gun=gunForTurret(item.id);
       q.strokeStyle='#151819';q.lineWidth=Math.max(3,5*sc);q.lineCap='round';
-      q.beginPath();q.moveTo(10*sc,0);q.lineTo(10*sc+38*sc*(gun.length||1),0);q.stroke();
+      if(item.id==='rapid'){
+        for(const sy of [-1,1]){
+          q.beginPath();q.moveTo(10*sc,sy*4.5*sc);q.lineTo(10*sc+38*sc*(gun.length||1),sy*4.5*sc);q.stroke();
+        }
+      }else{
+        q.beginPath();q.moveTo(10*sc,0);q.lineTo(10*sc+38*sc*(gun.length||1),0);q.stroke();
+      }
       if(accent){
-        q.strokeStyle=accent;q.lineWidth=1.4;q.beginPath();q.moveTo(12*sc,0);q.lineTo(34*sc,0);q.stroke();
+        q.strokeStyle=accent;q.lineWidth=1.4;
+        q.beginPath();q.moveTo(12*sc,0);q.lineTo(34*sc,0);q.stroke();
       }
       q.fillStyle=accent||'#849176';q.beginPath();q.arc(-13*sc,-8*sc,1.7*sc,0,6.283);q.fill();q.beginPath();q.arc(-13*sc,8*sc,1.7*sc,0,6.283);q.fill();
     }else if(type==='engine'){
@@ -1198,9 +1231,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.moveTo(-r*.43,-r*.27);x.lineTo(r*.22,-r*.31);x.quadraticCurveTo(r*.48,-r*.16,r*.48,0);
     x.quadraticCurveTo(r*.48,r*.16,r*.22,r*.31);x.lineTo(-r*.43,r*.27);x.quadraticCurveTo(-r*.53,0,-r*.43,-r*.27);
   }else if(visualTurret.id==='rapid'){
-    x.moveTo(-r*.47,-r*.31);x.quadraticCurveTo(-r*.20,-r*.43,r*.18,-r*.37);
-    x.quadraticCurveTo(r*.48,-r*.20,r*.48,0);x.quadraticCurveTo(r*.48,r*.20,r*.18,r*.37);
-    x.quadraticCurveTo(-r*.20,r*.43,-r*.47,r*.31);x.quadraticCurveTo(-r*.55,0,-r*.47,-r*.31);
+    // Twins: compact rounded turret with a broad front and twin gun mounts.
+    x.moveTo(-r*.50,-r*.34);x.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
+    x.quadraticCurveTo(r*.52,-r*.24,r*.52,0);x.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
+    x.quadraticCurveTo(-r*.18,r*.45,-r*.50,r*.34);x.quadraticCurveTo(-r*.58,0,-r*.50,-r*.34);
   }else{
     x.moveTo(-r*.49,-r*.30);x.quadraticCurveTo(-r*.28,-r*.48,r*.05,-r*.45);
     x.lineTo(r*.37,-r*.31);x.quadraticCurveTo(r*.54,-r*.16,r*.54,0);
@@ -1227,14 +1261,25 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
   const barrelWidth=.15*barrelScale;
-  x.fillStyle='#151819';x.fillRect(r*.35,-r*barrelWidth/2,r*1.16*barrelLength,r*barrelWidth);
-  if(visualBarrel.id==='122mm'){
-    x.fillStyle='#0e1112';x.fillRect(r*(1.35*barrelLength),-r*.13,r*.20,r*.26);
-    x.fillStyle='#4a5049';x.fillRect(r*.68,-r*.16,r*.16,r*.32);
-  }else if(visualBarrel.id==='57mm'){
-    x.fillStyle='#0e1112';x.fillRect(r*(1.32*barrelLength),-r*.065,r*.10,r*.13);
+  if(visualTurret.id==='rapid'){
+    // Two parallel cannons, mounted high/low like the classic Twins turret.
+    x.fillStyle='#151819';
+    for(const sy of [-1,1]){
+      const yy=sy*r*.115;
+      x.fillRect(r*.35,yy-r*barrelWidth*.32,r*1.16*barrelLength,r*barrelWidth*.64);
+      x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),yy-r*.07,r*.14,r*.14);
+      x.fillStyle='#151819';
+    }
   }else{
-    x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),-r*.105,r*.14,r*.21);
+    x.fillStyle='#151819';x.fillRect(r*.35,-r*barrelWidth/2,r*1.16*barrelLength,r*barrelWidth);
+    if(visualBarrel.id==='122mm'){
+      x.fillStyle='#0e1112';x.fillRect(r*(1.35*barrelLength),-r*.13,r*.20,r*.26);
+      x.fillStyle='#4a5049';x.fillRect(r*.68,-r*.16,r*.16,r*.32);
+    }else if(visualBarrel.id==='57mm'){
+      x.fillStyle='#0e1112';x.fillRect(r*(1.32*barrelLength),-r*.065,r*.10,r*.13);
+    }else{
+      x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),-r*.105,r*.14,r*.21);
+    }
   }
 
   x.fillStyle=railAccent||(enemy?(heavy?'#746a5d':'#9b5458'):'#849176');

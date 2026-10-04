@@ -475,8 +475,7 @@ function applyBurn(target){
   target.burnGrace=1;
   burst(target.x,target.y,'#ff9b55',10);
   // Every flame hit keeps the burn alive while the target is being sprayed.
-  target.burnTime=10;
-  target.burnTick=0;
+  target.burnTick=3;
   target.hitFlash=.05;
 }
 function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
@@ -899,26 +898,20 @@ function update(dt){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
   }
   // Burning tanks take 3 damage per second per stack for 8 seconds, up to 5 stacks.
-  if(p.burnTime>0){
-    const burnStacks=p.burnStacks||0;
-    p.burnTick=(p.burnTick||0)-dt;
-    // Burn deals one damage tick every 2 seconds per stack.
-    if(burnStacks>0&&p.burnTick<=0){
-      const burnHit=3*burnStacks;
-      p.hp-=burnHit;
-      dmgTexts.push({x:p.x+(Math.random()-.5)*p.r+24,y:p.y-p.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
-      p.hitFlash=.05;
-      p.burnTick=3;
-    }
-    p.burnGrace=Math.max(0,(p.burnGrace||0)-dt);
-    if(p.burnGrace<=0){
-      p.burnStacks=Math.max(0,burnStacks-1);
-      p.burnGrace=1;
-    }
-    p.burnTime=Math.max(0,p.burnTime-dt);
-    if(p.burnTime<=0){p.burnStacks=0;p.burnGrace=0;p.burnTick=0;p.burnHitCount=0;}
-    if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
-    if(p.hp<=0){p.hp=0;die();return;}
+  if(p.burnStacks>0){
+  const burnStacks=p.burnStacks;
+  p.burnTick=(p.burnTick||0)-dt;
+  if(p.burnTick<=0){
+    const burnHit=3*burnStacks;
+    p.hp-=burnHit;
+    dmgTexts.push({x:p.x+(Math.random()-.5)*p.r+24,y:p.y-p.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
+    p.hitFlash=.05;
+    p.burnStacks=Math.max(0,p.burnStacks-1);
+    p.burnTick=3;
+  }
+  if(Math.random()<dt*10)burst(p.x+(Math.random()-.5)*p.r,p.y+(Math.random()-.5)*p.r,'#ff8a3d',2);
+  if(p.hp<=0){p.hp=0;die();return;}
+}
   }
   // A wave cannot advance until every enemy from the current wave is destroyed.
   if(waveRemaining>0){
@@ -1052,26 +1045,20 @@ function update(dt){
   for(const e of en){
     const d=Math.hypot(p.x-e.x,p.y-e.y);
     e.fire-=dt;e.ramCd=Math.max(0,(e.ramCd||0)-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);
-    if(e.burnTime>0){
-      const burnStacks=e.burnStacks||0;
-      e.burnTick=(e.burnTick||0)-dt;
-      // Burn deals one damage tick every 2 seconds per stack.
-      if(burnStacks>0&&e.burnTick<=0){
-        const burnHit=3*burnStacks;
-        e.hp-=burnHit;
-        dmgTexts.push({x:e.x+(Math.random()-.5)*e.r+24,y:e.y-e.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
-        e.hitFlash=.05;
-        e.burnTick=3;
-      }
-      e.burnGrace=Math.max(0,(e.burnGrace||0)-dt);
-      if(e.burnGrace<=0){
-        e.burnStacks=Math.max(0,burnStacks-1);
-        e.burnGrace=1;
-      }
-      e.burnTime=Math.max(0,e.burnTime-dt);
-      if(e.burnTime<=0){e.burnStacks=0;e.burnGrace=0;e.burnTick=0;e.burnHitCount=0;}
-      if(Math.random()<dt*10)burst(e.x+(Math.random()-.5)*e.r,e.y+(Math.random()-.5)*e.r,'#ff8a3d',2);
-      if(e.hp<=0){
+    if(e.burnStacks>0){
+    const burnStacks=e.burnStacks;
+    e.burnTick=(e.burnTick||0)-dt;
+    if(e.burnTick<=0){
+      const burnHit=3*burnStacks;
+      e.hp-=burnHit;
+      dmgTexts.push({x:e.x+(Math.random()-.5)*e.r+24,y:e.y-e.r-38,text:burnHit.toFixed(0),life:.9,col:'#ff8a3d',kind:'burn'});
+      e.hitFlash=.05;
+      e.burnStacks=Math.max(0,e.burnStacks-1);
+      e.burnTick=3;
+    }
+    if(Math.random()<dt*10)burst(e.x+(Math.random()-.5)*e.r,e.y+(Math.random()-.5)*e.r,'#ff8a3d',2);
+    if(e.hp<=0){e.hp=0;killEnemy(e);continue;}
+  }if(e.hp<=0){
         e.hp=0;
         const idx=en.indexOf(e);
         if(idx>=0)killEnemy(e,idx);

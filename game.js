@@ -137,57 +137,12 @@ function stopEngineSound(){
 }
 
 
-function getSaveSlots(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'[]')}catch(e){return []}}
-function writeSaveSlots(slots){localStorage.setItem(SAVE_KEY,JSON.stringify(slots.slice(0,3)))}
-function saveCurrent(slot=activeSlot){
-  if(!p||!slot)return;
-  const slots=getSaveSlots();
-  slots[slot-1]={
-    version:1,level:p.lv,xp:p.xp,next:p.next,coins:p.coins,kills:p.kills,
-    hullId:equippedHull,turretId:equippedTurret,engineId:equippedEngine,
-    ownedHulls:[...ownedHulls],ownedTurrets:[...ownedTurrets],ownedEngines:[...ownedEngines],railgunTier,
-    savedAt:Date.now()
-  };
-  writeSaveSlots(slots);renderSaveSlots();
-}
-function applySave(slot){
-  const slots=getSaveSlots(),data=slots[slot-1];
-  if(!data)return false;
-  activeSlot=slot;
-  ownedHulls=data.ownedHulls||ownedHulls;ownedTurrets=data.ownedTurrets||ownedTurrets;ownedEngines=data.ownedEngines||ownedEngines;
-  normalizeOwnedEquipment();
-  equippedHull=data.hullId||'standard';equippedTurret=data.turretId||'standard';equippedEngine=data.engineId||'standard';railgunTier=Math.max(0,Math.min(3,Number(data.railgunTier)||0));
-  saveShop();
-  reset();
-  p.lv=Math.max(1,data.level||1);p.xp=Math.max(0,data.xp||0);p.next=Math.max(120,data.next||120);p.coins=Math.max(0,data.coins||0);p.kills=Math.max(0,data.kills||0);
-  return true;
-}
-function renderSaveSlots(){
-  const box=$('saveSlots');if(!box)return;
-  const slots=getSaveSlots();box.innerHTML='';
-  for(let i=1;i<=3;i++){
-    const d=slots[i-1],row=document.createElement('div');row.className='saveSlot';
-    const info=document.createElement('div');
-    info.innerHTML=d?'<b>Slot '+i+'</b><small>Level '+d.level+' • '+d.coins+' coins • '+d.kills+' kills</small>':'<b>Slot '+i+'</b><small>Empty</small>';
-    row.appendChild(info);
-    const actions=document.createElement('div');
-    if(d){const load=document.createElement('button');load.textContent='LOAD';load.onclick=()=>{initAudio();soundUi();if(applySave(i))showGame()};actions.appendChild(load)}
-    const save=document.createElement('button');save.textContent='SAVE';save.disabled=!p;save.onclick=()=>{initAudio();soundUi();activeSlot=i;saveCurrent(i)};
-    actions.appendChild(save);row.appendChild(actions);box.appendChild(row);
-  }
-}
+function saveCurrent(){ saveShop(); }
+function applySave(){ return false; }
 function showMenu(){
   stopEngineSound();
   hasContinue=!!p&&gameScreen==='game'&&!over;
   gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;renderSaveSlots();updateContinueButton();
-}
-function updateContinueButton(){
-  const b=$('continueGame');
-  if(b)b.hidden=!hasContinue;
-}
-function continueGame(){
-  if(!p||!hasContinue)return;
-  initAudio();soundUi();showGame();
 }
 function showGame(){
   gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;
@@ -197,11 +152,7 @@ document.querySelectorAll('.shopTab').forEach(tab=>{tab.onclick=()=>{initAudio()
 function openMenuShop(){
   initAudio();soundUi();$('mainMenu').hidden=true;$('shop').classList.add('open');renderShop();
 }
-function startNewGame(){
-  initAudio();soundUi();
-  const slots=getSaveSlots();let slot=activeSlot||slots.findIndex(v=>!v)+1;if(!slot)slot=1;
-  activeSlot=slot;reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveCurrent(slot);showGame();
-}
+function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveShop();showGame(); }
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
@@ -223,13 +174,13 @@ addEventListener('pointerup',()=>mouse.down=false);
 addEventListener('pointercancel',()=>mouse.down=false);
 addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space')&&gameScreen==='game')reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-$('mainMenuButton').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
+$('mainMenuButton').onclick=()=>{initAudio();soundUi();showMenu()};
 $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false;renderSaveSlots()};
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
 $('startGame').onclick=startNewGame;
-$('continueGame').onclick=continueGame;
-$('restart').onclick=()=>{initAudio();soundUi();if(activeSlot&&applySave(activeSlot))showGame();else{reset();showGame()}};
+$('continueGame').onclick=()=>showGame();
+$('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
 $('deathMenu').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
 renderSaveSlots();updateContinueButton();
 
@@ -602,7 +553,7 @@ function killEnemy(e,j){
   e.dead=true;e.corpseTime=5;e.hitFlash=0;e.burnTime=0;e.fire=0;
   deadTanks.push(e);en.splice(j,1);
 }
-function die(){saveCurrent(activeSlot);gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
+function die(){saveCurrent();gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
 function saveShop(){
   localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
@@ -830,7 +781,7 @@ function renderShop(){
       equippedEngine=item.id;
     }
     saveShop();
-    if(p&&activeSlot)saveCurrent(activeSlot);
+    if(p)saveCurrent();
     renderShop();
   };
 
@@ -913,7 +864,7 @@ function renderShop(){
 
 function update(dt){
   if(over||gameScreen!=='game'){stopEngineSound();return;}
-  autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent(activeSlot);}
+  autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent();}
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);p.ramCd=Math.max(0,(p.ramCd||0)-dt);
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);

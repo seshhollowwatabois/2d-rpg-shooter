@@ -3,6 +3,7 @@ let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[]
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
+let mobileFire=false;
 const hulls=[
   {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12,armor:{front:120,side:80,rear:60}},
   {id:'standard',name:'T-34',cost:0,hp:370,speed:120,reverse:75,turn:1.65,scale:1,armor:{front:80,side:45,rear:35}},
@@ -115,6 +116,8 @@ function makeEnemy(){
   waveRemaining--;
 }
 function shoot(){
+  const coarse=window.matchMedia?.('(pointer:coarse)').matches;
+  if(coarse&&!mobileFire)return;
   if(p.cd>0)return;
   const barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
   // Pick a random point inside the live dispersion circle, then fire toward that
@@ -775,8 +778,9 @@ setMobileButton('upButton','up');
 setMobileButton('downButton','down');
 setMobileButton('leftButton','left');
 setMobileButton('rightButton','right');
-$('fireButton').addEventListener('pointerdown',e=>{e.preventDefault();mouse.down=true});
-$('fireButton').addEventListener('pointerup',e=>{e.preventDefault();mouse.down=false});
-$('fireButton').addEventListener('pointercancel',()=>mouse.down=false);
+$('fireButton').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true});
+$('fireButton').addEventListener('pointerup',e=>{e.preventDefault();mobileFire=false});
+$('fireButton').addEventListener('pointercancel',()=>mobileFire=false);
+$('fireButton').addEventListener('lostpointercapture',()=>mobileFire=false);
 function frame(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(frame)}
 reset();requestAnimationFrame(frame);

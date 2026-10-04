@@ -560,9 +560,13 @@ function update(dt){
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
-      const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
+      const aimAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
+      const maxDispersion=140,dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
+      const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
+      const fireAngle=Math.atan2(mouse.y+Math.sin(ra)*rr-p.y,mouse.x+Math.cos(ra)*rr-p.x);
+      p.turretAngle=aimAngle;
       const barrelNow=barrels.find(v=>v.id===p.barrelId)||barrels[3];
-      fireRailgun(a,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime;
+      fireRailgun(fireAngle,barrelNow);p.railCharging=false;p.cd=barrelNow.reloadTime;
     }
   }
   for(let i=railBeams.length-1;i>=0;i--){railBeams[i].life-=dt;if(railBeams[i].life<=0)railBeams.splice(i,1);}

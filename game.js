@@ -7,9 +7,9 @@ const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
 const hulls=[
-  {id:'scout',name:'BT-7 Scout',cost:50,hp:270,speed:155,reverse:95,turn:2.1,scale:.92,armor:{front:45,side:22,rear:15}},
-  {id:'standard',name:'T-34',cost:0,hp:370,speed:120,reverse:75,turn:1.65,scale:1,armor:{front:80,side:32,rear:25}},
-  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12,armor:{front:120,side:60,rear:45}}
+  {id:'scout',name:'BT-7 Scout',cost:50,hp:270,speed:155,reverse:95,turn:2.1,scale:.92},
+  {id:'standard',name:'T-34',cost:0,hp:370,speed:120,reverse:75,turn:1.65,scale:1},
+  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];
 const turrets=[
   {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},
@@ -23,16 +23,16 @@ const engines=[
   {id:'better',name:'Better Engine',cost:0,speed:1.20,turn:1.20}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:4,dispersionTime:4,aimTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:9,dispersionTime:3,aimTime:6,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:16,dispersionTime:2,aimTime:10,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:1,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,reloadTime:4,dispersionTime:4,aimTime:4,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,reloadTime:9,dispersionTime:3,aimTime:6,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,reloadTime:16,dispersionTime:2,aimTime:10,scale:1.22,length:1.12},
+  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,precision:1,reloadTime:20,dispersionTime:1,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 const railgunTiers=[
-  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,penetration:160,reloadMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,penetration:165,reloadMult:.97},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,penetration:172,reloadMult:.94},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,penetration:180,reloadMult:.90}
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.97},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.94},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.90}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -387,7 +387,7 @@ function fireRailgun(fireAngle,barrel){
     const target=pierced[i].e;
     if(!en.includes(target))continue;
     const damage=baseDamage*Math.pow(.5,i);
-    applyBulletHit(target,damage,target.x,target.y,railTier.penetration,null);
+    applyBulletHit(target,damage,target.x,target.y);
     if(target.hp<=0)killEnemy(target,en.indexOf(target));
   }
 
@@ -415,26 +415,8 @@ function shoot(){
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
-  bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,penetration:barrel.penetration,trail:[]});
+  bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});
   p.cd=barrel.reloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
-}
-function getArmor(target,zone){
-  if(target===p){
-    const h=hulls.find(v=>v.id===p.hullId)||hulls[0];
-    return h.armor[zone];
-  }
-  return target.heavy?120:80;
-}
-function penetrationChance(penetration,armor){
-  const ratio=penetration/Math.max(1,armor);
-  const points=[[.5,.10],[.75,.30],[1,.50],[1.25,.70],[1.5,.85],[2,.95]];
-  if(ratio<=points[0][0])return .05;
-  if(ratio>=points[points.length-1][0])return .95;
-  for(let i=1;i<points.length;i++){
-    const [r1,c1]=points[i-1],[r2,c2]=points[i];
-    if(ratio<=r2)return c1+(c2-c1)*(ratio-r1)/(r2-r1);
-  }
-  return .95;
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -444,55 +426,20 @@ function getHitProfile(target,bx,by){
   if(c<=-.5)return {rear:true,zone:'rear'};
   return {rear:false,zone:'side'};
 }
-function ricochetChance(target,bx,by,vx,vy){
-  // 0° = shell striking the armor straight on. 90° = a grazing impact.
-  // Grazing hits become increasingly likely to bounce instead of penetrating.
-  const surfaceAngle=Math.atan2(by-target.y,bx-target.x);
-  const shellAngle=Math.atan2(vy,vx);
-  let impact=Math.abs(((shellAngle-(surfaceAngle+Math.PI)+Math.PI*3)%(Math.PI*2))-Math.PI);
-  impact=Math.min(impact,Math.PI-impact);
-  const deg=impact*180/Math.PI;
-  if(deg<55)return 0;
-  if(deg>=80)return .95;
-  return .10+(.95-.10)*(deg-55)/25;
-}
-function reflectBullet(b,target,bx,by){
-  const nx=(bx-target.x)/Math.max(.001,Math.hypot(bx-target.x,by-target.y));
-  const ny=(by-target.y)/Math.max(.001,Math.hypot(bx-target.x,by-target.y));
-  const dot=b.vx*nx+b.vy*ny;
-  b.vx=(b.vx-2*dot*nx)*.82;
-  b.vy=(b.vy-2*dot*ny)*.82;
-  b.x=bx+nx*(b.r+1.5);
-  b.y=by+ny*(b.r+1.5);
-  b.life=Math.min(b.life,.9);
-}
-function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
+function applyBulletHit(target,baseDamage,bx,by,b=null){
   const profile=getHitProfile(target,bx,by);
-  if(b&&Math.random()<ricochetChance(target,bx,by,b.vx,b.vy)){
-    reflectBullet(b,target,bx,by);
-    burst(bx,by,'#f5f7f7',12);
-    burst(bx,by,'#9aa5ad',6);soundRicochet();
-    return {profile,ricochet:true};
-  }
-  const armor=getArmor(target,profile.zone);
-  const chance=penetrationChance(penetration,armor);
-  const penetrates=Math.random()<chance;
-  const damage=penetrates?baseDamage:0;
-  if(penetrates){
-    target.hp-=damage;
-    target.hitFlash=.08;
-    dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
-  }
-
-  // A penetrating rear hit has a 1% chance to ignite the tank. Burning deals 40% of
-  // its max HP over 10 seconds, at a steady rate.
+  const damage=baseDamage;
+  target.hp-=damage;
+  target.hitFlash=.08;
+  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
   const fireChance=profile.rear?.05:profile.zone==='side'?.02:0;
-  if(penetrates&&fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
+  if(fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
     target.burnTime=10;
     target.burnDamage=target.max*.60;
     burst(target.x,target.y,'#ff9b55',16);
   }
-  burst(bx,by,penetrates?'#ffd27a':'#b8c0c8',penetrates?14:8);soundImpact(penetrates);
+  burst(bx,by,'#ffd27a',14);
+  soundImpact(true);
   return {profile,ricochet:false};
 }
 function enemyShoot(e){
@@ -502,10 +449,10 @@ function enemyShoot(e){
   if(barrel.instant){
     const range=1400,cos=Math.cos(a),sin=Math.sin(a);
     const dx=p.x-e.x,dy=p.y-e.y,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
-    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y,barrel.penetration,null);
+    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y);
   }else{
     const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
-    ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:2.5,life:2.4,dmg:damage,penetration:barrel.penetration,trail:[]});
+    ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
   }
   e.fire=barrel.reloadTime;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);soundFire(barrel.id);
@@ -639,7 +586,7 @@ function renderShop(){
       const addStat=(label,value,accent=false)=>{const d=document.createElement('div');d.className='shopStat'+(accent?' accent':'');d.innerHTML='<span>'+label+'</span><b>'+value+'</b>';grid.appendChild(d)};
       if(type==='hull'){
         addStat('Hit Points',item.hp,true);addStat('Forward Speed',item.speed);addStat('Reverse Speed',item.reverse);addStat('Hull Turn',item.turn.toFixed(2));
-        addStat('Front Armor',item.armor.front);addStat('Side Armor',item.armor.side);addStat('Rear Armor',item.armor.rear);addStat('Size',item.scale.toFixed(2)+'x');
+        addStat('Size',item.scale.toFixed(2)+'x');
       }else if(type==='turret'){
         addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Turret HP',item.hp);addStat('Size',item.scale.toFixed(2)+'x');
       }else if(type==='engine'){
@@ -648,8 +595,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        const displayedPenetration=item.id==='122mmLong'?(activeRailTier?.penetration||item.penetration):item.penetration;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Penetration',displayedPenetration);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);
@@ -798,8 +744,8 @@ function update(dt){
       if(firstHit){
         b.x=ox+(nx-ox)*firstT;b.y=oy+(ny-oy)*firstT;
         const j=en.indexOf(firstHit);
-        const result=applyBulletHit(firstHit,b.dmg,b.x,b.y,b.penetration,b);
-        hit=!result.ricochet;
+        const result=applyBulletHit(firstHit,b.dmg,b.x,b.y,b);
+        hit=true;
         if(firstHit.hp<=0&&j>=0)killEnemy(firstHit,j);
         // A ricochet remains alive and is reflected from the first tank it touched.
       }else{
@@ -820,29 +766,16 @@ function update(dt){
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);
-        if(Math.random()<ricochetChance(p,b.x,b.y,b.vx,b.vy)){
-          reflectBullet(b,p,b.x,b.y);
-          burst(b.x,b.y,'#f5f7f7',12);
-          burst(b.x,b.y,'#9aa5ad',6);soundRicochet();
-          continue;
-        }
-        const armor=getArmor(p,profile.zone);
-        const chance=penetrationChance(b.penetration,armor);
-        const penetrates=Math.random()<chance;
-        const damage=penetrates?b.dmg:0;
-        if(penetrates){
-          p.hp-=damage;p.inv=.28;shake=10; soundHit();
-          dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
-        }else{
-          burst(b.x,b.y,'#b8c0c8',8);
-        }
-        if(penetrates&&profile.rear&&p.burnTime<=0&&Math.random()<.01){
+        const damage=b.dmg;
+        p.hp-=damage;p.inv=.28;shake=10; soundHit();
+        dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(damage),life:.7});
+        if(profile.rear&&p.burnTime<=0&&Math.random()<.01){
           p.burnTime=10;p.burnDamage=p.max*.40;burst(p.x,p.y,'#ff9b55',16);
         }
         burst(b.x,b.y,'#ff765d',14);
         if(p.hp<=0)die();
       }
-      ebs.splice(i,1);continue;
+      ebs.splice(i,1);continue;      ebs.splice(i,1);continue;
     }
     if(b.life<=0||b.x<-60||b.x>W+60||b.y<-60||b.y>H+60)ebs.splice(i,1);
   }

@@ -511,18 +511,37 @@ function renderShop(){
 
     if(type==='hull'){
       const sc=item.scale*.9;
-      const body=item.id==='heavy'?'#4e4942':item.id==='scout'?'#526149':'#56644c';
-      const dark=item.id==='heavy'?'#373532':'#3f493e';
-      q.fillStyle=dark;q.fillRect(-31*sc,-17*sc,62*sc,5*sc);q.fillRect(-31*sc,12*sc,62*sc,5*sc);
+      const isWasp=item.id==='scout',isTitan=item.id==='heavy';
+      const body=isTitan?'#4e4942':isWasp?'#4f6048':'#566b4c';
+      const dark=isTitan?'#373532':'#384337';
+      const light=isTitan?'#605a52':'#68775b';
+      const L=31*sc,B=(isWasp?12:isTitan?17:14)*sc;
+      q.fillStyle='#202520';
+      q.roundRect(-L,-B*.72,L*2,B*.20,4*sc);q.fill();
+      q.roundRect(-L,B*.52,L*2,B*.20,4*sc);q.fill();
       q.fillStyle=body;q.beginPath();
-      q.moveTo(30*sc,0);q.lineTo(20*sc,-11*sc);q.lineTo(3*sc,-13*sc);q.lineTo(-25*sc,-12*sc);
-      q.quadraticCurveTo(-30*sc,-10*sc,-30*sc,0);q.quadraticCurveTo(-30*sc,10*sc,-25*sc,12*sc);
-      q.lineTo(3*sc,13*sc);q.lineTo(20*sc,11*sc);q.closePath();q.fill();
-      q.fillStyle=item.id==='heavy'?'#605a52':'#647258';q.beginPath();
-      q.moveTo(30*sc,0);q.lineTo(20*sc,-11*sc);q.lineTo(4*sc,-13*sc);q.lineTo(6*sc,-5*sc);q.lineTo(22*sc,-4*sc);q.closePath();q.fill();
-      q.fillStyle='#687264';
-      for(let i=-2;i<=2;i++){q.beginPath();q.arc(i*11*sc,-15*sc,3.4*sc,0,6.283);q.fill();q.beginPath();q.arc(i*11*sc,15*sc,3.4*sc,0,6.283);q.fill()}
-      q.fillStyle='#343c34';q.beginPath();q.arc(-3*sc,0,11*sc,0,6.283);q.fill();
+      if(isWasp){
+        q.moveTo(L*.98,0);q.lineTo(L*.60,-B*.60);q.lineTo(L*.08,-B*.78);q.lineTo(-L*.52,-B*.66);q.lineTo(-L*.90,-B*.35);q.lineTo(-L*.90,B*.35);q.lineTo(-L*.52,B*.66);q.lineTo(L*.08,B*.78);q.lineTo(L*.60,B*.60);
+      }else if(isTitan){
+        q.moveTo(L*.95,0);q.lineTo(L*.68,-B*.72);q.lineTo(L*.14,-B*.82);q.lineTo(-L*.64,-B*.80);q.lineTo(-L*.95,-B*.58);q.lineTo(-L*.95,B*.58);q.lineTo(-L*.64,B*.80);q.lineTo(L*.14,B*.82);q.lineTo(L*.68,B*.72);
+      }else{
+        q.moveTo(L,0);q.lineTo(L*.68,-B*.68);q.lineTo(L*.08,-B*.82);q.lineTo(-L*.68,-B*.72);q.quadraticCurveTo(-L*.96,-B*.50,-L*.96,0);q.quadraticCurveTo(-L*.96,B*.50,-L*.68,B*.72);q.lineTo(L*.08,B*.82);q.lineTo(L*.68,B*.68);
+      }
+      q.closePath();q.fill();
+      q.fillStyle=light;q.beginPath();q.moveTo(L*.94,0);q.lineTo(L*.62,-B*.60);q.lineTo(L*.05,-B*.74);q.lineTo(L*.18,-B*.28);q.lineTo(L*.60,-B*.18);q.closePath();q.fill();
+      q.save();q.scale(1,-1);q.fill();q.restore();
+      if(!isWasp){
+        q.fillStyle=dark;
+        q.beginPath();q.moveTo(-L*.58,-B*.68);q.lineTo(L*.54,-B*.58);q.lineTo(L*.48,-B*.88);q.lineTo(-L*.44,-B*.80);q.closePath();q.fill();
+        q.save();q.scale(1,-1);q.fill();q.restore();
+      }
+      q.fillStyle='#343c34';q.beginPath();q.arc(-2,0,(isTitan?12:isWasp?9:11)*sc,0,6.283);q.fill();
+      q.strokeStyle='#7c896f';q.lineWidth=1;q.stroke();
+      for(let i=0;i<(isWasp?4:isTitan?6:5);i++){
+        const wx=-L*.55+i*(L*1.1/Math.max(1,(isWasp?4:isTitan?6:5)-1));
+        q.fillStyle='#596158';q.beginPath();q.arc(wx,-(B*.88),2.6*sc,0,6.283);q.fill();
+        q.beginPath();q.arc(wx,B*.88,2.6*sc,0,6.283);q.fill();
+      }
     }else if(type==='turret'){
       const sc=item.scale*.95;
       const tier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
@@ -917,99 +936,99 @@ function update(dt){
 function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard'){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
-  // T-34-85-inspired top-down proportions:
-  // long hull, sharply sloped glacis, rounded rear, wide side tracks and five road wheels.
-  const hullScale=hullId==='scout'?.92:hullId==='heavy'?1.12:1;
-  const L=r*2.55*hullScale, B=r*1.18*hullScale, trackW=r*.34*hullScale, trackL=L*.92;
-  const hullB=r*.88*hullScale;
+  // Classic Tanki-style hull silhouettes: Wasp = tiny/agile, Hornet = sleek medium,
+  // Titan = broad/heavy. Each keeps the same hit radius while getting a distinct body.
+  const isWasp=hullId==='scout', isHornet=hullId==='standard', isTitan=hullId==='heavy';
+  const hullScale=isWasp?.92:isTitan?1.12:1;
+  const L=r*2.55*hullScale, B=r*1.18*hullScale;
+  const trackW=r*(isWasp?.29:isTitan?.39:.34)*hullScale;
+  const trackL=L*(isWasp?.86:isTitan?.98:.92);
+  const hullB=r*(isWasp?.78:isTitan?.98:.88)*hullScale;
 
-  // Ground shadow
   x.save();x.rotate(-hullAngle);x.fillStyle='rgba(0,0,0,.34)';
-  x.beginPath();x.ellipse(2,5,r*1.48,r*.88,0,0,6.283);x.fill();x.restore();
+  x.beginPath();x.ellipse(2,5,r*(isTitan?1.58:1.42),r*(isTitan?.94:.82),0,0,6.283);x.fill();x.restore();
 
-  // Tracks are on the SIDES of the hull, like a real tank.
-  x.fillStyle=flash?'#e2c3a5':(enemy?(heavy?'#292b2c':'#4b3033'):'#242923');
+  const trackDark=flash?'#b89d84':(enemy?(heavy?'#292b2c':'#4b3033'):'#202520');
+  const trackEdge=enemy?(heavy?'#5b5954':'#704347'):'#4a5148';
+  const wheelOuter=enemy?(heavy?'#66635d':'#75464a'):'#596158';
+  const wheelInner=enemy?(heavy?'#353735':'#4b3033'):'#303530';
   for(const sy of [-1,1]){
     const ty=sy*(hullB/2+trackW/2);
-    x.beginPath();x.roundRect(-trackL/2,ty-trackW/2,trackL,trackW,6);x.fill();
-    x.strokeStyle=enemy?(heavy?'#5b5954':'#704347'):'#454c43';x.lineWidth=2;x.stroke();
-
-    // Track inner rail
-    x.strokeStyle=enemy?(heavy?'#3c3d3d':'#5b383b'):'#30362f';x.lineWidth=2;
+    x.fillStyle=trackDark;x.beginPath();x.roundRect(-trackL/2,ty-trackW/2,trackL,trackW,7);x.fill();
+    x.strokeStyle=trackEdge;x.lineWidth=2;x.stroke();
+    x.strokeStyle=enemy?(heavy?'#3c3d3d':'#5b383b'):'#343a34';x.lineWidth=2;
     x.strokeRect(-trackL*.43,ty-trackW*.24,trackL*.86,trackW*.48);
-
-    // Five large T-34-style road wheels.
-    for(let i=0;i<5;i++){
-      const wx=-trackL*.34+i*(trackL*.17);
-      x.fillStyle=enemy?(heavy?'#66635d':'#75464a'):'#555d52';
-      x.beginPath();x.arc(wx,ty,r*.16,0,6.283);x.fill();
+    const wheels=isWasp?4:isTitan?6:5;
+    for(let i=0;i<wheels;i++){
+      const wx=-trackL*.34+i*(trackL*.68/Math.max(1,wheels-1));
+      const wr=r*(isTitan?.175:isWasp?.145:.16);
+      x.fillStyle=wheelOuter;x.beginPath();x.arc(wx,ty,wr,0,6.283);x.fill();
       x.strokeStyle='#202320';x.lineWidth=1.5;x.stroke();
-      x.fillStyle=enemy?(heavy?'#353735':'#4b3033'):'#353b35';
-      x.beginPath();x.arc(wx,ty,r*.055,0,6.283);x.fill();
+      x.fillStyle=wheelInner;x.beginPath();x.arc(wx,ty,wr*.34,0,6.283);x.fill();
     }
-
-    // Track end/idler hints.
-    x.fillStyle=enemy?(heavy?'#77736a':'#875057'):'#697264';
-    x.beginPath();x.arc(-trackL*.43,ty,r*.075,0,6.283);x.fill();
-    x.beginPath();x.arc(trackL*.43,ty,r*.075,0,6.283);x.fill();
   }
 
-  // Main hull silhouette: pointed/sloped nose, straight sides, rounded rear.
-  x.fillStyle=flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):'#526149');
-  x.beginPath();
-  x.moveTo(L*.50,0);                    // pointed glacis nose
-  x.lineTo(L*.34,-hullB*.43);
-  x.lineTo(L*.04,-hullB*.54);
-  x.lineTo(-L*.32,-hullB*.51);
-  x.quadraticCurveTo(-L*.47,-hullB*.43,-L*.48,-hullB*.18);
-  x.lineTo(-L*.48,hullB*.18);
-  x.quadraticCurveTo(-L*.47,hullB*.43,-L*.32,hullB*.51);
-  x.lineTo(L*.04,hullB*.54);
-  x.lineTo(L*.34,hullB*.43);
-  x.closePath();x.fill();
+  const body=flash?'#e5c6a8':(enemy?(heavy?'#4e4942': '#713d41'):'#4f6048');
+  const bodyDark=enemy?(heavy?'#373532':'#593337'):'#384337';
+  const bodyLight=enemy?(heavy?'#625a50':'#81484c'):'#68775b';
 
-  // Characteristic sloped glacis.
-  x.fillStyle=enemy?(heavy?'#605a52':'#81484c'):'#647258';
-  x.beginPath();
-  x.moveTo(L*.50,0);x.lineTo(L*.34,-hullB*.43);x.lineTo(L*.04,-hullB*.54);
-  x.lineTo(L*.08,-hullB*.22);x.lineTo(L*.31,-hullB*.16);x.closePath();x.fill();
+  x.fillStyle=body;x.beginPath();
+  if(isWasp){
+    // Small, narrow Wasp: pointed nose, tapered rear and pronounced side shoulders.
+    x.moveTo(L*.53,0);x.lineTo(L*.34,-hullB*.38);x.lineTo(L*.04,-hullB*.47);
+    x.lineTo(-L*.28,-hullB*.40);x.lineTo(-L*.47,-hullB*.22);x.lineTo(-L*.47,hullB*.22);
+    x.lineTo(-L*.28,hullB*.40);x.lineTo(L*.04,hullB*.47);x.lineTo(L*.34,hullB*.38);x.closePath();
+  }else if(isTitan){
+    // Broad Titan: wide armored nose, heavy side skirts and squared engine deck.
+    x.moveTo(L*.48,0);x.lineTo(L*.36,-hullB*.50);x.lineTo(L*.08,-hullB*.56);
+    x.lineTo(-L*.33,-hullB*.55);x.lineTo(-L*.48,-hullB*.40);x.lineTo(-L*.48,hullB*.40);
+    x.lineTo(-L*.33,hullB*.55);x.lineTo(L*.08,hullB*.56);x.lineTo(L*.36,hullB*.50);x.closePath();
+  }else{
+    // Sleek Hornet: longer and cleaner than Wasp, with a pointed wedge nose.
+    x.moveTo(L*.51,0);x.lineTo(L*.35,-hullB*.43);x.lineTo(L*.04,-hullB*.53);
+    x.lineTo(-L*.34,-hullB*.48);x.quadraticCurveTo(-L*.48,-hullB*.36,-L*.48,0);
+    x.quadraticCurveTo(-L*.48,hullB*.36,-L*.34,hullB*.48);x.lineTo(L*.04,hullB*.53);x.lineTo(L*.35,hullB*.43);x.closePath();
+  }
+  x.fill();
 
-  // Lower hull side bands.
-  x.fillStyle=enemy?(heavy?'#393734':'#593337'):'#3f493e';
-  x.beginPath();
-  x.moveTo(-L*.32,-hullB*.51);x.lineTo(L*.04,-hullB*.54);x.lineTo(L*.08,-hullB*.22);
-  x.lineTo(-L*.30,-hullB*.25);x.closePath();x.fill();
-  x.beginPath();
-  x.moveTo(-L*.32,hullB*.51);x.lineTo(L*.04,hullB*.54);x.lineTo(L*.08,hullB*.22);
-  x.lineTo(-L*.30,hullB*.25);x.closePath();x.fill();
+  // Distinctive armor panels.
+  x.fillStyle=bodyLight;x.beginPath();
+  if(isWasp){
+    x.moveTo(L*.50,0);x.lineTo(L*.32,-hullB*.36);x.lineTo(-L*.02,-hullB*.42);x.lineTo(L*.08,-hullB*.16);x.lineTo(L*.30,-hullB*.13);x.closePath();
+  }else if(isTitan){
+    x.moveTo(L*.47,0);x.lineTo(L*.34,-hullB*.47);x.lineTo(L*.04,-hullB*.51);x.lineTo(L*.10,-hullB*.22);x.lineTo(L*.31,-hullB*.18);x.closePath();
+  }else{
+    x.moveTo(L*.49,0);x.lineTo(L*.34,-hullB*.40);x.lineTo(L*.03,-hullB*.49);x.lineTo(L*.08,-hullB*.20);x.lineTo(L*.31,-hullB*.15);x.closePath();
+  }
+  x.fill();
+  x.save();x.scale(1,-1);x.fill();x.restore();
 
-  // Engine deck at the rear.
-  x.fillStyle=enemy?(heavy?'#373532':'#4f3034'):'#3d473c';
-  x.beginPath();
-  x.moveTo(-L*.43,-hullB*.34);x.lineTo(-L*.08,-hullB*.39);
-  x.lineTo(-L*.02,-hullB*.12);x.lineTo(-L*.36,-hullB*.10);x.closePath();x.fill();
-  x.beginPath();
-  x.moveTo(-L*.43,hullB*.34);x.lineTo(-L*.08,hullB*.39);
-  x.lineTo(-L*.02,hullB*.12);x.lineTo(-L*.36,hullB*.10);x.closePath();x.fill();
+  // Side skirts / armor wings are especially visible on Hornet and Titan.
+  if(!isWasp){
+    x.fillStyle=bodyDark;
+    const wing=isTitan?L*.40:L*.34, thick=isTitan?r*.16:r*.12;
+    x.beginPath();x.moveTo(-L*.34,-hullB*.50);x.lineTo(wing,-hullB*.54);x.lineTo(wing-.04*L,-hullB*.72);x.lineTo(-L*.28,-hullB*.66);x.closePath();x.fill();
+    x.beginPath();x.moveTo(-L*.34,hullB*.50);x.lineTo(wing,hullB*.54);x.lineTo(wing-.04*L,hullB*.72);x.lineTo(-L*.28,hullB*.66);x.closePath();x.fill();
+    x.fillStyle='#697264';
+    x.fillRect(-L*.24,-hullB*.66,L*.16,thick);x.fillRect(-L*.24,hullB*.66,L*.16,thick);
+  }
 
-  // Engine vents.
+  // Rear engine deck and vents.
+  x.fillStyle=bodyDark;x.beginPath();x.roundRect(-L*.43,-hullB*.34,L*.34,hullB*.68,isTitan?5:4);x.fill();
   x.strokeStyle=enemy?(heavy?'#625d54':'#744246'):'#5e6a59';x.lineWidth=1.2;
-  for(let i=0;i<4;i++){
-    const vx=-L*.34+i*r*.075;
-    x.beginPath();x.moveTo(vx,-hullB*.30);x.lineTo(vx+.035*r,-hullB*.14);x.stroke();
-    x.beginPath();x.moveTo(vx,hullB*.30);x.lineTo(vx+.035*r,hullB*.14);x.stroke();
+  const ventCount=isTitan?5:4;
+  for(let i=0;i<ventCount;i++){
+    const vx=-L*.37+i*(L*.06);
+    x.beginPath();x.moveTo(vx,-hullB*.27);x.lineTo(vx+.025*L,-hullB*.09);x.stroke();
+    x.beginPath();x.moveTo(vx,hullB*.27);x.lineTo(vx+.025*L,hullB*.09);x.stroke();
   }
 
-  // Hull seams and small armor bolts.
-  x.strokeStyle=enemy?(heavy?'#777067':'#9a5558'):'#78866d';x.lineWidth=1.2;
-  x.beginPath();x.moveTo(-L*.29,-hullB*.50);x.lineTo(-L*.29,hullB*.50);x.stroke();
-  x.beginPath();x.moveTo(L*.08,-hullB*.53);x.lineTo(L*.08,hullB*.53);x.stroke();
+  // Hull armor seams and bolts.
+  x.strokeStyle=enemy?(heavy?'#777067':'#9a5558'):'#7c896f';x.lineWidth=1.2;
+  x.beginPath();x.moveTo(-L*.27,-hullB*.50);x.lineTo(-L*.27,hullB*.50);x.stroke();
+  if(isTitan){x.beginPath();x.moveTo(L*.08,-hullB*.53);x.lineTo(L*.08,hullB*.53);x.stroke();}
   x.fillStyle=enemy?(heavy?'#aaa092':'#ad5d60'):'#a1ac91';
-  for(const px of [-L*.24,L*.18]){
-    for(const py of [-hullB*.42,hullB*.42]){
-      x.beginPath();x.arc(px,py,r*.035,0,6.283);x.fill();
-    }
-  }
+  for(const px of [-L*.24,L*.18])for(const py of [-hullB*.42,hullB*.42]){x.beginPath();x.arc(px,py,r*.035,0,6.283);x.fill();}
 
   // Turret ring.
   x.fillStyle=enemy?(heavy?'#363432':'#513033'):'#343c34';

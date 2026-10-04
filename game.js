@@ -527,7 +527,15 @@ function enemyShoot(e){
   if(barrel.instant){
     const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
-    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
+    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
+      applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
+      // Instant-hit enemy weapons must also trigger the player's death check.
+      if(p.hp<=0){
+        p.hp=0;
+        die();
+        return;
+      }
+    }
   }else{
     const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300);
     if(e.turretId==='rapid'){

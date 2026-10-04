@@ -205,9 +205,12 @@ function applyBulletHit(target,baseDamage,bx,by,penetration=70,b=null){
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*900,vy:Math.sin(a)*900,r:2.5,life:2.4,dmg:50,penetration:70,trail:[]});
-  e.fire=4;
-  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
+  const isKV=e.enemyBarrelId==='122mm';
+  const damage=isKV?390+Math.random()*50:50;
+  const penetration=isKV?140:70;
+  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*900,vy:Math.sin(a)*900,r:2.5,life:2.4,dmg:damage,penetration,trail:[]});
+  e.fire=isKV?5.5:4;
+  burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,isKV?'#ffd27a':'#ff875f',isKV?7:4);
 }
 function killEnemy(e,j){
   p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);

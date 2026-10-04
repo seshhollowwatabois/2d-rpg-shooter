@@ -350,9 +350,8 @@ function makeEnemy(){
   const heavy=hullId==='heavy';
   const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
 
-  // Enemy HP comes from the hull only; turrets provide no HP bonus.
-  const baseHp=heavy?360:hullId==='standard'?240:170;
-  const hp=baseHp;
+  // Enemy HP matches the selected hull's HP exactly; turrets provide no HP bonus.
+  const hp=hull.hp;
 
   en.push({
     x:a,y:b,

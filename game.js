@@ -357,7 +357,8 @@ function makeEnemy(){
   });
   waveRemaining--;
 }
-function fireRailgun(barrel){
+function fireRailgun(){
+  const barrel=gunForTurret(p.turretId);
   const fireAngle=p.turretAngle;
   // Start the beam at the actual end of the long gun barrel, not at the turret center.
   const gunMuzzleDistance=p.r*(.38+1.16*(barrel.length||1));
@@ -399,7 +400,7 @@ function fireRailgun(barrel){
   railBeams.push({
     x1:muzzleX,y1:muzzleY,
     x2:muzzleX+cos*wallDist,y2:muzzleY+sin*wallDist,
-    life:2,maxLife:2,angle:fireAngle
+    life:.45,maxLife:.45,angle:fireAngle
   });
   burst(muzzleX,muzzleY,'#bffcff',24);
   burst(muzzleX,muzzleY,'#ffffff',12);
@@ -630,7 +631,7 @@ function update(dt){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
       const barrelNow=gunForTurret(p.turretId);
-      fireRailgun(barrelNow);
+      fireRailgun();
       p.railCharging=false;
       const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
       p.cd=barrelNow.reloadTime*(activeRailTier?.reloadMult||1);

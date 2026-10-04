@@ -488,11 +488,11 @@ function shoot(){
       }
     }
     // Dense flame particles make the weapon read as a flamethrower instead of a projectile.
-    for(let i=0;i<18;i++){
+    for(let i=0;i<45;i++){
       const a=fireAngle+(Math.random()-.5)*cone*1.7;
       const d=18+Math.random()*range;
       const px=muzzle.x+Math.cos(a)*d,py=muzzle.y+Math.sin(a)*d;
-      ps.push({x:px,y:py,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.10+Math.random()*.18,col:Math.random()<.55?'#ff6a22':'#ffd35a'});
+      ps.push({x:px,y:py,vx:Math.cos(a)*25,vy:Math.sin(a)*25,life:.16+Math.random()*.24,col:Math.random()<.55?'#ff5a18':Math.random()<.7?'#ffb52e':'#fff1a6',size:5+Math.random()*5});
     }
     burst(muzzle.x,muzzle.y,'#ff6a22',6);
     soundFire(barrel.id);
@@ -561,9 +561,9 @@ function enemyShoot(e){
         if(p.hp<=0){p.hp=0;die();return;}
       }
     }
-    for(let i=0;i<12;i++){
+    for(let i=0;i<30;i++){
       const fa=a+(Math.random()-.5)*cone*1.7,d=18+Math.random()*range;
-      ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:Math.cos(fa)*20,vy:Math.sin(fa)*20,life:.10+Math.random()*.16,col:Math.random()<.55?'#ff6a22':'#ffd35a'});
+      ps.push({x:e.x+Math.cos(fa)*d,y:e.y+Math.sin(fa)*d,vx:Math.cos(fa)*20,vy:Math.sin(fa)*20,life:.14+Math.random()*.22,col:Math.random()<.55?'#ff5a18':Math.random()<.7?'#ffb52e':'#fff1a6',size:5+Math.random()*4});
     }
     burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',5);
   }else if(barrel.instant){
@@ -1431,7 +1431,7 @@ function draw(){
     x.restore();
   }
   // shell trails / explosions
-  for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,3.5,0,6.283);x.fill()}x.globalAlpha=1;
+  for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,q.size||3.5,0,6.283);x.fill()}x.globalAlpha=1;
   for(const b of bs){
     const col=b.col||'#ff8a00',trailCol=b.col?'#72c5ff':'#ff9d24',coreCol=b.col?'#d9f1ff':'#fff4c2';
     for(let i=b.trail.length-1;i>=0;i--){const t=b.trail[i],a=t.life/.16*.55;x.globalAlpha=a;x.fillStyle=trailCol;x.beginPath();x.arc(t.x,t.y,b.r*(1.0+.9*a),0,6.283);x.fill();x.fillStyle=coreCol;x.globalAlpha=a*.9;x.beginPath();x.arc(t.x,t.y,b.r*(.55+.7*a),0,6.283);x.fill()}

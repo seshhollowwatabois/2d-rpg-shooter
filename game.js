@@ -25,14 +25,14 @@ const engines=[
 const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,reloadTime:4,hullMoveDispersion:1,aimTime:4,scale:.82,length:.82},
   {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,reloadTime:9,hullMoveDispersion:.75,aimTime:6,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,reloadTime:16,hullMoveDispersion:.55,aimTime:10,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,precision:1,reloadTime:20,hullMoveDispersion:.40,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,scale:1.22,length:1.12},
+  {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 const railgunTiers=[
-  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,aimMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.85,pierceDamageMult:.67,hullMoveMult:.80,aimMult:.90},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.70,pierceDamageMult:.83,hullMoveMult:.60,aimMult:.80},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.55,pierceDamageMult:1,hullMoveMult:.40,aimMult:.70}
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.85,pierceDamageMult:.67,hullMoveMult:.80},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.70,pierceDamageMult:.83,hullMoveMult:.60},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.55,pierceDamageMult:1,hullMoveMult:.40}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -176,7 +176,7 @@ function startNewGame(){
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], barrel=barrels.find(v=>v.id===equippedBarrel)||barrels[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp+turret.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,aimPrecision:barrel.precision,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,turretAngularSpeed:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,mass:hull.id==='heavy'?1.8:hull.id==='scout'?.65:1,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnTime:0,burnDamage:0,ramCd:0,railCharging:false,railCharge:0,hullId:hull.id,turretId:turret.id,barrelId:barrel.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
@@ -353,7 +353,7 @@ function makeEnemy(){
   });
   waveRemaining--;
 }
-function fireRailgun(fireAngle,barrel){
+function fireRailgun(barrel){
   // Start the beam at the actual end of the long gun barrel, not at the turret center.
   const gunMuzzleDistance=p.r*(.38+1.16*(barrel.length||1));
   const muzzleX=p.x+Math.cos(fireAngle)*gunMuzzleDistance;
@@ -409,22 +409,15 @@ function shoot(){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
   }
-  const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-  const hullMoveDispersion=barrel.hullMoveDispersion*(activeRailTier?.hullMoveMult||1);
-  const maxSpeed=Math.max(1,p.speed);
-  const hullSpeedRatio=Math.min(1,Math.abs(p.currentDriveSpeed||0)/maxSpeed);
-  const effectivePrecision=Math.max(.02,p.aimPrecision*(1-hullSpeedRatio*hullMoveDispersion));
-  const maxDispersion=140,dispersionRadius=maxDispersion*(1-effectivePrecision);
-  const rr=dispersionRadius*Math.sqrt(Math.random()),ra=Math.random()*Math.PI*2;
-  const fireAngle=p.turretAngle+Math.atan2(Math.sin(ra)*rr,Math.cos(ra)*rr)/Math.max(1,p.r);
+  const fireAngle=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});
-  const actualReloadTime=barrel.reloadTime*(activeRailTier?.reloadMult||1);
+  const actualReloadTime=barrel.reloadTime;
   p.cd=actualReloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
 }
-function getHitProfile(target,bx,by){
+function getHitProfilefunction getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
   const local=((hitAngle-target.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const c=Math.cos(local);
@@ -601,7 +594,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierced Tank Damage',item.id==='122mmLong'?Math.round((activeRailTier?.pierceDamageMult??.5)*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');const detailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;addStat('Aim Time',item.id==='122mmLong'?(item.aimTime*(detailTier?.aimMult||1)).toFixed(2)+'s':(item.aimTime||0)+'s');addStat('Hull Movement Dispersion',Math.round((item.hullMoveDispersion||0)*(detailTier?.hullMoveMult||1)*100)+'%');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierced Tank Damage',item.id==='122mmLong'?Math.round((activeRailTier?.pierceDamageMult??.5)*100)+'%':'—');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);
@@ -1081,7 +1074,7 @@ function draw(){
   }
   // 122mm Long charge animation: energy builds around the muzzle for 1 second.
   if(p.railCharging){
-    const a=p.turretAngle;
+    const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);
     const chargeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[3];
     const muzzleDistance=p.r*(.38+1.16*(chargeBarrel.length||1));
     const mx=p.x+Math.cos(a)*muzzleDistance,my=p.y+Math.sin(a)*muzzleDistance;
@@ -1169,28 +1162,7 @@ function draw(){
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
-  // Show the live reload countdown beside the cursor.
-  // Live dispersion reticle: its size directly represents the current shot spread.
-  const liveRailTier=p.barrelId==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-  const liveBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
-  const liveMoveDispersion=(liveBarrel.hullMoveDispersion||0)*(liveRailTier?.hullMoveMult||1);
-  const liveHullSpeedRatio=Math.min(1,Math.abs(p.currentDriveSpeed||0)/Math.max(1,p.speed));
-  const hullAccuracy=Math.max(.02,Math.min(1,p.aimPrecision*(1-liveHullSpeedRatio*liveMoveDispersion)));
-  const turretAngleToMouse=Math.atan2(mouse.y-p.y,mouse.x-p.x);
-  const turretError=Math.abs(((turretAngleToMouse-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
-  const turretAlignment=Math.max(0,1-turretError/.18);
-  const turretMotionPenalty=Math.max(0,Math.min(1,(p.turretAngularSpeed||0)/Math.max(.01,(turrets.find(v=>v.id===p.turretId)||turrets[0]).turn)));
-  const accuracy=Math.max(.02,Math.min(1,hullAccuracy*turretAlignment*(1-turretMotionPenalty*.65)));
-  const precisionRadius=18+122*(1-accuracy);
-  const aimReady=turretError<.012&&liveHullSpeedRatio<.001&&turretMotionPenalty<.001&&p.aimPrecision>=liveBarrel.precision-.002;
-  const aimCenterX=mouse.x;
-  const aimCenterY=mouse.y;
-  x.save();
-  x.strokeStyle=aimReady?'#39e66b':accuracy<.5?'#ff4b4b':'#ffd21a';
-  x.lineWidth=aimReady?1.5:accuracy<.5?2.5:2;
-  x.globalAlpha=.9;
-  x.beginPath();x.arc(aimCenterX,aimCenterY,precisionRadius,0,6.283);x.stroke();
-  x.beginPath();x.moveTo(aimCenterX-precisionRadius-5,aimCenterY);x.lineTo(aimCenterX-precisionRadius+4,aimCenterY);x.moveTo(aimCenterX+precisionRadius-4,aimCenterY);x.lineTo(aimCenterX+precisionRadius+5,aimCenterY);x.moveTo(aimCenterX,aimCenterY-precisionRadius-5);x.lineTo(aimCenterX,aimCenterY-precisionRadius+4);x.moveTo(aimCenterX,aimCenterY+precisionRadius-4);x.lineTo(aimCenterX,aimCenterY+precisionRadius+5);x.stroke();x.restore();
+  // Reload countdown only; aiming/dispersion UI removed.
   const cursorReload=$('cursorReload');
   if(cursorReload){
     const activeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];

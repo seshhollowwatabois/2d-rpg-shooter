@@ -998,7 +998,10 @@ function draw(){
   }
   // 122mm Long charge animation: energy builds around the muzzle for 1 second.
   if(p.railCharging){
-    const a=Math.atan2(mouse.y-p.y,mouse.x-p.x),mx=p.x+Math.cos(a)*34,my=p.y+Math.sin(a)*34;
+    const a=p.turretAngle;
+    const chargeBarrel=barrels.find(v=>v.id===p.barrelId)||barrels[3];
+    const muzzleDistance=p.r*(.38+1.16*(chargeBarrel.length||1));
+    const mx=p.x+Math.cos(a)*muzzleDistance,my=p.y+Math.sin(a)*muzzleDistance;
     const progress=1-p.railCharge;
     x.save();x.translate(mx,my);x.rotate(a);x.globalAlpha=.35+.65*progress;
     x.strokeStyle='#79faff';x.lineWidth=3+5*progress;x.beginPath();x.arc(0,0,8+14*progress,0,6.283);x.stroke();
@@ -1010,8 +1013,8 @@ function draw(){
   for(const b of railBeams){
     const a=Math.max(0,b.life/b.maxLife);
     x.save();x.globalAlpha=a;
-    x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=7*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
-    x.strokeStyle='#ffffff';x.lineWidth=2*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.lineCap='round';x.strokeStyle='#79faff';x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
   // shell trails / explosions

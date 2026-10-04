@@ -1134,8 +1134,11 @@ function draw(){
   const actualReloadTime=barrel.id==='122mmLong'
     ? barrel.reloadTime*(activeRailTier?.reloadMult||1)
     : barrel.reloadTime;
-  // Empty immediately after firing, then fill smoothly until ready.
-  const reloadPct=actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1;
+  // Railgun charge drains the reload bar toward zero before the shot,
+  // then the normal reload cycle starts from empty after firing.
+  const reloadPct=p.railCharging
+    ?Math.max(0,Math.min(1,p.railCharge))
+    :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
   for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/.7);x.fillStyle='#ffd27a';x.font='bold 13px system-ui';x.textAlign='center';x.fillText('-'+q.text,q.x,q.y);x.globalAlpha=1}

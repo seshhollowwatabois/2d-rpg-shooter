@@ -174,7 +174,7 @@ $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('op
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
 $('startGame').onclick=startNewGame;
-$('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
+$('restart').onclick=()=>{initAudio();soundUi();if(activeSlot&&applySave(activeSlot))showGame();else{reset();showGame()}};
 $('deathMenu').onclick=()=>{initAudio();soundUi();saveCurrent(activeSlot);showMenu()};
 renderSaveSlots();
 

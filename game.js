@@ -778,9 +778,25 @@ setMobileButton('upButton','up');
 setMobileButton('downButton','down');
 setMobileButton('leftButton','left');
 setMobileButton('rightButton','right');
-$('fireButton').addEventListener('pointerdown',e=>{e.preventDefault();mobileFire=true});
-$('fireButton').addEventListener('pointerup',e=>{e.preventDefault();mobileFire=false});
-$('fireButton').addEventListener('pointercancel',()=>mobileFire=false);
-$('fireButton').addEventListener('lostpointercapture',()=>mobileFire=false);
+const fireButton=$('fireButton');
+if(fireButton){
+  const startFire=e=>{
+    e.preventDefault();
+    mobileFire=true;
+    if(e.pointerId!=null)fireButton.setPointerCapture?.(e.pointerId);
+    shoot();
+  };
+  const stopFire=e=>{
+    e.preventDefault();
+    mobileFire=false;
+  };
+  fireButton.addEventListener('pointerdown',startFire);
+  fireButton.addEventListener('pointerup',stopFire);
+  fireButton.addEventListener('pointercancel',stopFire);
+  fireButton.addEventListener('lostpointercapture',()=>{mobileFire=false});
+  fireButton.addEventListener('touchstart',startFire,{passive:false});
+  fireButton.addEventListener('touchend',stopFire,{passive:false});
+  fireButton.addEventListener('touchcancel',stopFire,{passive:false});
+}
 function frame(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(frame)}
 reset();requestAnimationFrame(frame);

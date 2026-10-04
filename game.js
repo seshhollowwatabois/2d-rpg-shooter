@@ -29,10 +29,10 @@ const barrels=[
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:500,maxDamage:700,precision:1,reloadTime:20,dispersionTime:1,aimTime:3,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 const railgunTiers=[
-  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.97},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.94},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.90}
+  {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,dispersionMult:1,aimMult:1},
+  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.08,reloadMult:.925,dispersionMult:.90,aimMult:.90},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.18,reloadMult:.85,dispersionMult:.80,aimMult:.80},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.32,reloadMult:.775,dispersionMult:.70,aimMult:.70}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -416,7 +416,9 @@ function shoot(){
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   const speed=({"57mm":1000,"85mm":1300,"122mm":1600}[barrel.id]||1300);
   bs.push({x:muzzleX,y:muzzleY,vx:Math.cos(fireAngle)*speed,vy:Math.sin(fireAngle)*speed,r:2.8,life:1.8,dmg,trail:[]});
-  p.cd=barrel.reloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
+  const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
+  const actualReloadTime=barrel.reloadTime*(activeRailTier?.reloadMult||1);
+  p.cd=actualReloadTime;burst(muzzleX,muzzleY,'#ffd27a',6);soundFire(barrel.id);
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
@@ -595,7 +597,7 @@ function renderShop(){
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;
         const displayedMaxDamage=item.id==='122mmLong'?Math.round(item.maxDamage*(activeRailTier?.damageMult||1)):item.maxDamage;
-        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierce Damage Reduction',item.id==='122mmLong'?Math.round((1-(activeRailTier?.pierceDamageMult??.5))*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');addStat('Aim Time',(item.aimTime||0)+'s');addStat('Dispersion Time',(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(railgunTiers[Math.max(0,Math.min(3,railgunTier))]?.reloadMult||1)).toFixed(1)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
+        addStat('Damage',displayedMinDamage+'-'+displayedMaxDamage,true);addStat('Pierce Damage Reduction',item.id==='122mmLong'?Math.round((1-(activeRailTier?.pierceDamageMult??.5))*100)+'%':'—');addStat('Precision',Math.round(item.precision*100)+'%');const detailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;addStat('Aim Time',item.id==='122mmLong'?(item.aimTime*(detailTier?.aimMult||1)).toFixed(2)+'s':(item.aimTime||0)+'s');addStat('Dispersion Time',item.id==='122mmLong'?(item.dispersionTime*(detailTier?.dispersionMult||1)).toFixed(2)+'s':(item.dispersionTime||0)+'s');addStat('Reload Time',item.id==='122mmLong'?(item.reloadTime*(detailTier?.reloadMult||1)).toFixed(2)+'s':item.reloadTime+'s');addStat('Barrel Scale',item.scale.toFixed(2)+'x');addStat('Barrel Length',item.length.toFixed(2)+'x');
       }
       details.appendChild(grid);
       box.appendChild(details);
@@ -706,8 +708,9 @@ function update(dt){
   // is moving and smoothly contracts while stationary. The value is never reset every frame.
   const moving=drive!==0;
   const movingFloor=.02;
-  const dispersionTime=Math.max(.1,barrel.dispersionTime||1);
-  const aimTime=Math.max(.1,barrel.aimTime||dispersionTime);
+  const activeRailTier=barrel.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
+  const dispersionTime=Math.max(.1,(barrel.dispersionTime||1)*(activeRailTier?.dispersionMult||1));
+  const aimTime=Math.max(.1,(barrel.aimTime||dispersionTime)*(activeRailTier?.aimMult||1));
   const movingRate=(1-movingFloor)/dispersionTime;
   const aimRate=(1-movingFloor)/aimTime;
   if(moving){

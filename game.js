@@ -3,9 +3,9 @@ let W,H,last=0,spawn=0,over=false,shake=0,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[]
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 const hulls=[
-  {id:'standard',name:'T-34',cost:0,hp:370,speed:120,reverse:75,turn:1.65,scale:1},
-  {id:'scout',name:'BT-7 Scout',cost:50,hp:270,speed:155,reverse:95,turn:2.1,scale:.92},
-  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12}
+  {id:'standard',name:'T-34',cost:0,hp:370,speed:120,reverse:75,turn:1.65,scale:1,armor:{front:80,side:45,rear:35}},
+  {id:'scout',name:'BT-7 Scout',cost:50,hp:270,speed:155,reverse:95,turn:2.1,scale:.92,armor:{front:45,side:30,rear:20}},
+  {id:'heavy',name:'KV-1 Heavy',cost:80,hp:610,speed:90,reverse:60,turn:1.15,scale:1.12,armor:{front:120,side:80,rear:60}}
 ];
 const turrets=[
   {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},
@@ -13,9 +13,9 @@ const turrets=[
   {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,precision:.68,reloadTime:5,dispersionTime:2,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,precision:.88,reloadTime:9,dispersionTime:3,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,precision:1,reloadTime:17,dispersionTime:4,scale:1.22,length:1.12}
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:5,dispersionTime:2,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:9,dispersionTime:3,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:17,dispersionTime:4,scale:1.22,length:1.12}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -91,20 +91,40 @@ function shoot(){
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
   const spread=(1-p.aimPrecision)*0.45;
   const fireAngle=a+(Math.random()-.5)*spread;
-  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage),trail:[]});
+  bs.push({x:p.x+Math.cos(fireAngle)*34,y:p.y+Math.sin(fireAngle)*34,vx:Math.cos(fireAngle)*1400,vy:Math.sin(fireAngle)*1400,r:2.8,life:1.8,dmg:barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage),penetration:barrel.penetration,trail:[]});
   p.cd=barrel.reloadTime;burst(p.x+Math.cos(a)*25,p.y+Math.sin(a)*25,'#ffd27a',6);
+}
+function getArmor(target,zone){
+  if(target===p){
+    const h=hulls.find(v=>v.id===p.hullId)||hulls[0];
+    return h.armor[zone];
+  }
+  return target.heavy?120:80;
+}
+function penetrationChance(penetration,armor){
+  const ratio=penetration/Math.max(1,armor);
+  const points=[[.5,.10],[.75,.30],[1,.50],[1.25,.70],[1.5,.85],[2,.95]];
+  if(ratio<=points[0][0])return .05;
+  if(ratio>=points[points.length-1][0])return .95;
+  for(let i=1;i<points.length;i++){
+    const [r1,c1]=points[i-1],[r2,c2]=points[i];
+    if(ratio<=r2)return c1+(c2-c1)*(ratio-r1)/(r2-r1);
+  }
+  return .95;
 }
 function getHitProfile(target,bx,by){
   const hitAngle=Math.atan2(by-target.y,bx-target.x);
   const local=((hitAngle-target.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const c=Math.cos(local);
-  if(c>=.5)return {penetration:.25,rear:false,zone:'front'};
-  if(c<=-.5)return {penetration:1,rear:true,zone:'rear'};
-  return {penetration:.75,rear:false,zone:'side'};
+  if(c>=.5)return {rear:false,zone:'front'};
+  if(c<=-.5)return {rear:true,zone:'rear'};
+  return {rear:false,zone:'side'};
 }
-function applyBulletHit(target,baseDamage,bx,by){
+function applyBulletHit(target,baseDamage,bx,by,penetration=70){
   const profile=getHitProfile(target,bx,by);
-  const penetrates=Math.random()<profile.penetration;
+  const armor=getArmor(target,profile.zone);
+  const chance=penetrationChance(penetration,armor);
+  const penetrates=Math.random()<chance;
   const damage=penetrates?baseDamage:0;
   if(penetrates){
     target.hp-=damage;
@@ -124,7 +144,7 @@ function applyBulletHit(target,baseDamage,bx,by){
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
-  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*900,vy:Math.sin(a)*900,r:2.5,life:2.4,dmg:50,trail:[]});
+  ebs.push({x:e.x+Math.cos(a)*(e.r+10),y:e.y+Math.sin(a)*(e.r+10),vx:Math.cos(a)*900,vy:Math.sin(a)*900,r:2.5,life:2.4,dmg:50,penetration:70,trail:[]});
   e.fire=4;
   burst(e.x+Math.cos(a)*e.r,e.y+Math.sin(a)*e.r,'#ff875f',4);
 }
@@ -184,7 +204,7 @@ function renderShop(){
     let stat='';
     if(type==='hull')stat='HP '+item.hp+' • Speed '+item.speed;
     else if(type==='turret')stat='Turn speed '+item.turn+' • HP +'+item.hp
-    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s • Reload '+item.reloadTime+'s';
+    else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Dispersion '+(item.dispersionTime||0)+'s • Reload '+item.reloadTime+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
     info.appendChild(text);row.appendChild(info);
     const btn=document.createElement('button');
@@ -270,7 +290,7 @@ function update(dt){
     for(let j=en.length-1;j>=0;j--){
       const e=en[j];
       if(Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){
-        applyBulletHit(e,b.dmg,b.x,b.y);hit=true;
+        applyBulletHit(e,b.dmg,b.x,b.y,b.penetration);hit=true;
         if(e.hp<=0)killEnemy(e,j);break;
       }
     }
@@ -283,7 +303,9 @@ function update(dt){
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){
       if(p.inv<=0){
         const profile=getHitProfile(p,b.x,b.y);
-        const penetrates=Math.random()<profile.penetration;
+        const armor=getArmor(p,profile.zone);
+        const chance=penetrationChance(b.penetration,armor);
+        const penetrates=Math.random()<chance;
         const damage=penetrates?b.dmg:0;
         if(penetrates){
           p.hp-=damage;p.inv=.28;shake=10;

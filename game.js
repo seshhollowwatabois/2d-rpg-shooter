@@ -642,10 +642,12 @@ function update(dt){
       const factor=Math.max(0,e.deathDrift);
       moveWithWalls(e,(e.deathVx||0)*factor*dt,(e.deathVy||0)*factor*dt);
       e.deathDrift=Math.max(0,e.deathDrift-dt);
-      const slow=Math.max(0,e.deathDrift);
       e.deathVx=(e.deathVx||0)*Math.max(0,1-dt);
       e.deathVy=(e.deathVy||0)*Math.max(0,1-dt);
     }
+    // Wrecks remain for the normal corpse lifetime, then are removed.
+    e.corpseTime=Math.max(0,(e.corpseTime||0)-dt);
+    if(e.corpseTime<=0)deadTanks.splice(i,1);
   }
 
   // Burning tanks lose exactly 40% of their max HP over 10 seconds.

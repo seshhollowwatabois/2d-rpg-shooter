@@ -117,9 +117,17 @@ function makeEnemy(){
 function shoot(){
   if(p.cd>0)return;
   const barrel=barrels.find(v=>v.id===p.barrelId)||barrels[0];
+  // Pick a random point inside the live dispersion circle, then fire toward that
+  // point. This makes shots behave like a true reticle/dispersion system rather
+  // than a simple angular spread.
   const a=Math.atan2(mouse.y-p.y,mouse.x-p.x);p.turretAngle=a;
-  const spread=(1-p.aimPrecision)*0.45;
-  const fireAngle=a+(Math.random()-.5)*spread;
+  const maxDispersion=140;
+  const dispersionRadius=maxDispersion*(1-Math.max(0,Math.min(1,p.aimPrecision)));
+  const rr=dispersionRadius*Math.sqrt(Math.random());
+  const ra=Math.random()*Math.PI*2;
+  const aimX=mouse.x+Math.cos(ra)*rr;
+  const aimY=mouse.y+Math.sin(ra)*rr;
+  const fireAngle=Math.atan2(aimY-p.y,aimX-p.x);
   const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
   const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
   if(barrel.instant){
@@ -368,21 +376,21 @@ function update(dt){
     moveWithWalls(p,Math.cos(p.angle)*drive*moveSpeed*dt,Math.sin(p.angle)*drive*moveSpeed*dt);
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
-  // Moving throws off the gun. Accuracy recovers while the hull is stationary.
+  // World-of-Tanks-style dispersion: the reticle continuously expands while the hull
+  // is moving and smoothly contracts while stationary. The value is never reset every frame.
   const moving=drive!==0;
-  // Dispersion is continuous: movement pushes accuracy down gradually, while stopping
-  // lets it recover gradually. The indicator therefore shows the actual current accuracy.
-  const dispersionTime=barrel.dispersionTime||1;
-  const aimChangeRate=moving?(0.50/Math.max(.1,dispersionTime)):(0.50/Math.max(.1,dispersionTime));
+  const dispersionTime=Math.max(.1,barrel.dispersionTime||1);
+  const movingFloor=.10;
+  const dispersionRate=(1-movingFloor)/dispersionTime;
+  if(moving){
+    p.aimPrecision=Math.max(movingFloor,p.aimPrecision-dispersionRate*dt);
+  }else{
+    p.aimPrecision=Math.min(1,p.aimPrecision+dispersionRate*dt);
+  }
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
   p.turretAngle+=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
-  // Accuracy starts low while moving and settles toward 100% while stopped.
-  p.aimPrecision=barrel.precision;
-  const is122=barrel.id==='122mm'||barrel.id==='122mmLong';
-  const aimTarget=moving?(is122?0.05:0.25):1;
-  p.aimPrecision+=Math.sign(aimTarget-p.aimPrecision)*Math.min(Math.abs(aimTarget-p.aimPrecision),aimChangeRate*dt);
   if(mouse.down||keys.has(' '))shoot();
 
   for(let i=bs.length-1;i>=0;i--){
@@ -733,11 +741,9 @@ function draw(){
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
-  // Precision reticle around the cursor: smaller/tighter means more accurate.
+  // Live dispersion reticle: its size directly represents the current shot spread.
   const accuracy=Math.max(0,Math.min(1,p.aimPrecision));
-  // Radius directly represents the remaining dispersion: 100% accuracy = tight,
-  // lower accuracy = progressively wider. No instant size jumps.
-  const precisionRadius=18+66*(1-accuracy);
+  const precisionRadius=18+122*(1-accuracy);
   x.save();
   x.strokeStyle=accuracy<.5?'#ff4b4b':accuracy<1?'#ffd21a':'#39e66b';
   x.lineWidth=accuracy<.5?2.5:accuracy<1?2:1.5;

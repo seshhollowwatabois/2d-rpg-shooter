@@ -426,6 +426,7 @@ function shoot(){
   // Firebird is a continuous flamethrower: visual flame stays active while held,
   // but damage is applied only on each 0.50s tick (including the first tick).
   if(barrel.id==='122mm'&&barrel.flame){
+    const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
     const range=tier.range||barrel.range||230,cone=barrel.cone||.42;
     let hitAny=false;
     for(const e of [...en]){
@@ -435,8 +436,7 @@ function shoot(){
       const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
       if(da>cone)continue;
       if(wallRayHit(muzzle.x,muzzle.y,fireAngle,Math.min(dist,range)))continue;
-      const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-      const damageFalloff=1-Math.min(1,dist/(tier.range||barrel.range||230));
+      const damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
       const dmg=minDamage+(maxDamage-minDamage)*damageFalloff;
       applyBulletHit(e,dmg,e.x,e.y,null,0);

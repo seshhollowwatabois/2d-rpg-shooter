@@ -23,7 +23,7 @@ const engines=[
   {id:'better',name:'Better Engine',cost:0,speed:1.20,turn:1.20}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,reloadTime:4,scale:.82,length:.82},
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:30,maxDamage:35,reloadTime:3,scale:.82,length:.82,instant:true,critChance:.10},
   {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
   {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,reloadTime:16,scale:1.22,length:1.12},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
@@ -439,7 +439,32 @@ function shoot(){
   const fireAngle=p.turretAngle;
   const ca=Math.cos(fireAngle),sa=Math.sin(fireAngle);
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
-  const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300);
+
+  // Smoky fires an instant shell: no travel time or projectile velocity.
+  // The first enemy in the line of fire is hit immediately, unless a wall blocks it.
+  if(barrel.id==='57mm'&&barrel.instant){
+    let best=null,bestDist=1400;
+    for(const e of en){
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y;
+      const along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
+      if(along<=0||along>=bestDist||side>e.r)continue;
+      if(wallRayHit(muzzle.x,muzzle.y,fireAngle,along))continue;
+      best=e;bestDist=along;
+    }
+    if(best){
+      const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
+      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      applyBulletHit(best,dmg,hitX,hitY,null,barrel.critChance||0);
+      burst(hitX,hitY,'#ffd27a',22);
+    }else{
+      burst(muzzle.x+ca*34,muzzle.y+sa*34,'#ffd27a',8);
+    }
+    soundFire(barrel.id);
+    p.cd=barrel.reloadTime;
+    return;
+  }
+
+  const speed=({"85mm":900,"122mm":1600}[barrel.id]||1300);
   if(p.turretId==='rapid'){
     // Twins: one click fires ONE barrel. Alternate left/right on each shot.
     const side=.12*p.r;
@@ -467,21 +492,22 @@ function getHitProfile(target,bx,by){
   if(c<=-.5)return {rear:true,zone:'rear'};
   return {rear:false,zone:'side'};
 }
-function applyBulletHit(target,baseDamage,bx,by,b=null){
+function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const profile=getHitProfile(target,bx,by);
-  const damage=baseDamage;
+  const critical=critChance>0&&Math.random()<critChance;
+  const damage=critical?baseDamage*2:baseDamage;
   target.hp-=damage;
   target.hitFlash=.08;
-  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage),life:.7});
+  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:.7});
   const fireChance=profile.rear?0.05:profile.zone==='side'?0.02:0;
   if(fireChance>0&&target.burnTime<=0&&Math.random()<fireChance){
     target.burnTime=10;
     target.burnDamage=target.max*.60;
     burst(target.x,target.y,'#ff9b55',16);
   }
-  burst(bx,by,'#ffd27a',14);
+  burst(bx,by,critical?'#fff07a':'#ffd27a',critical?22:14);
   soundImpact(true);
-  return {profile,ricochet:false};
+  return {profile,ricochet:false,critical};
 }
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
@@ -490,7 +516,7 @@ function enemyShoot(e){
   if(barrel.instant){
     const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
-    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y);
+    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along))applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
   }else{
     const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300);
     if(e.turretId==='rapid'){

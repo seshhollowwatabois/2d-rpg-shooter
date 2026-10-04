@@ -19,10 +19,10 @@ const engines=[
   {id:'better',name:'Better Engine',cost:0,speed:1.20,turn:1.20}
 ];
 const barrels=[
-  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:9,dispersionTime:4,scale:.82,length:.82},
-  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:4,dispersionTime:3,scale:1,length:1},
-  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:16,dispersionTime:2,scale:1.22,length:1.12},
-  {id:'122mmLong',name:'122mm Long Heavy Barrel',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:1,scale:1.28,length:1.65,instant:true}
+  {id:'57mm',name:'57mm Barrel',cost:0,minDamage:110,maxDamage:130,penetration:55,precision:.68,reloadTime:9,dispersionTime:4,aimTime:4,scale:.82,length:.82},
+  {id:'85mm',name:'85mm Barrel',cost:0,minDamage:240,maxDamage:270,penetration:90,precision:.88,reloadTime:4,dispersionTime:3,aimTime:6,scale:1,length:1},
+  {id:'122mm',name:'122mm Heavy Barrel',cost:0,minDamage:390,maxDamage:440,penetration:140,precision:1,reloadTime:16,dispersionTime:2,aimTime:10,scale:1.22,length:1.12},
+  {id:'122mmLong',name:'122mm Long Heavy Barrel',cost:0,minDamage:500,maxDamage:700,penetration:160,precision:1,reloadTime:20,dispersionTime:1,aimTime:12,scale:1.28,length:1.65,instant:true}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -379,13 +379,15 @@ function update(dt){
   // World-of-Tanks-style dispersion: the reticle continuously expands while the hull
   // is moving and smoothly contracts while stationary. The value is never reset every frame.
   const moving=drive!==0;
-  const dispersionTime=Math.max(.1,barrel.dispersionTime||1);
   const movingFloor=.02;
-  const dispersionRate=(1-movingFloor)/dispersionTime;
+  const dispersionTime=Math.max(.1,barrel.dispersionTime||1);
+  const aimTime=Math.max(.1,barrel.aimTime||dispersionTime);
+  const movingRate=(1-movingFloor)/dispersionTime;
+  const aimRate=(1-movingFloor)/aimTime;
   if(moving){
-    p.aimPrecision=Math.max(movingFloor,p.aimPrecision-dispersionRate*dt);
+    p.aimPrecision=Math.max(movingFloor,p.aimPrecision-movingRate*dt);
   }else{
-    p.aimPrecision=Math.min(1,p.aimPrecision+dispersionRate*dt);
+    p.aimPrecision=Math.min(1,p.aimPrecision+aimRate*dt);
   }
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;

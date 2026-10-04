@@ -14,7 +14,8 @@ const hulls=[
 const turrets=[
   {id:'standard',name:'Standard Turret',cost:0,turn:1.25,hp:0,scale:1},
   {id:'rapid',name:'Rapid Turret',cost:0,turn:2.4,hp:50,scale:.9},
-  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82}
+  {id:'fast',name:'Fast Turret',cost:0,turn:3.4,hp:80,scale:.82},
+  {id:'railgun',name:'Railgun Turret',cost:0,turn:1.05,hp:120,scale:1.08}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
@@ -1013,7 +1014,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';
   x.beginPath();
-  if(visualTurret.id==='fast'){
+  if(visualTurret.id==='railgun'){
+    x.moveTo(-r*.52,-r*.34);x.lineTo(r*.05,-r*.38);x.quadraticCurveTo(r*.42,-r*.30,r*.52,-r*.12);
+    x.lineTo(r*.52,r*.12);x.quadraticCurveTo(r*.42,r*.30,r*.05,r*.38);x.lineTo(-r*.52,r*.34);
+    x.quadraticCurveTo(-r*.62,0,-r*.52,-r*.34);
+  }else if(visualTurret.id==='fast'){
     x.moveTo(-r*.42,-r*.24);x.lineTo(r*.18,-r*.30);x.quadraticCurveTo(r*.48,-r*.18,r*.48,0);
     x.quadraticCurveTo(r*.48,r*.18,r*.18,r*.30);x.lineTo(-r*.42,r*.24);x.quadraticCurveTo(-r*.52,0,-r*.42,-r*.24);
   }else if(visualTurret.id==='rapid'){
@@ -1026,6 +1031,12 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   }
   x.closePath();x.fill();
 
+  if(visualTurret.id==='railgun'){
+    x.strokeStyle=enemy?(heavy?'#9b9284':'#a95d63'):'#8eeaff';x.lineWidth=1.5;
+    x.beginPath();x.moveTo(-r*.34,-r*.30);x.lineTo(r*.18,-r*.27);x.lineTo(r*.34,-r*.12);x.stroke();
+    x.beginPath();x.moveTo(-r*.34,r*.30);x.lineTo(r*.18,r*.27);x.lineTo(r*.34,r*.12);x.stroke();
+  }
+
   // Turret facets / casting details.
   x.strokeStyle=enemy?(heavy?'#746c61':'#925055'):'#7f8b75';x.lineWidth=1.25;
   x.beginPath();x.moveTo(-r*.27,-r*.42);x.quadraticCurveTo(-r*.08,-r*.30,r*.02,-r*.29);x.stroke();
@@ -1034,6 +1045,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // Roof hatch.
   x.fillStyle='#292e2a';x.beginPath();x.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);x.fill();
   x.strokeStyle='#89967c';x.stroke();
+
+  if(visualTurret.id==='railgun'){
+    x.fillStyle=enemy?'#252729':'#202725';
+    x.beginPath();x.roundRect(r*.02,-r*.23,r*.28,r*.46,5);x.fill();
+  }
 
   // Gun mantlet and long 85mm-style barrel.
   x.fillStyle=enemy?'#252729':'#292f2a';

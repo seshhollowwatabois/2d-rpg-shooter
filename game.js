@@ -601,7 +601,7 @@ function renderShop(){
         const tier=document.createElement('div');
         tier.className='railgunTierMiniRow'+(t.tier===railgunTier?' current':'');
         const label=document.createElement('span');
-        label.innerHTML='<b>T'+t.tier+'</b><small>'+Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult)+' DMG • '+t.penetration+' PEN • '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</small>';
+        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
         const b=document.createElement('button');
         b.className='tierInlineButton';
         b.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';

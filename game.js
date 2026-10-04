@@ -597,7 +597,25 @@ function renderShop(){
     else if(type==='engine')stat='Hull speed +'+Math.round((item.speed-1)*100)+'% • Hull rotation +'+Math.round((item.turn-1)*100)+'%';
     else stat='DMG '+item.minDamage+'-'+item.maxDamage+' • Pen '+item.penetration+' • Precision '+Math.round(item.precision*100)+'% • Aim '+(item.aimTime||0)+'s • Reload '+item.reloadTime+'s';
     text.innerHTML='<b>'+item.name+'</b><small>'+stat+'</small>';
-    info.appendChild(text);row.appendChild(info);
+    info.appendChild(text);
+    if(type==='barrel'&&item.id==='122mmLong'&&isSelected){
+      const tiers=document.createElement('div');tiers.className='railgunTierMini';
+      railgunTiers.forEach(t=>{
+        const owned=t.tier<=railgunOwnedTier;
+        const tier=document.createElement('div');
+        tier.className='railgunTierMiniRow'+(t.tier===railgunTier?' current':'');
+        const label=document.createElement('span');
+        label.innerHTML='<b>T'+t.tier+'</b><small>'+Math.round(item.minDamage*t.damageMult)+'-'+Math.round(item.maxDamage*t.damageMult)+' DMG • '+t.penetration+' PEN • '+(item.reloadTime*t.reloadMult).toFixed(1)+'s</small>';
+        const b=document.createElement('button');
+        b.className='tierInlineButton';
+        b.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';
+        b.disabled=t.tier===railgunTier||(!owned&&t.tier!==railgunOwnedTier+1);
+        b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===railgunOwnedTier+1)railgunOwnedTier=t.tier;railgunTier=t.tier;saveShop();renderShop()};
+        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
+      });
+      info.appendChild(tiers);
+    }
+    row.appendChild(info);
     const btn=document.createElement('button');
     btn.textContent=equipped?'EQUIPPED':owned?'EQUIP':'FREE';btn.disabled=equipped;
     btn.onclick=e=>{e.stopPropagation();

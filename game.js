@@ -332,27 +332,49 @@ function makeEnemy(){
   waveRemaining--;
 }
 function fireRailgun(fireAngle,barrel){
-  const muzzleX=p.x+Math.cos(fireAngle)*34,muzzleY=p.y+Math.sin(fireAngle)*34;
+  // Start the beam at the actual end of the long gun barrel, not at the turret center.
+  const gunMuzzleDistance=p.r*(.38+1.16*(barrel.length||1));
+  const muzzleX=p.x+Math.cos(fireAngle)*gunMuzzleDistance;
+  const muzzleY=p.y+Math.sin(fireAngle)*gunMuzzleDistance;
   const range=1400,cos=Math.cos(fireAngle),sin=Math.sin(fireAngle);
   let wallDist=range;
+
   // The beam ends at the first wall, so it can never pass through cover.
   const step=2;
   for(let d=0;d<=range;d+=step){
     const rx=muzzleX+cos*d,ry=muzzleY+sin*d;
     if(wallHitCircle(rx,ry,2.5)){wallDist=d;break;}
   }
-  let hit=null,best=Infinity;
+
+  // A railgun can pierce multiple tanks. Each tank after the first
+  // receives 50% of the previous tank's damage: 100%, 50%, 25%, 12.5%...
+  const pierced=[];
   for(const e of en){
-    const dx=e.x-muzzleX,dy=e.y-muzzleY,along=dx*cos+dy*sin,side=Math.abs(dx*sin-dy*cos);
-    if(along>0&&along<wallDist&&side<=e.r&&along<best){hit=e;best=along;}
+    const dx=e.x-muzzleX,dy=e.y-muzzleY;
+    const along=dx*cos+dy*sin;
+    const side=Math.abs(dx*sin-dy*cos);
+    if(along>0&&along<wallDist&&side<=e.r){
+      pierced.push({e,along});
+    }
   }
-  if(hit){
-    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-    applyBulletHit(hit,dmg,hit.x,hit.y,barrel.penetration,null);
-    if(hit.hp<=0)killEnemy(hit,en.indexOf(hit));
+  pierced.sort((a,b)=>a.along-b.along);
+
+  const baseDamage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+  for(let i=0;i<pierced.length;i++){
+    const target=pierced[i].e;
+    if(!en.includes(target))continue;
+    const damage=baseDamage*Math.pow(.5,i);
+    applyBulletHit(target,damage,target.x,target.y,barrel.penetration,null);
+    if(target.hp<=0)killEnemy(target,en.indexOf(target));
   }
-  railBeams.push({x1:muzzleX,y1:muzzleY,x2:muzzleX+cos*wallDist,y2:muzzleY+sin*wallDist,life:2,maxLife:2,angle:fireAngle});
-  burst(muzzleX,muzzleY,'#bffcff',24);burst(muzzleX,muzzleY,'#ffffff',12);
+
+  railBeams.push({
+    x1:muzzleX,y1:muzzleY,
+    x2:muzzleX+cos*wallDist,y2:muzzleY+sin*wallDist,
+    life:2,maxLife:2,angle:fireAngle
+  });
+  burst(muzzleX,muzzleY,'#bffcff',24);
+  burst(muzzleX,muzzleY,'#ffffff',12);
   soundRailFire();
 }
 function shoot(){

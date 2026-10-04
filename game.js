@@ -370,8 +370,10 @@ function update(dt){
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));
   // Moving throws off the gun. Accuracy recovers while the hull is stationary.
   const moving=drive!==0;
-  // Accuracy takes about 4 seconds to fully settle after movement stops.
-  const aimChangeRate=moving?1.8:(barrel.dispersionTime>0?(.75/barrel.dispersionTime):999);
+  // Dispersion is continuous: movement pushes accuracy down gradually, while stopping
+  // lets it recover gradually. The indicator therefore shows the actual current accuracy.
+  const dispersionTime=barrel.dispersionTime||1;
+  const aimChangeRate=moving?(0.50/Math.max(.1,dispersionTime)):(0.50/Math.max(.1,dispersionTime));
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
   const playerTurretTurnRate=turret.turn;
@@ -732,8 +734,14 @@ function draw(){
   $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;$('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';$('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
   // Show the live reload countdown beside the cursor.
   // Precision reticle around the cursor: smaller/tighter means more accurate.
-  const precisionRadius=p.aimPrecision<.5?64+(0.5-p.aimPrecision)*24:(p.aimPrecision<1?38+(1-p.aimPrecision)*20:22);
-  x.save();x.strokeStyle=p.aimPrecision<.5?'#ff4b4b':p.aimPrecision<1?'#ffd21a':'#39e66b';x.lineWidth=1.5;x.globalAlpha=.9;
+  const accuracy=Math.max(0,Math.min(1,p.aimPrecision));
+  // Radius directly represents the remaining dispersion: 100% accuracy = tight,
+  // lower accuracy = progressively wider. No instant size jumps.
+  const precisionRadius=18+66*(1-accuracy);
+  x.save();
+  x.strokeStyle=accuracy<.5?'#ff4b4b':accuracy<1?'#ffd21a':'#39e66b';
+  x.lineWidth=accuracy<.5?2.5:accuracy<1?2:1.5;
+  x.globalAlpha=.9;
   x.beginPath();x.arc(mouse.x,mouse.y,precisionRadius,0,6.283);x.stroke();
   x.beginPath();x.moveTo(mouse.x-precisionRadius-5,mouse.y);x.lineTo(mouse.x-precisionRadius+4,mouse.y);x.moveTo(mouse.x+precisionRadius-4,mouse.y);x.lineTo(mouse.x+precisionRadius+5,mouse.y);x.moveTo(mouse.x,mouse.y-precisionRadius-5);x.lineTo(mouse.x,mouse.y-precisionRadius+4);x.moveTo(mouse.x,mouse.y+precisionRadius-4);x.lineTo(mouse.x,mouse.y+precisionRadius+5);x.stroke();x.restore();
   const cursorReload=$('cursorReload');

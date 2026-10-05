@@ -535,6 +535,8 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
 function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
   const barrel=gunForTurret(e.turretId);
+  const enemyTwinsTier=Math.max(0,Math.min(3,e.twinsTier||0));
+  const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
   const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.id==='122mm'&&barrel.flame){
     // The visible flame particles are also the only damage hitbox.
@@ -568,8 +570,6 @@ function enemyShoot(e){
       }
     }
   }else{
-    const enemyTwinsTier=Math.max(0,Math.min(3,e.twinsTier||0));
-    const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
     const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?enemyTwinsTierData.speedMult:1);
     if(e.turretId==='rapid'){
       // Enemy Twins: one projectile per reload, alternating barrels.

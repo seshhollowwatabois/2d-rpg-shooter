@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100513';
+const GAME_VERSION='2026100514';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -595,7 +595,6 @@ function enemyShoot(e){
       die();
       return;
     }
-  }
   }else{
     const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?enemyTwinsTierData.speedMult:1);
     if(e.turretId==='rapid'){

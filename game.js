@@ -47,6 +47,12 @@ const railgunTiers=[
   {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.44,reloadMult:.50,pierceDamageMult:.83,hullMoveMult:.60,turnMult:2.8},
   {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];
+const twinsTiers=[
+  {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,col:'#3da9ff'},
+  {tier:1,name:'Twins Tier 1',damageMult:1.2,reloadTime:.25,speedMult:1.2,col:'#a13cff'},
+  {tier:2,name:'Twins Tier 2',damageMult:1.44,reloadTime:.20,speedMult:1.44,col:'#ffd23f'},
+  {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,col:'#39d353'}
+];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
   {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:280,flame:'#b83b16',core:'#ffd08a',accent:'#d86a22'},
@@ -315,6 +321,7 @@ function makeEnemy(){
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,turretId,engineId,
     angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,
+     twinsTier:turretId==='rapid'?Math.min(3,Math.floor((wave-1)/4)):0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -408,7 +415,7 @@ function shoot(){
     }
     if(best){
       const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
-      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
       applyBulletHit(best,dmg,hitX,hitY,null,barrel.critChance||0);
       impactExplosion(hitX,hitY,'#ffd27a',24);
       if(best.hp<=0){
@@ -447,15 +454,16 @@ function shoot(){
     return;
   }
 
-  const speed=({"85mm":900,"122mm":1600}[barrel.id]||1300);
+  const twinsTierData=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
+  const speed=({"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?twinsTierData.speedMult:1);
   if(p.turretId==='rapid'){
     // Twins: one click fires ONE barrel. Alternate left/right on each shot.
     const side=.12*p.r;
     const offset=p.twinsNextBarrel===1?side:-side;
     const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
     const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
-    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:'#3da9ff'});
-    burst(muzzleX,muzzleY,'#3da9ff',5);
+    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:twinsTierData.col});
+    burst(muzzleX,muzzleY,twinsTierData.col,5);
     soundFire(barrel.id);
     p.twinsNextBarrel=p.twinsNextBarrel===1?-1:1;
   }else{
@@ -464,7 +472,7 @@ function shoot(){
     bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[]});
     burst(muzzleX,muzzleY,'#ffd27a',6);
   }
-  const actualReloadTime=barrel.reloadTime;
+  const actualReloadTime=barrel.id==='85mm'?twinsTierData.reloadTime:barrel.reloadTime;
   p.cd=actualReloadTime;if(p.turretId!=='rapid')soundFire(barrel.id);
 }
 function getHitProfile(target,bx,by){
@@ -540,13 +548,13 @@ function enemyShoot(e){
       const damage=minDamage+(maxDamage-minDamage)*damageFalloff;
       applyBulletHit(p,damage,p.x,p.y,null,0);
       applyBurn(p,tierIndex);
-      e.fire=barrel.reloadTime;
+      e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}
     }
     if(flameParticleHit(p,e))burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
     return;
   }else if(barrel.instant){
-    const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
     if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
       applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
@@ -558,15 +566,17 @@ function enemyShoot(e){
       }
     }
   }else{
-    const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300);
+    const enemyTwinsTier=Math.max(0,Math.min(3,e.twinsTier||0));
+    const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
+    const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?enemyTwinsTierData.speedMult:1);
     if(e.turretId==='rapid'){
       // Enemy Twins: one projectile per reload, alternating barrels.
       const side=.12*e.r;
       const offset=e.twinsNextBarrel===1?side:-side;
       const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
-      ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:'#3da9ff'});
-      burst(mx,my,'#3da9ff',3);
+      ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:enemyTwinsTierData.col});
+      burst(mx,my,enemyTwinsTierData.col,3);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
     }else{
@@ -599,7 +609,7 @@ function saveShop(){
   localStorage.setItem('tankEquippedEngine',equippedEngine);
   localStorage.setItem('tankRailgunTier',String(railgunTier));
   localStorage.setItem('tankRailgunOwnedTier',String(railgunOwnedTier));
-  localStorage.setItem('tankFirebirdTier',String(firebirdTier));
+  localStorage.setItem('tankFirebirdTier',String(firebirdTier)); localStorage.setItem('tankTwinsTier',String(twinsTier)); localStorage.setItem('tankTwinsOwnedTier',String(twinsOwnedTier));
   localStorage.setItem('tankFirebirdOwnedTier',String(firebirdOwnedTier));
 }
 let shopCategory='hull',selectedShopItem=null;
@@ -887,7 +897,7 @@ function renderShop(){
         p.turretId=item.id;
         p.railCharging=false;
         p.railCharge=0;
-        p.firebirdTier=firebirdTier;
+        p.firebirdTier=firebirdTier; p.twinsTier=twinsTier;
       }
     }else if(type==='engine'){
       if(!ownedEngines.includes(item.id))ownedEngines.push(item.id);
@@ -920,6 +930,23 @@ function renderShop(){
         b.textContent=t.tier===railgunTier?'CURRENT':owned?'SELECT':t.tier===railgunOwnedTier+1?'UPGRADE':'LOCKED';
         b.disabled=t.tier===railgunTier||(!owned&&t.tier!==railgunOwnedTier+1);
         b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===railgunOwnedTier+1)railgunOwnedTier=t.tier;railgunTier=t.tier;saveShop();renderShop()};
+        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
+      });
+      info.appendChild(tiers);
+    }
+    if(type==='turret'&&item.id==='rapid'&&isSelected){
+      const tiers=document.createElement('div');tiers.className='railgunTierMini';
+      twinsTiers.forEach(t=>{
+        const owned=t.tier<=twinsOwnedTier;
+        const tier=document.createElement('div');
+        tier.className='railgunTierMiniRow'+(t.tier===twinsTier?' current':'');
+        const label=document.createElement('span');
+        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
+        const b=document.createElement('button');
+        b.className='tierInlineButton';
+        b.textContent=t.tier===twinsTier?'CURRENT':owned?'SELECT':t.tier===twinsOwnedTier+1?'UPGRADE':'LOCKED';
+        b.disabled=t.tier===twinsTier||(!owned&&t.tier!==twinsOwnedTier+1);
+        b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===twinsOwnedTier+1)twinsOwnedTier=t.tier;twinsTier=t.tier;if(p)p.twinsTier=twinsTier;saveShop();renderShop()};
         tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
       });
       info.appendChild(tiers);

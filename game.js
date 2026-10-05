@@ -757,7 +757,7 @@ function renderShop(){
       const r=20;
       const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-      const railAccent=railTier?(railTier.tier===0?null:railTier.tier===1?railgunTiers[0].beam:railTier.beam):null;
+      const railAccent=railTier&&railTier.tier>0?(railTier.tier===1?railgunTiers[0].beam:railTier.beam):null;
 
       q.fillStyle='#343c34';
       q.beginPath();q.arc(0,0,r*.57,0,6.283);q.fill();
@@ -792,8 +792,8 @@ function renderShop(){
       }
       q.closePath();q.fill();
 
-      if(visualTurret.id==='railgun'){
-        q.strokeStyle=railAccent||'#8eeaff';q.lineWidth=1.7;
+      if(visualTurret.id==='railgun'&&railAccent){
+        q.strokeStyle=railAccent;q.lineWidth=1.7;
         q.beginPath();q.moveTo(-r*.34,-r*.27);q.lineTo(r*.20,-r*.23);q.lineTo(r*.35,-r*.10);q.stroke();
         q.beginPath();q.moveTo(-r*.34,r*.27);q.lineTo(r*.20,r*.23);q.lineTo(r*.35,r*.10);q.stroke();
       }else if(visualTurret.id==='rapid'){
@@ -1465,7 +1465,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
   const activeRailVisualTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
-  const railAccent=visualTurret.id==='railgun'?(activeRailVisualTier.tier===0?null:activeRailVisualTier.tier===1?railgunTiers[0].beam:activeRailVisualTier.beam):null;
+  const railAccent=visualTurret.id==='railgun'&&activeRailVisualTier.tier>0?(activeRailVisualTier.tier===1?railgunTiers[0].beam:activeRailVisualTier.beam):null;
 
   // Turret silhouette varies with weapon class.
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';x.beginPath();
@@ -1497,8 +1497,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   }
   x.closePath();x.fill();
 
-  if(visualTurret.id==='railgun'){
-    x.strokeStyle=railAccent||'#8eeaff';x.lineWidth=1.7;
+  if(visualTurret.id==='railgun'&&railAccent){
+    x.strokeStyle=railAccent;x.lineWidth=1.7;
     x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.20,-tr*.23);x.lineTo(tr*.35,-tr*.10);x.stroke();
     x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
   }else if(visualTurret.id==='rapid'){

@@ -640,8 +640,10 @@ function enemyShoot(e){
   const barrel=gunForTurret(e.turretId);
   const enemyTwinsTier=Math.max(0,Math.min(3,e.twinsTier||0));
   const enemySmokyTier=Math.max(0,Math.min(3,e.smokyTier||0));
+  const enemyRailgunTier=Math.max(0,Math.min(3,e.turretTier||0));
   const enemySmokyTierData=smokyTiers[enemySmokyTier]||smokyTiers[0];
   const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
+  const enemyRailgunTierData=railgunTiers[enemyRailgunTier]||railgunTiers[0];
   const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.id==='122mm'&&barrel.flame){
     // The visible flame particles are also the only damage hitbox.
@@ -657,18 +659,29 @@ function enemyShoot(e){
       const damage=minDamage+(maxDamage-minDamage)*damageFalloff;
       applyBulletHit(p,damage,p.x,p.y,null,0);
       applyBurn(p,tierIndex);
-      e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.reloadTime;
+      e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.id==='122mmLong'?barrel.reloadTime*(enemyRailgunTierData.reloadMult||1):barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}
     }
     if(flameParticleHit(p,e))burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
     return;
   }else if(barrel.instant){
     const baseDamage=(barrel.minDamage||0)+Math.random()*((barrel.maxDamage||barrel.minDamage||0)-(barrel.minDamage||0));
-    const damage=baseDamage*(barrel.id==='85mm'?(enemyTwinsTierData.damageMult||1):(enemySmokyTierData.damageBonus!==undefined?1:1));
+    const damage=barrel.id==='122mmLong'
+      ?baseDamage*(enemyRailgunTierData.damageMult||1)
+      :barrel.id==='85mm'
+        ?baseDamage*(enemyTwinsTierData.damageMult||1)
+        :baseDamage+(barrel.id==='57mm'?(enemySmokyTierData.damageBonus||0):0);
     const smokyDamage=baseDamage+(barrel.id==='57mm'?(enemySmokyTierData.damageBonus||0):0);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
     const muzzleX=e.x+ca*(e.r+10),muzzleY=e.y+sa*(e.r+10);
-    if(barrel.id==='57mm'){
+    if(barrel.id==='122mmLong'){
+      const hit=along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along);
+      const beamEnd=hit?along:Math.min(range,Math.max(90,along));
+      const beamX=e.x+ca*beamEnd,beamY=e.y+sa*beamEnd;
+      railBeams.push({x1:muzzleX,y1:muzzleY,x2:beamX,y2:beamY,life:.35,maxLife:.35,angle:a,tier:enemyRailgunTier});
+      burst(muzzleX,muzzleY,enemyRailgunTierData.glow||'#bffcff',18);
+      if(hit)applyBulletHit(p,damage,p.x,p.y,null,0);
+    }else if(barrel.id==='57mm'){
       const hit=along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along);
       const endDist=hit?along:Math.min(range,260);
       const hitX=muzzleX+ca*Math.max(0,endDist-(e.r+10)),hitY=muzzleY+sa*Math.max(0,endDist-(e.r+10));
@@ -1469,7 +1482,10 @@ function update(dt){
       }else{
         e.firebirdFuel=Math.min(e.firebirdMaxFuel||5,e.firebirdFuel+dt*.5);
       }
-    }else if(d<620&&e.fire<=0)enemyShoot(e);
+    }else if(e.fire<=0){
+      const enemyAttackRange=e.turretId==='railgun'?1400:620;
+      if(d<enemyAttackRange&&!wallRayHit(e.x,e.y,targetTurret,d))enemyShoot(e);
+    }
     // Ram damage is handled once below for both tanks.
   }
 
@@ -1847,7 +1863,7 @@ function draw(){
   for(const b of railBeams){
     const a=Math.max(0,b.life/b.maxLife);
     x.save();x.globalAlpha=a;
-    x.lineCap='round';const railTierVisual=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+    x.lineCap='round';const beamTier=Math.max(0,Math.min(3,b.tier===undefined?railgunTier:b.tier));const railTierVisual=railgunTiers[beamTier]||railgunTiers[0];
     x.strokeStyle=(railTierVisual.tier===0?railgunTiers[1].beam:railTierVisual.beam);x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();

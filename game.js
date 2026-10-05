@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100601';
+const GAME_VERSION='2026100603';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1834,9 +1834,9 @@ function draw(){
   x.restore();
 
   const hp=Math.max(0,p.hp/p.max),xp=Math.max(0,p.xp/p.next);
-  $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';$('coinsText').textContent=p.coins;
+  $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
-  $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;const topCoins=$('topCoinsText'),topKills=$('topKillsText');if(topCoins)topCoins.textContent=p.coins;if(topKills)topKills.textContent=p.kills;
+  $('levelText').textContent=p.lv;const topCoins=$('topCoinsText'),topKills=$('topKillsText');if(topCoins)topCoins.textContent=p.coins;if(topKills)topKills.textContent=p.kills;
   $('reloadBar').style.width=(reloadPct*100)+'%';
   $('damageText').textContent='WAVE '+wave;
   if(barrel.id==='122mm'&&barrel.flame){

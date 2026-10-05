@@ -102,7 +102,7 @@ function normalizeOwnedEquipment(){
 }
 normalizeOwnedEquipment();
 
-function updateVersionLabel(){const el=document.getElementById('gameVersion');if(el)el.textContent='v'+GAME_VERSION;}
+function updateVersionLabel(){const el=document.getElementById('gameVersion');if(el)el.textContent='v'+GAME_VERSION;const w=document.getElementById('waveDisplay');if(w)w.textContent='WAVE '+wave;}
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
@@ -295,7 +295,7 @@ function addXp(n){
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
 function waveSize(w){return 3+w*2;}
-function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;soundWave();}
+function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;soundWave();const el=document.getElementById('waveDisplay');if(el){el.textContent='WAVE '+wave;el.classList.remove('wavePulse');void el.offsetWidth;el.classList.add('wavePulse')}}
 
 function pickEnemyTurret(){
   const roll=Math.random();

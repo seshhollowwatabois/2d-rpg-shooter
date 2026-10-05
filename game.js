@@ -1480,6 +1480,16 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.strokeStyle=railAccent||'#8eeaff';x.lineWidth=1.7;
     x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.20,-tr*.23);x.lineTo(tr*.35,-tr*.10);x.stroke();
     x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
+  }else if(visualTurret.id==='rapid'){
+    const twinsAccent=twinsTiers[Math.max(0,Math.min(3,twinsTier))]?.col||'#3da9ff';
+    x.fillStyle=twinsAccent;x.globalAlpha=.9;
+    x.beginPath();x.roundRect(-tr*.38,-tr*.31,tr*.22,tr*.13,tr*.04);x.fill();
+    x.beginPath();x.roundRect(-tr*.38,tr*.18,tr*.22,tr*.13,tr*.04);x.fill();
+    x.globalAlpha=1;x.strokeStyle=twinsAccent;x.lineWidth=tr*.055;
+    x.beginPath();x.moveTo(-tr*.24,-tr*.23);x.lineTo(tr*.28,-tr*.16);x.stroke();
+    x.beginPath();x.moveTo(-tr*.24,tr*.23);x.lineTo(tr*.28,tr*.16);x.stroke();
+    x.fillStyle=twinsAccent;x.fillRect(tr*.08,-tr*.045,tr*.30,tr*.09);
+    x.globalAlpha=.8;x.beginPath();x.arc(-tr*.08,0,tr*.10,0,6.283);x.fill();x.globalAlpha=1;
   }else if(visualTurret.id==='fast'){
     // Firebird armor accents use the exact same palette as the active flame tier.
     // This keeps the turret visually tied to its flame instead of using one fixed accent color.

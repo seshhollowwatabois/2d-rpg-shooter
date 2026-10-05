@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100511';
+const GAME_VERSION='2026100512';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -578,15 +578,24 @@ function enemyShoot(e){
   }else if(barrel.instant){
     const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
-    if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
+    const muzzleX=e.x+ca*(e.r+10),muzzleY=e.y+sa*(e.r+10);
+    if(barrel.id==='57mm'){
+      const hit=along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along);
+      const endDist=hit?along:Math.min(range,260);
+      const hitX=muzzleX+ca*Math.max(0,endDist-(e.r+10)),hitY=muzzleY+sa*Math.max(0,endDist-(e.r+10));
+      smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:hit? p.x:hitX,y2:hit? p.y:hitY,life:.13,maxLife:.13});
+      burst(muzzleX,muzzleY,'#ff9d24',12);burst(muzzleX,muzzleY,'#fff3c4',7);
+      if(hit)applyBulletHit(p,damage,p.x,p.y,{smoky:true},barrel.critChance||0);
+    }else if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
       applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
-      // Instant-hit enemy weapons must also trigger the player's death check.
-      if(p.hp<=0){
-        p.hp=0;
-        die();
-        return;
-      }
     }
+    // Instant-hit enemy weapons must also trigger the player's death check.
+    if(p.hp<=0){
+      p.hp=0;
+      die();
+      return;
+    }
+  }
   }else{
     const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?enemyTwinsTierData.speedMult:1);
     if(e.turretId==='rapid'){

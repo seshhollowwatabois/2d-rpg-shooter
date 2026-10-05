@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100516';
+const GAME_VERSION='2026100517';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -854,12 +854,12 @@ function renderShop(){
         q.beginPath();q.moveTo(-r*.08,0);q.lineTo(r*.36,0);q.stroke();q.globalAlpha=1;
       }
 
-      q.strokeStyle=railAccent||'#7f8b75';q.lineWidth=1.25;
+      const twinsNeutral=visualTurret.id==='rapid'&&Math.max(0,Math.min(3,enemy?twinsTierVisual:twinsTier))===0; q.strokeStyle=railAccent||(twinsNeutral?'#4a4d49':'#7f8b75');q.lineWidth=1.25;
       q.beginPath();q.moveTo(-r*.28,-r*.40);q.quadraticCurveTo(-r*.08,-r*.29,r*.04,-r*.28);q.stroke();
       q.beginPath();q.moveTo(-r*.28,r*.40);q.quadraticCurveTo(-r*.08,r*.29,r*.04,r*.28);q.stroke();
 
       q.fillStyle='#292e2a';q.beginPath();q.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);q.fill();
-      q.strokeStyle='#89967c';q.stroke();
+      q.strokeStyle=twinsNeutral?'#4a4d49':'#89967c';q.stroke();
       q.fillStyle='#292f2a';
       q.beginPath();q.roundRect(r*.08,-r*.18,r*.34,r*.36,5);q.fill();
 

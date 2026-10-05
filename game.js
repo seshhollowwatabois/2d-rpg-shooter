@@ -757,7 +757,7 @@ function renderShop(){
       const r=20;
       const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-      const railAccent=railTier?.beam||null;
+      const railAccent=railTier?(railTier.tier===0?railgunTiers[1].beam:railTier.tier===1?null:railTier.beam):null;
 
       q.fillStyle='#343c34';
       q.beginPath();q.arc(0,0,r*.57,0,6.283);q.fill();
@@ -797,7 +797,7 @@ function renderShop(){
         q.beginPath();q.moveTo(-r*.34,-r*.27);q.lineTo(r*.20,-r*.23);q.lineTo(r*.35,-r*.10);q.stroke();
         q.beginPath();q.moveTo(-r*.34,r*.27);q.lineTo(r*.20,r*.23);q.lineTo(r*.35,r*.10);q.stroke();
       }else if(visualTurret.id==='rapid'){
-        const twinsAccent=(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col;
+        const twinsAccent=(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col;
         q.fillStyle=twinsAccent;q.globalAlpha=.98;
         q.fillRect(-r*.34,-r*.29,r*.20,r*.12);
         q.fillRect(-r*.34,r*.17,r*.20,r*.12);
@@ -808,7 +808,7 @@ function renderShop(){
         q.beginPath();q.arc(-r*.08,0,r*.10,0,6.283);q.fill();
         q.globalAlpha=1;
       }else if(visualTurret.id==='fast'){
-        const fireAccent=fireTier.accent,fireFlame=fireTier.flame,fireCore=fireTier.core;
+        const fireAccent=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.accent,fireFlame=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.flame,fireCore=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.core;
         q.fillStyle='#343a31';
         q.beginPath();q.moveTo(-r*.34,-r*.27);q.lineTo(r*.18,-r*.31);q.lineTo(r*.38,-r*.15);
         q.lineTo(r*.38,r*.15);q.lineTo(r*.18,r*.31);q.lineTo(-r*.34,r*.27);q.closePath();q.fill();
@@ -1464,7 +1464,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const railAccent=visualTurret.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))].beam:null;
+  const activeRailVisualTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
+  const railAccent=visualTurret.id==='railgun'?(activeRailVisualTier.tier===0?railgunTiers[1].beam:activeRailVisualTier.tier===1?null:activeRailVisualTier.beam):null;
 
   // Turret silhouette varies with weapon class.
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';x.beginPath();
@@ -1501,7 +1502,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.20,-tr*.23);x.lineTo(tr*.35,-tr*.10);x.stroke();
     x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
   }else if(visualTurret.id==='rapid'){
-    const twinsAccent=twinsTiers[Math.max(0,Math.min(3,twinsTier))]?.col||'#3da9ff';
+    const twinsAccent=(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col;
     x.fillStyle=twinsAccent;x.globalAlpha=.9;
     x.beginPath();x.roundRect(-tr*.38,-tr*.31,tr*.22,tr*.13,tr*.04);x.fill();
     x.beginPath();x.roundRect(-tr*.38,tr*.18,tr*.22,tr*.13,tr*.04);x.fill();
@@ -1514,9 +1515,9 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     // Firebird armor accents use the exact same palette as the active flame tier.
     // This keeps the turret visually tied to its flame instead of using one fixed accent color.
     const fireAccentTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTierVisual||0))]||firebirdTiers[0];
-    const fireAccent=fireAccentTier.accent;
-    const fireFlame=fireAccentTier.flame;
-    const fireCore=fireAccentTier.core;
+    const fireAccent=fireAccentTier.tier===0?'rgba(0,0,0,0)':fireAccentTier.accent;
+    const fireFlame=fireAccentTier.tier===0?'rgba(0,0,0,0)':fireAccentTier.flame;
+    const fireCore=fireAccentTier.tier===0?'rgba(0,0,0,0)':fireAccentTier.core;
 
     // Strong, unmistakable Firebird tier accents.
     x.fillStyle=enemy?'#352d29':'#343a31';

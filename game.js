@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100616';
+const GAME_VERSION='2026100617';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -332,35 +332,27 @@ function startNextWave(){
 }
 
 function pickEnemyTurret(){
-  // Every 5th wave advances the guaranteed tier cycle:
-  // W5: 1x T1 + 4x T0
-  // W10: 2x T1 + 3x T0
-  // W15: 3x T1 + 2x T0
-  // W20: 1x T2 + 4x T1
-  // Then repeat the same pattern at higher tiers until everything reaches T3.
+  // Every 5 waves, one more enemy gets the next tier:
+  // W5-9:  1x T1 + 4x T0
+  // W10-14: 2x T1 + 3x T0
+  // W15-19: 3x T1 + 2x T0
+  // W20-24: 4x T1 + 1x T0
+  // W25-29: 1x T2 + 4x T1
+  // W30-34: 2x T2 + 3x T1
+  // W35-39: 3x T2 + 2x T1
+  // W40-44: 4x T2 + 1x T1
+  // W45+: continue the same pattern until all enemies are T3.
   const spawnIndex=5-waveRemaining;
-  const cycle=Math.floor((wave-5)/20);
-  const step=((wave-5)%20);
-  let tier=0;
-  if(step===0){
-    tier=cycle+1;
-    if(spawnIndex>0)tier=cycle;
-  }else if(step===5){
-    tier=cycle+1;
-    if(spawnIndex<2)tier=cycle+1;
-    else tier=cycle;
-  }else if(step===10){
-    tier=cycle+1;
-    if(spawnIndex<3)tier=cycle+1;
-    else tier=cycle;
-  }else if(step===15){
-    tier=cycle+2;
-    if(spawnIndex===0)tier=cycle+2;
-    else tier=cycle+1;
-  }else{
-    tier=Math.min(3,cycle);
+  if(wave<5){
+    const weaponRoll=Math.random();
+    const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
+    return {id,tier:0};
   }
-  tier=Math.max(0,Math.min(3,tier));
+  const milestone=Math.floor((wave-5)/5);
+  const highCount=(milestone%4)+1;
+  const highTier=Math.min(3,Math.floor(milestone/4)+1);
+  const lowTier=Math.max(0,highTier-1);
+  const tier=spawnIndex<highCount?highTier:lowTier;
   const weaponRoll=Math.random();
   const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
   return {id,tier};

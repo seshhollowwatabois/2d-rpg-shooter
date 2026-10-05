@@ -39,6 +39,14 @@ function turretForPlayer(){
     const tier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
     return {...t,turn:t.turn*(tier.turnMult||1)};
   }
+  if(t.id==='rapid'){
+    const tier=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
+    return {...t,turn:t.turn*(tier.turnMult||1)};
+  }
+  if(t.id==='fast'){
+    const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
+    return {...t,turn:t.turn*(tier.turnMult||1)};
+  }
   return t;
 }
 const railgunTiers=[
@@ -48,16 +56,16 @@ const railgunTiers=[
   {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];
 const twinsTiers=[
-  {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,col:'#3da9ff'},
-  {tier:1,name:'Twins Tier 1',damageMult:1.2,reloadTime:.25,speedMult:1.2,col:'#a13cff'},
-  {tier:2,name:'Twins Tier 2',damageMult:1.44,reloadTime:.20,speedMult:1.44,col:'#ffd23f'},
-  {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,col:'#39d353'}
+  {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,turnMult:1,col:'#3da9ff'},
+  {tier:1,name:'Twins Tier 1',damageMult:1.2,reloadTime:.25,speedMult:1.2,turnMult:1.2,col:'#a13cff'},
+  {tier:2,name:'Twins Tier 2',damageMult:1.44,reloadTime:.20,speedMult:1.44,turnMult:1.44,col:'#ffd23f'},
+  {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:'#39d353'}
 ];
 const firebirdTiers=[
-  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
-  {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:280,flame:'#b83b16',core:'#ffd08a',accent:'#d86a22'},
-  {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
-  {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
+  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
+  {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:280,turnMult:1.2,flame:'#b83b16',core:'#ffd08a',accent:'#d86a22'},
+  {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
+  {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
 ];
 let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
 let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
@@ -1001,10 +1009,10 @@ function renderShop(){
         const gun=gunForTurret(item.id);
         if(item.id==='rapid'){
           const t=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
-          addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage*t.damageMult).toFixed(1)+'-'+(gun.maxDamage*t.damageMult).toFixed(1));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Projectile Speed',Math.round(900*t.speedMult));addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage*t.damageMult).toFixed(1)+'-'+(gun.maxDamage*t.damageMult).toFixed(1));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Projectile Speed',Math.round(900*t.speedMult));addStat('Tier','T'+t.tier);
         }else if(item.id==='fast'){
           const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-          addStat('Turret Rotation',item.turn.toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
         }else{
           const rt=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;const turn=item.id==='railgun'?item.turn*(rt?.turnMult||1):item.turn;const min=Math.round(gun.minDamage*(rt?.damageMult||1));const max=Math.round(gun.maxDamage*(rt?.damageMult||1));const reload=gun.reloadTime*(rt?.reloadMult||1);addStat('Turret Rotation',turn.toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',min+'-'+max);addStat('Reload Time',reload.toFixed(2)+'s');addStat('Size',item.scale.toFixed(2)+'x');
         }

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100518';
+const GAME_VERSION='2026100519';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1528,7 +1528,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.20,-tr*.23);x.lineTo(tr*.35,-tr*.10);x.stroke();
     x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
   }else if(visualTurret.id==='rapid'){
-    const twinsAccent=(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col;
+    const activeTwinsVisualTier=Math.max(0,Math.min(3,enemy?twinsTierVisual:twinsTier)); const twinsAccent=(twinsTiers[activeTwinsVisualTier]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[activeTwinsVisualTier]||twinsTiers[0]).col;
     x.fillStyle=twinsAccent;x.globalAlpha=.9;
     x.beginPath();x.roundRect(-tr*.38,-tr*.31,tr*.22,tr*.13,tr*.04);x.fill();
     x.beginPath();x.roundRect(-tr*.38,tr*.18,tr*.22,tr*.13,tr*.04);x.fill();

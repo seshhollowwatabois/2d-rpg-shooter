@@ -344,7 +344,7 @@ function makeEnemy(){
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,turretId,engineId,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,firebirdFuel:5,firebirdMaxFuel:5,
      twinsTier:turretId==='rapid'?Math.min(3,Math.floor((wave-1)/4)):0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
@@ -1305,33 +1305,57 @@ function update(dt){
       }
     }
 
-    // Bots wander around the battlefield instead of constantly chasing the player.
-    e.wanderTime-=dt;
-    if(e.wanderTime<=0){
-      e.wanderX=60+Math.random()*Math.max(1,W-120);
-      e.wanderY=60+Math.random()*Math.max(1,H-120);
-      e.wanderTime=1.5+Math.random()*4;
-      e.idle=Math.random()<.35;
-    }
+    const enemyBarrel=gunForTurret(e.turretId);
+    const isEnemyFirebird=enemyBarrel.id==='122mm'&&enemyBarrel.flame;
+    const enemyFireTier=firebirdTiers[Math.max(0,Math.min(3,e.firebirdTier||0))]||firebirdTiers[0];
+    const firebirdEngageRange=Math.min(enemyFireTier.range||230,300);
 
-    const oldEx=e.x,oldEy=e.y;
-    if(recoverBotFromWall(e)){}
-    e.vx=0;e.vy=0;
-    if(!e.idle){
-      const wa=Math.atan2(e.wanderY-e.y,e.wanderX-e.x);
-      const wda=((wa-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-      const turnRate=2.1;
-      e.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,wda));
-      const wd=Math.hypot(e.wanderX-e.x,e.wanderY-e.y);
-      if(wd>28){
-        const moveVx=Math.cos(e.angle)*e.speed;
-        const moveVy=Math.sin(e.angle)*e.speed;
-        const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);
-        if(moved){e.vx=moveVx;e.vy=moveVy;}
-        if(!moved){
-          const point=findOpenPoint(e.r);
-          e.wanderX=point.x;e.wanderY=point.y;e.wanderTime=1.5+Math.random()*2;
-          e.angle+=(Math.random()<.5?1:-1)*Math.PI*.35;
+    // Firebirds actively close the distance instead of trying to flame the player from far away.
+    if(isEnemyFirebird && d>firebirdEngageRange){
+      e.idle=false;
+      e.wanderTime=0;
+      const chaseAngle=Math.atan2(p.y-e.y,p.x-e.x);
+      const chaseDelta=((chaseAngle-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+      const chaseTurnRate=2.6;
+      e.angle+=Math.max(-chaseTurnRate*dt,Math.min(chaseTurnRate*dt,chaseDelta));
+      const moveVx=Math.cos(e.angle)*e.speed;
+      const moveVy=Math.sin(e.angle)*e.speed;
+      const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);
+      if(moved){e.vx=moveVx;e.vy=moveVy;}
+      if(!moved){
+        const point=findOpenPoint(e.r);
+        e.wanderX=point.x;e.wanderY=point.y;e.wanderTime=1.5+Math.random()*2;
+        e.angle+=(Math.random()<.5?1:-1)*Math.PI*.35;
+      }
+    }else{
+      // Other enemies keep their normal wandering behavior.
+      e.wanderTime-=dt;
+      if(e.wanderTime<=0){
+        e.wanderX=60+Math.random()*Math.max(1,W-120);
+        e.wanderY=60+Math.random()*Math.max(1,H-120);
+        e.wanderTime=1.5+Math.random()*4;
+        e.idle=Math.random()<.35;
+      }
+
+      const oldEx=e.x,oldEy=e.y;
+      if(recoverBotFromWall(e)){}
+      e.vx=0;e.vy=0;
+      if(!e.idle){
+        const wa=Math.atan2(e.wanderY-e.y,e.wanderX-e.x);
+        const wda=((wa-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+        const turnRate=2.1;
+        e.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,wda));
+        const wd=Math.hypot(e.wanderX-e.x,e.wanderY-e.y);
+        if(wd>28){
+          const moveVx=Math.cos(e.angle)*e.speed;
+          const moveVy=Math.sin(e.angle)*e.speed;
+          const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);
+          if(moved){e.vx=moveVx;e.vy=moveVy;}
+          if(!moved){
+            const point=findOpenPoint(e.r);
+            e.wanderX=point.x;e.wanderY=point.y;e.wanderTime=1.5+Math.random()*2;
+            e.angle+=(Math.random()<.5?1:-1)*Math.PI*.35;
+          }
         }
       }
     }
@@ -1346,12 +1370,14 @@ function update(dt){
     const turretTurnRate=2.4;
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
-    // Bots can engage from range without needing to chase the player.
-    // Firebird is called every frame so its flame remains visually continuous;
-    // enemyShoot() itself controls the actual 0.50s damage/burn tick.
-    const enemyBarrel=gunForTurret(e.turretId);
-    if(enemyBarrel.id==='122mm'&&enemyBarrel.flame){
-      if(d<620)enemyShoot(e);
+    // Firebirds only fire after closing to their dedicated close-range distance.
+    // Their flame consumes a limited fuel pool and regenerates while they are not firing.
+    if(isEnemyFirebird){
+      if(e.firebirdFuel<=0)e.firebirdFuel=Math.min(e.firebirdMaxFuel||5,e.firebirdFuel+dt*.5);
+      if(d<=firebirdEngageRange && e.firebirdFuel>0){
+        enemyShoot(e);
+        e.firebirdFuel=Math.max(0,e.firebirdFuel-dt);
+      }
     }else if(d<620&&e.fire<=0)enemyShoot(e);
     // Ram damage is handled once below for both tanks.
   }

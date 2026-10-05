@@ -1700,7 +1700,20 @@ function draw(){
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';$('coinsText').textContent=p.coins;
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;$('coinsText').textContent=p.coins;$('killsText').textContent=p.kills;
-  $('reloadBar').style.width=(reloadPct*100)+'%';$('damageText').textContent=barrel.damage;
+  $('reloadBar').style.width=(reloadPct*100)+'%';
+  let hudDamage='-';
+  if(barrel.id==='85mm'){
+    const t=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
+    hudDamage=(barrel.minDamage*t.damageMult).toFixed(1)+'-'+(barrel.maxDamage*t.damageMult).toFixed(1);
+  }else if(barrel.id==='122mm'){
+    const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
+    hudDamage=(10+t.directBonus)+'-'+(21+t.directBonus);
+  }else if(barrel.id==='122mmLong'){
+    hudDamage=Math.round(barrel.minDamage*activeRailTier.damageMult)+'-'+Math.round(barrel.maxDamage*activeRailTier.damageMult);
+  }else{
+    hudDamage=barrel.minDamage+'-'+barrel.maxDamage;
+  }
+  $('damageText').textContent=hudDamage;
   if(barrel.id==='122mm'&&barrel.flame){
     $('reloadText').textContent='FUEL';
     $('reloadText').style.color='#ffd21a';

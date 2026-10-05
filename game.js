@@ -1373,10 +1373,11 @@ function update(dt){
     // Firebirds only fire after closing to their dedicated close-range distance.
     // Their flame consumes a limited fuel pool and regenerates while they are not firing.
     if(isEnemyFirebird){
-      if(e.firebirdFuel<=0)e.firebirdFuel=Math.min(e.firebirdMaxFuel||5,e.firebirdFuel+dt*.5);
       if(d<=firebirdEngageRange && e.firebirdFuel>0){
         enemyShoot(e);
         e.firebirdFuel=Math.max(0,e.firebirdFuel-dt);
+      }else{
+        e.firebirdFuel=Math.min(e.firebirdMaxFuel||5,e.firebirdFuel+dt*.5);
       }
     }else if(d<620&&e.fire<=0)enemyShoot(e);
     // Ram damage is handled once below for both tanks.

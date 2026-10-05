@@ -26,3 +26,5 @@
 #topRightStats .topStat{padding:7px 10px;border-radius:7px;background:rgba(21,27,41,.88);color:#fff;font:700 13px/1 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 #topRightStats #mainMenuButton{pointer-events:auto;position:static}
 @media(max-width:600px){#topRightStats{right:7px;top:7px;gap:5px}#topRightStats .topStat{padding:6px 7px;font-size:12px}}
+
+.difficultyModal{position:absolute;inset:0;z-index:70;display:grid;place-items:center;background:#05080dcc}.difficultyModal[hidden]{display:none!important}.difficultyPanel{position:relative;width:min(88vw,380px);padding:24px;background:#0b1018f8;border:1px solid #435366;border-radius:16px;box-shadow:0 20px 60px #000c;text-align:center}.difficultyPanel h2{margin:0 0 7px;font-size:22px;letter-spacing:2px}.difficultyPanel p{margin:0 0 20px;color:#8fa3b8;font-size:12px}.difficultyClose{position:absolute;top:8px;right:10px;padding:2px 9px;font-size:20px}.difficultyGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.difficultyGrid button{padding:16px;font-size:18px;font-weight:900;letter-spacing:1px}.difficultyGrid button:hover{border-color:#8eeaff;background:#16232d}

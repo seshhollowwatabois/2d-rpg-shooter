@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100612';
+const GAME_VERSION='2026100613';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -200,6 +200,8 @@ function reset(){
   const totalHp=hull.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
+  const waveDisplay=document.getElementById('waveDisplay');
+  if(waveDisplay)waveDisplay.textContent='WAVE 1';
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
     {x:W*.28,y:H*.55,w:190,h:30},{x:W*.58,y:H*.64,w:34,h:150},{x:W*.08,y:H*.70,w:145,h:28},
@@ -318,7 +320,16 @@ function addXp(n){
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
 function waveSize(w){return 5;}
-function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;soundWave();const el=document.getElementById('waveDisplay');if(el){el.textContent='WAVE '+wave;el.classList.remove('wavePulse');void el.offsetWidth;el.classList.add('wavePulse')}}
+function startNextWave(){
+  // Clearing a wave fully restores the player's health before the next wave.
+  if(p){p.hp=p.max;p.burnStacks=0;p.burnTick=1;}
+  wave++;
+  waveRemaining=waveSize(wave);
+  waveClearTimer=0;
+  soundWave();
+  const el=document.getElementById('waveDisplay');
+  if(el){el.textContent='WAVE '+wave;el.classList.remove('wavePulse');void el.offsetWidth;el.classList.add('wavePulse')}
+}
 
 function pickEnemyTurret(){
   const roll=Math.random();

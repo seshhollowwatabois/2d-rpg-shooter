@@ -1,8 +1,9 @@
-const GAME_VERSION='2026100624';
+const GAME_VERSION='2026100625';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0,menuPausedGame=false;
+let enemyStageOverride=null;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
@@ -222,6 +223,13 @@ $('mainMenuButton').onclick=()=>{initAudio();soundUi();showMenu(true)};
 $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false};
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
+$('stageSelect').onclick=()=>{
+  initAudio();soundUi();
+  enemyStageOverride=enemyStageOverride===null?0:enemyStageOverride+1;
+  if(enemyStageOverride>3)enemyStageOverride=null;
+  const b=$('stageSelect');
+  if(b)b.textContent=enemyStageOverride===null?'ENEMY STAGE: NORMAL':'ENEMY STAGE: T'+enemyStageOverride;
+};
 $('startGame').onclick=startNewGame;
 $('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
 $('deathMenu').onclick=()=>{initAudio();soundUi();showMenu(false)};
@@ -332,6 +340,12 @@ function startNextWave(){
 }
 
 function pickEnemyTurret(){
+  // Main-menu testing override: when selected, every enemy uses the chosen tier.
+  if(enemyStageOverride!==null){
+    const weaponRoll=Math.random();
+    const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
+    return {id,tier:enemyStageOverride};
+  }
   // Every 5 waves, one more enemy gets the next tier:
   // W5-9:  1x T1 + 4x T0
   // W10-14: 2x T1 + 3x T0

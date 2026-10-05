@@ -1655,7 +1655,7 @@ function draw(){
     const a=Math.max(0,b.life/b.maxLife);
     x.save();x.globalAlpha=a;
     x.lineCap='round';const railTierVisual=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
-    x.strokeStyle=railTierVisual.beam;x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.strokeStyle=(railTierVisual.tier===0?railgunTiers[1].beam:railTierVisual.beam);x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }

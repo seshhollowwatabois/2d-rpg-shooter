@@ -757,7 +757,7 @@ function renderShop(){
       const r=20;
       const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
-      const railAccent=railTier?(railTier.tier===0?railgunTiers[1].beam:railTier.tier===1?null:railTier.beam):null;
+      const railAccent=railTier?(railTier.tier===0?null:railTier.tier===1?railgunTiers[0].beam:railTier.beam):null;
 
       q.fillStyle='#343c34';
       q.beginPath();q.arc(0,0,r*.57,0,6.283);q.fill();
@@ -1465,7 +1465,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
   const activeRailVisualTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
-  const railAccent=visualTurret.id==='railgun'?(activeRailVisualTier.tier===0?railgunTiers[1].beam:activeRailVisualTier.tier===1?null:activeRailVisualTier.beam):null;
+  const railAccent=visualTurret.id==='railgun'?(activeRailVisualTier.tier===0?null:activeRailVisualTier.tier===1?railgunTiers[0].beam:activeRailVisualTier.beam):null;
 
   // Turret silhouette varies with weapon class.
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';x.beginPath();

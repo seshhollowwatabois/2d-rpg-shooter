@@ -1414,42 +1414,43 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.save();x.translate(turretX,0);x.rotate(turretAngle-hullAngle);
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
+  const tr=tr*(visualTurret.scale||1);
   const railAccent=visualTurret.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))].beam:null;
 
   // Turret silhouette varies with weapon class.
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';x.beginPath();
   if(visualTurret.id==='railgun'){
-    x.moveTo(-r*.50,-r*.30);x.lineTo(r*.08,-r*.36);x.quadraticCurveTo(r*.42,-r*.27,r*.48,0);
-    x.quadraticCurveTo(r*.42,r*.27,r*.08,r*.36);x.lineTo(-r*.50,r*.30);x.quadraticCurveTo(-r*.60,0,-r*.50,-r*.30);
+    x.moveTo(-tr*.50,-tr*.30);x.lineTo(tr*.08,-tr*.36);x.quadraticCurveTo(tr*.42,-tr*.27,tr*.48,0);
+    x.quadraticCurveTo(tr*.42,tr*.27,tr*.08,tr*.36);x.lineTo(-tr*.50,tr*.30);x.quadraticCurveTo(-tr*.60,0,-tr*.50,-tr*.30);
   }else if(visualTurret.id==='fast'){
     // Firebird: old Tanki-style low, armored flamethrower body.
     // Broad wedge, sloped nose, recessed center channel and heavy side armor.
-    x.moveTo(-r*.52,-r*.36);
-    x.lineTo(-r*.12,-r*.49);
-    x.lineTo(r*.34,-r*.40);
-    x.quadraticCurveTo(r*.55,-r*.20,r*.55,0);
-    x.quadraticCurveTo(r*.55,r*.20,r*.34,r*.40);
-    x.lineTo(-r*.12,r*.49);
-    x.lineTo(-r*.52,r*.36);
-    x.quadraticCurveTo(-r*.63,0,-r*.52,-r*.36);
+    x.moveTo(-tr*.52,-tr*.36);
+    x.lineTo(-tr*.12,-tr*.49);
+    x.lineTo(tr*.34,-tr*.40);
+    x.quadraticCurveTo(tr*.55,-tr*.20,tr*.55,0);
+    x.quadraticCurveTo(tr*.55,tr*.20,tr*.34,tr*.40);
+    x.lineTo(-tr*.12,tr*.49);
+    x.lineTo(-tr*.52,tr*.36);
+    x.quadraticCurveTo(-tr*.63,0,-tr*.52,-tr*.36);
   }else if(visualTurret.id==='rapid'){
     // Twins: compact rounded turret with a broad front and twin gun mounts.
-    x.moveTo(-r*.50,-r*.34);x.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
-    x.quadraticCurveTo(r*.52,-r*.24,r*.52,0);x.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
-    x.quadraticCurveTo(-r*.18,r*.45,-r*.50,r*.34);x.quadraticCurveTo(-r*.58,0,-r*.50,-r*.34);
+    x.moveTo(-tr*.50,-tr*.34);x.quadraticCurveTo(-tr*.18,-tr*.45,tr*.24,-tr*.39);
+    x.quadraticCurveTo(tr*.52,-tr*.24,tr*.52,0);x.quadraticCurveTo(tr*.52,tr*.24,tr*.24,tr*.39);
+    x.quadraticCurveTo(-tr*.18,tr*.45,-tr*.50,tr*.34);x.quadraticCurveTo(-tr*.58,0,-tr*.50,-tr*.34);
   }else{
     // Smoky: classic Tanki-style compact, rounded turret with a distinct sloped front.
-    x.moveTo(-r*.48,-r*.30);x.quadraticCurveTo(-r*.28,-r*.46,r*.02,-r*.43);
-    x.lineTo(r*.31,-r*.30);x.quadraticCurveTo(r*.48,-r*.15,r*.50,0);
-    x.quadraticCurveTo(r*.48,r*.15,r*.31,r*.30);x.lineTo(r*.02,r*.43);
-    x.quadraticCurveTo(-r*.28,r*.46,-r*.48,r*.30);x.quadraticCurveTo(-r*.57,0,-r*.48,-r*.30);
+    x.moveTo(-tr*.48,-tr*.30);x.quadraticCurveTo(-tr*.28,-tr*.46,tr*.02,-tr*.43);
+    x.lineTo(tr*.31,-tr*.30);x.quadraticCurveTo(tr*.48,-tr*.15,tr*.50,0);
+    x.quadraticCurveTo(tr*.48,tr*.15,tr*.31,tr*.30);x.lineTo(tr*.02,tr*.43);
+    x.quadraticCurveTo(-tr*.28,tr*.46,-tr*.48,tr*.30);x.quadraticCurveTo(-tr*.57,0,-tr*.48,-tr*.30);
   }
   x.closePath();x.fill();
 
   if(visualTurret.id==='railgun'){
     x.strokeStyle=railAccent||'#8eeaff';x.lineWidth=1.7;
-    x.beginPath();x.moveTo(-r*.34,-r*.27);x.lineTo(r*.20,-r*.23);x.lineTo(r*.35,-r*.10);x.stroke();
-    x.beginPath();x.moveTo(-r*.34,r*.27);x.lineTo(r*.20,r*.23);x.lineTo(r*.35,r*.10);x.stroke();
+    x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.20,-tr*.23);x.lineTo(tr*.35,-tr*.10);x.stroke();
+    x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
   }else if(visualTurret.id==='fast'){
     // Firebird armor accents use the exact same palette as the active flame tier.
     // This keeps the turret visually tied to its flame instead of using one fixed accent color.
@@ -1461,49 +1462,49 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     // Strong, unmistakable Firebird tier accents.
     x.fillStyle=enemy?'#352d29':'#343a31';
     x.beginPath();
-    x.moveTo(-r*.34,-r*.27);x.lineTo(r*.18,-r*.31);x.lineTo(r*.38,-r*.15);
-    x.lineTo(r*.38,r*.15);x.lineTo(r*.18,r*.31);x.lineTo(-r*.34,r*.27);
+    x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.18,-tr*.31);x.lineTo(tr*.38,-tr*.15);
+    x.lineTo(tr*.38,tr*.15);x.lineTo(tr*.18,tr*.31);x.lineTo(-tr*.34,tr*.27);
     x.closePath();x.fill();
 
     // Bright tier-colored side armor plates.
     x.fillStyle=fireFlame;
     x.globalAlpha=.95;
-    x.beginPath();x.moveTo(-r*.34,-r*.27);x.lineTo(r*.18,-r*.31);x.lineTo(r*.28,-r*.20);
-      x.lineTo(-r*.25,-r*.16);x.closePath();x.fill();
-    x.beginPath();x.moveTo(-r*.34,r*.27);x.lineTo(r*.18,r*.31);x.lineTo(r*.28,r*.20);
-      x.lineTo(-r*.25,r*.16);x.closePath();x.fill();
+    x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.18,-tr*.31);x.lineTo(tr*.28,-tr*.20);
+      x.lineTo(-tr*.25,-tr*.16);x.closePath();x.fill();
+    x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.18,tr*.31);x.lineTo(tr*.28,tr*.20);
+      x.lineTo(-tr*.25,tr*.16);x.closePath();x.fill();
     x.globalAlpha=1;
 
     // Large tier-colored heat vents.
     x.fillStyle=fireAccent;
     for(const sy of [-1,1]){
       for(let j=0;j<4;j++){
-        const vx=-r*.20+j*r*.105;
-        x.beginPath();x.ellipse(vx,sy*r*.30,r*.035,r*.065,0,0,6.283);x.fill();
+        const vx=-tr*.20+j*tr*.105;
+        x.beginPath();x.ellipse(vx,sy*tr*.30,tr*.035,tr*.065,0,0,6.283);x.fill();
       }
     }
 
     // Raised twin fuel channels.
-    x.strokeStyle=fireAccent;x.lineWidth=r*.065;
-    x.beginPath();x.moveTo(-r*.18,-r*.22);x.lineTo(r*.30,-r*.11);x.stroke();
-    x.beginPath();x.moveTo(-r*.18,r*.22);x.lineTo(r*.30,r*.11);x.stroke();
+    x.strokeStyle=fireAccent;x.lineWidth=tr*.065;
+    x.beginPath();x.moveTo(-tr*.18,-tr*.22);x.lineTo(tr*.30,-tr*.11);x.stroke();
+    x.beginPath();x.moveTo(-tr*.18,tr*.22);x.lineTo(tr*.30,tr*.11);x.stroke();
 
     // Bright core stripe.
-    x.strokeStyle=fireCore;x.lineWidth=r*.045;
+    x.strokeStyle=fireCore;x.lineWidth=tr*.045;
     x.globalAlpha=.9;
-    x.beginPath();x.moveTo(-r*.08,0);x.lineTo(r*.36,0);x.stroke();
+    x.beginPath();x.moveTo(-tr*.08,0);x.lineTo(tr*.36,0);x.stroke();
     x.globalAlpha=1;
   }
 
   x.strokeStyle=railAccent||(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
-  x.beginPath();x.moveTo(-r*.28,-r*.40);x.quadraticCurveTo(-r*.08,-r*.29,r*.04,-r*.28);x.stroke();
-  x.beginPath();x.moveTo(-r*.28,r*.40);x.quadraticCurveTo(-r*.08,r*.29,r*.04,r*.28);x.stroke();
+  x.beginPath();x.moveTo(-tr*.28,-tr*.40);x.quadraticCurveTo(-tr*.08,-tr*.29,tr*.04,-tr*.28);x.stroke();
+  x.beginPath();x.moveTo(-tr*.28,tr*.40);x.quadraticCurveTo(-tr*.08,tr*.29,tr*.04,tr*.28);x.stroke();
 
   // Hatch and mantlet.
-  x.fillStyle='#292e2a';x.beginPath();x.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);x.fill();
+  x.fillStyle='#292e2a';x.beginPath();x.ellipse(-tr*.18,0,tr*.17,tr*.12,0,0,6.283);x.fill();
   x.strokeStyle='#89967c';x.stroke();
   x.fillStyle=enemy?'#252729':'#292f2a';
-  x.beginPath();x.roundRect(r*.08,-r*.18,r*.34,r*.36,5);x.fill();
+  x.beginPath();x.roundRect(tr*.08,-tr*.18,tr*.34,tr*.36,5);x.fill();
 
   const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
   const barrelWidth=.15*barrelScale;
@@ -1511,9 +1512,9 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     // Two parallel cannons, mounted high/low like the classic Twins turret.
     x.fillStyle='#151819';
     for(const sy of [-1,1]){
-      const yy=sy*r*.115;
-      x.fillRect(r*.35,yy-r*barrelWidth*.32,r*1.16*barrelLength,r*barrelWidth*.64);
-      x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),yy-r*.07,r*.14,r*.14);
+      const yy=sy*tr*.115;
+      x.fillRect(tr*.35,yy-tr*barrelWidth*.32,tr*1.16*barrelLength,tr*barrelWidth*.64);
+      x.fillStyle='#0e1112';x.fillRect(tr*(1.46*barrelLength),yy-tr*.07,tr*.14,tr*.14);
       x.fillStyle='#151819';
     }
   }else if(visualTurret.id==='fast'){
@@ -1523,34 +1524,34 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     const fireFlame=fireAccentTier.flame;
     x.fillStyle='#171a18';
     x.beginPath();
-    x.moveTo(r*.30,-r*.105);x.lineTo(r*.83,-r*.115);x.lineTo(r*1.08,-r*.19);
-    x.lineTo(r*1.22,-r*.19);x.lineTo(r*1.31,-r*.11);x.lineTo(r*1.31,r*.11);
-    x.lineTo(r*1.22,r*.19);x.lineTo(r*1.08,r*.19);x.lineTo(r*.83,r*.115);
-    x.lineTo(r*.30,r*.105);x.closePath();x.fill();
-    x.fillStyle='#4a5049';x.fillRect(r*.45,-r*.13,r*.13,r*.26);
+    x.moveTo(tr*.30,-tr*.105);x.lineTo(tr*.83,-tr*.115);x.lineTo(tr*1.08,-tr*.19);
+    x.lineTo(tr*1.22,-tr*.19);x.lineTo(tr*1.31,-tr*.11);x.lineTo(tr*1.31,tr*.11);
+    x.lineTo(tr*1.22,tr*.19);x.lineTo(tr*1.08,tr*.19);x.lineTo(tr*.83,tr*.115);
+    x.lineTo(tr*.30,tr*.105);x.closePath();x.fill();
+    x.fillStyle='#4a5049';x.fillRect(tr*.45,-tr*.13,tr*.13,tr*.26);
     x.fillStyle='#0b0d0c';
-    x.beginPath();x.ellipse(r*1.28,0,r*.10,r*.105,0,0,6.283);x.fill();
+    x.beginPath();x.ellipse(tr*1.28,0,tr*.10,tr*.105,0,0,6.283);x.fill();
 
     // Hot-metal band around the nozzle and matching tier-colored rails.
     x.fillStyle=fireFlame;
     x.globalAlpha=.9;
-    x.fillRect(r*.78,-r*.13,r*.07,r*.26);
+    x.fillRect(tr*.78,-tr*.13,tr*.07,tr*.26);
     x.globalAlpha=1;
     x.strokeStyle=fireAccent;x.lineWidth=1.6;
-    x.beginPath();x.moveTo(r*.58,-r*.12);x.lineTo(r*.98,-r*.17);x.stroke();
-    x.beginPath();x.moveTo(r*.58,r*.12);x.lineTo(r*.98,r*.17);x.stroke();
+    x.beginPath();x.moveTo(tr*.58,-tr*.12);x.lineTo(tr*.98,-tr*.17);x.stroke();
+    x.beginPath();x.moveTo(tr*.58,tr*.12);x.lineTo(tr*.98,tr*.17);x.stroke();
   }else{
-    x.fillStyle='#151819';x.fillRect(r*.35,-r*barrelWidth/2,r*1.16*barrelLength,r*barrelWidth);
+    x.fillStyle='#151819';x.fillRect(tr*.35,-tr*barrelWidth/2,tr*1.16*barrelLength,tr*barrelWidth);
     if(visualBarrel.id==='122mm'){
-      x.fillStyle='#0e1112';x.fillRect(r*(1.32*barrelLength),-r*.065,r*.10,r*.13);
+      x.fillStyle='#0e1112';x.fillRect(tr*(1.32*barrelLength),-tr*.065,tr*.10,tr*.13);
     }else{
-      x.fillStyle='#0e1112';x.fillRect(r*(1.46*barrelLength),-r*.105,r*.14,r*.21);
+      x.fillStyle='#0e1112';x.fillRect(tr*(1.46*barrelLength),-tr*.105,tr*.14,tr*.21);
     }
   }
 
   x.fillStyle=railAccent||(enemy?(heavy?'#746a5d':'#9b5458'):'#849176');
-  x.beginPath();x.arc(-r*.36,-r*.23,r*.04,0,6.283);x.fill();
-  x.beginPath();x.arc(-r*.36,r*.23,r*.04,0,6.283);x.fill();
+  x.beginPath();x.arc(-tr*.36,-tr*.23,tr*.04,0,6.283);x.fill();
+  x.beginPath();x.arc(-tr*.36,tr*.23,tr*.04,0,6.283);x.fill();
 
   x.restore();x.restore();
 }

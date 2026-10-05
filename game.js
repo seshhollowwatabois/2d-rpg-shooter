@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100631';
+const GAME_VERSION='2026100632';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -415,7 +415,7 @@ function makeEnemy(){
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,turretId,turretTier,engineId,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,railCharging:false,railCharge:0,
      twinsTier:turretId==='rapid'?turretTier:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
@@ -1482,9 +1482,24 @@ function update(dt){
       }else{
         e.firebirdFuel=Math.min(e.firebirdMaxFuel||5,e.firebirdFuel+dt*.5);
       }
+    }else if(e.turretId==='railgun'){
+      // Railguns charge before firing, just like the player's Railgun.
+      if(e.railCharging){
+        e.railCharge=Math.max(0,e.railCharge-dt);
+        if(e.railCharge<=0){
+          e.railCharging=false;
+          enemyShoot(e);
+        }
+      }else if(e.fire<=0){
+        const enemyAttackRange=1400;
+        if(d<enemyAttackRange&&!wallRayHit(e.x,e.y,targetTurret,d)){
+          e.railCharging=true;
+          e.railCharge=1;
+          e.turretAngle=targetTurret;
+        }
+      }
     }else if(e.fire<=0){
-      const enemyAttackRange=e.turretId==='railgun'?1400:620;
-      if(d<enemyAttackRange&&!wallRayHit(e.x,e.y,targetTurret,d))enemyShoot(e);
+      if(d<620&&!wallRayHit(e.x,e.y,targetTurret,d))enemyShoot(e);
     }
     // Ram damage is handled once below for both tanks.
   }
@@ -1857,6 +1872,22 @@ function draw(){
     x.strokeStyle=chargeTier.beam;x.lineWidth=3+5*progress;x.beginPath();x.arc(0,0,8+14*progress,0,6.283);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=2;x.beginPath();x.moveTo(5,0);x.lineTo(22+18*progress,0);x.stroke();
     x.fillStyle='#dfffff';x.globalAlpha=.5+.5*progress;x.beginPath();x.arc(0,0,4+7*progress,0,6.283);x.fill();
+    x.restore();
+  }
+  // Enemy Railgun charge animations use the same 1-second energy buildup as the player's Railgun.
+  for(const e of en){
+    if(e.turretId!=='railgun'||!e.railCharging)continue;
+    const a=e.turretAngle;
+    const muzzleX=e.x+Math.cos(a)*(e.r+10),muzzleY=e.y+Math.sin(a)*(e.r+10);
+    const progress=1-e.railCharge;
+    const tier=railgunTiers[Math.max(0,Math.min(3,e.turretTier||0))]||railgunTiers[0];
+    x.save();x.translate(muzzleX,muzzleY);x.rotate(a);x.globalAlpha=.35+.65*progress;
+    x.strokeStyle=tier.beam;x.lineWidth=3+5*progress;
+    x.beginPath();x.arc(0,0,8+14*progress,0,6.283);x.stroke();
+    x.strokeStyle=tier.glow||'#bffcff';x.lineWidth=2+3*progress;
+    x.beginPath();x.moveTo(-10,0);x.lineTo(18+30*progress,0);x.stroke();
+    x.fillStyle=tier.glow||'#bffcff';x.globalAlpha=.5+.5*progress;
+    x.beginPath();x.arc(0,0,4+7*progress,0,6.283);x.fill();
     x.restore();
   }
   // Railgun beams linger and fade smoothly for 2 seconds.

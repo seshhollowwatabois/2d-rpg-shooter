@@ -1,9 +1,9 @@
-const GAME_VERSION='2026100625';
+const GAME_VERSION='2026100626';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0,menuPausedGame=false;
-let enemyStageOverride=null;
+let enemyStageOverride=null,enemyDifficultyOpen=false;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
@@ -176,10 +176,14 @@ function stopEngineSound(){
 
 
 function saveCurrent(){ saveShop(); }
+function closeEnemyDifficulty(){enemyDifficultyOpen=false;const el=$('enemyDifficulty');if(el)el.hidden=true;}
+function openEnemyDifficulty(){initAudio();soundUi();enemyDifficultyOpen=true;const el=$('enemyDifficulty');if(el)el.hidden=false;}
+function selectEnemyDifficulty(tier){initAudio();soundUi();enemyStageOverride=tier;enemyDifficultyOpen=false;const el=$('enemyDifficulty');if(el)el.hidden=true;reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveShop();showGame();}
 function showMenu(pausedGame=false){
   stopEngineSound();
   menuPausedGame=!!pausedGame;
   gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;
+  closeEnemyDifficulty();
   const startButton=$('startGame');
   if(startButton)startButton.textContent=menuPausedGame?'CONTINUE':'START GAME';
 }
@@ -223,13 +227,9 @@ $('mainMenuButton').onclick=()=>{initAudio();soundUi();showMenu(true)};
 $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false};
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
-$('stageSelect').onclick=()=>{
-  initAudio();soundUi();
-  enemyStageOverride=enemyStageOverride===null?0:enemyStageOverride+1;
-  if(enemyStageOverride>3)enemyStageOverride=null;
-  const b=$('stageSelect');
-  if(b)b.textContent=enemyStageOverride===null?'ENEMY STAGE: NORMAL':'ENEMY STAGE: T'+enemyStageOverride;
-};
+$('stageSelect').onclick=openEnemyDifficulty;
+$('enemyDifficultyClose').onclick=closeEnemyDifficulty;
+document.querySelectorAll('[data-enemy-tier]').forEach(b=>{b.onclick=()=>selectEnemyDifficulty(Number(b.dataset.enemyTier))});
 $('startGame').onclick=startNewGame;
 $('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
 $('deathMenu').onclick=()=>{initAudio();soundUi();showMenu(false)};

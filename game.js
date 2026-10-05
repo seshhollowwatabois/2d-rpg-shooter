@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100626';
+const GAME_VERSION='2026100627';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -342,9 +342,8 @@ function startNextWave(){
 function pickEnemyTurret(){
   // Main-menu testing override: when selected, every enemy uses the chosen tier.
   if(enemyStageOverride!==null){
-    const weaponRoll=Math.random();
-    const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
-    return {id,tier:enemyStageOverride};
+    // Difficulty test rounds use Smoky so the selected tier is unambiguous.
+    return {id:'standard',tier:enemyStageOverride};
   }
   // Every 5 waves, one more enemy gets the next tier:
   // W5-9:  1x T1 + 4x T0
@@ -662,7 +661,8 @@ function enemyShoot(e){
     if(flameParticleHit(p,e))burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
     return;
   }else if(barrel.instant){
-    const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
+    const baseDamage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    const damage=baseDamage*(barrel.id==='85mm'?enemyTwinsTierData.damageMult:enemySmokyTierData.damageMult);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
     const muzzleX=e.x+ca*(e.r+10),muzzleY=e.y+sa*(e.r+10);
     if(barrel.id==='57mm'){

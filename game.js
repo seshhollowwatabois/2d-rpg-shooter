@@ -67,10 +67,10 @@ const twinsTiers=[
   {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:'#39d353'}
 ];
 const smokyTiers=[
-  {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,accent:null},
-  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.05,accent:'#2dd4bf'},
-  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.10,accent:'#ff9f1c'},
-  {tier:3,name:'Smoky Tier 3',damageBonus:15,reloadTime:1.25,turnBonus:.15,accent:'#ff3b30'}
+  {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},
+  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.05,critBonus:.05,accent:'#2dd4bf'},
+  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.10,critBonus:.10,accent:'#ff9f1c'},
+  {tier:3,name:'Smoky Tier 3',damageBonus:15,reloadTime:1.25,turnBonus:.15,critBonus:.15,accent:'#ff3b30'}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -445,7 +445,7 @@ function shoot(){
       const dmg=smokyMin+Math.random()*(smokyMax-smokyMin);
       smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13});
       burst(muzzle.x,muzzle.y,'#ff9d24',14);burst(muzzle.x,muzzle.y,'#fff3c4',8);
-      applyBulletHit(best,dmg,hitX,hitY,{smoky:true},barrel.critChance||0);
+      applyBulletHit(best,dmg,hitX,hitY,{smoky:true},barrel.critChance+(smokyTierData.critBonus||0));
       if(best.hp<=0){
         const j=en.indexOf(best);
         if(j>=0)killEnemy(best,j);
@@ -1068,7 +1068,7 @@ function renderShop(){
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage*t.damageMult).toFixed(1)+'-'+(gun.maxDamage*t.damageMult).toFixed(1));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Projectile Speed',Math.round(900*t.speedMult));addStat('Tier','T'+t.tier);
         }else if(item.id==='standard'){
           const t=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
-          addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round((gun.critChance||0)*100)+'%');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round(((gun.critChance||0)+(t.critBonus||0))*100)+'%');addStat('Tier','T'+t.tier);
         }else if(item.id==='fast'){
           const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);

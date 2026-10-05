@@ -24,3 +24,9 @@
 .railUpgradePreview{border-left:1px solid #66737c;padding-left:14px}
 
 #waveDisplay{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:25;padding:8px 18px;border:2px solid #56616a;border-radius:10px;background:rgba(8,10,14,.9);color:#fff;font:900 18px/1 system-ui,sans-serif;letter-spacing:2px;text-shadow:0 2px 4px #000;pointer-events:none;box-shadow:0 4px 16px #0008}#waveDisplay.wavePulse{animation:wavePulse .45s ease-out}@keyframes wavePulse{0%{transform:translateX(-50%) scale(1.18);opacity:.6}100%{transform:translateX(-50%) scale(1);opacity:1}}@media(max-width:700px){#waveDisplay{top:7px;font-size:14px;padding:7px 12px;letter-spacing:1.5px}}
+
+/* Top-right cash/kills layout */
+#topRightStats{position:absolute;right:10px;top:10px;z-index:21;display:flex;align-items:center;gap:8px;pointer-events:none}
+#topRightStats .topStat{padding:7px 10px;border-radius:7px;background:rgba(21,27,41,.88);color:#fff;font:700 13px/1 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+#topRightStats #mainMenuButton{pointer-events:auto;position:static}
+@media(max-width:600px){#topRightStats{right:7px;top:7px;gap:5px}#topRightStats .topStat{padding:6px 7px;font-size:12px}}

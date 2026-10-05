@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100629';
+const GAME_VERSION='2026100630';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -342,8 +342,10 @@ function startNextWave(){
 function pickEnemyTurret(){
   // Main-menu testing override: when selected, every enemy uses the chosen tier.
   if(enemyStageOverride!==null){
-    // Difficulty test rounds use Smoky so the selected tier is unambiguous.
-    return {id:'standard',tier:enemyStageOverride};
+    // Difficulty test rounds use the selected tier, while keeping all four weapons equally likely.
+    const weaponRoll=Math.random();
+    const id=weaponRoll<.25?'standard':weaponRoll<.50?'rapid':weaponRoll<.75?'fast':'railgun';
+    return {id,tier:enemyStageOverride};
   }
   // Every 5 waves, one more enemy gets the next tier:
   // W5-9:  1x T1 + 4x T0
@@ -358,7 +360,7 @@ function pickEnemyTurret(){
   const spawnIndex=5-waveRemaining;
   if(wave<5){
     const weaponRoll=Math.random();
-    const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
+    const id=weaponRoll<.25?'standard':weaponRoll<.50?'rapid':weaponRoll<.75?'fast':'railgun';
     return {id,tier:0};
   }
   const milestone=Math.floor((wave-5)/5);
@@ -367,7 +369,7 @@ function pickEnemyTurret(){
   const lowTier=Math.max(0,highTier-1);
   const tier=spawnIndex<highCount?highTier:lowTier;
   const weaponRoll=Math.random();
-  const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
+  const id=weaponRoll<.25?'standard':weaponRoll<.50?'rapid':weaponRoll<.75?'fast':'railgun';
   return {id,tier};
 }
 function pickEnemyEngine(){

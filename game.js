@@ -1,8 +1,8 @@
-const GAME_VERSION='2026100610';
+const GAME_VERSION='2026100611';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
-let gameScreen='menu',autoSaveTimer=0;
+let gameScreen='menu',autoSaveTimer=0,menuPausedGame=false;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
@@ -175,19 +175,26 @@ function stopEngineSound(){
 
 
 function saveCurrent(){ saveShop(); }
-function showMenu(){
+function showMenu(pausedGame=false){
   stopEngineSound();
+  menuPausedGame=!!pausedGame;
   gameScreen='menu';over=true;$('mainMenu').hidden=false;$('shop').classList.remove('open');$('death').hidden=true;$('cursorReload').hidden=true;
+  const startButton=$('startGame');
+  if(startButton)startButton.textContent=menuPausedGame?'CONTINUE':'START GAME';
 }
 function showGame(){
-  gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;
+  gameScreen='game';$('mainMenu').hidden=true;$('shop').classList.remove('open');$('death').hidden=true;over=false;autoSaveTimer=0;menuPausedGame=false;
 }
 document.querySelectorAll('.shopTab').forEach(tab=>{tab.onclick=()=>{initAudio();soundUi();shopCategory=tab.dataset.shopCategory;renderShop()}});
 
 function openMenuShop(){
   initAudio();soundUi();$('mainMenu').hidden=true;$('shop').classList.add('open');renderShop();
 }
-function startNewGame(){ initAudio();soundUi(); reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveShop();showGame(); }
+function startNewGame(){
+  initAudio();soundUi();
+  if(menuPausedGame){showGame();return;}
+  reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveShop();showGame();
+}
 function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
@@ -209,13 +216,13 @@ addEventListener('pointerup',()=>mouse.down=false);
 addEventListener('pointercancel',()=>mouse.down=false);
 addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space')e.preventDefault();if(over&&(e.key==='Enter'||e.code==='Space')&&gameScreen==='game')reset()});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-$('mainMenuButton').onclick=()=>{initAudio();soundUi();showMenu()};
+$('mainMenuButton').onclick=()=>{initAudio();soundUi();showMenu(true)};
 $('shopClose').onclick=()=>{initAudio();soundUi();$('shop').classList.remove('open');$('mainMenu').hidden=false};
 $('shopBack').onclick=()=>{initAudio();soundUi();showMenu()};
 $('menuShop').onclick=openMenuShop;
 $('startGame').onclick=startNewGame;
 $('restart').onclick=()=>{initAudio();soundUi();reset();showGame()};
-$('deathMenu').onclick=()=>{initAudio();soundUi();showMenu()};
+$('deathMenu').onclick=()=>{initAudio();soundUi();showMenu(false)};
 
 function burst(a,b,col,n=8){
   for(let i=0;i<n;i++){let q=Math.random()*6.283,s=40+Math.random()*150;

@@ -1,5 +1,5 @@
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[];
+let W,H,last=0,spawn=0,over=false,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
@@ -178,7 +178,7 @@ function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,hullId:hull.id,turretId:turret.id};
-  en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
+  en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   walls=[
     {x:W*.18,y:H*.22,w:150,h:28},{x:W*.52,y:H*.18,w:190,h:28},{x:W*.76,y:H*.34,w:34,h:145},
     {x:W*.28,y:H*.55,w:190,h:30},{x:W*.58,y:H*.64,w:34,h:150},{x:W*.08,y:H*.70,w:145,h:28},
@@ -426,14 +426,18 @@ function shoot(){
     if(best){
       const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
       const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
-      applyBulletHit(best,dmg,hitX,hitY,null,barrel.critChance||0);
-      impactExplosion(hitX,hitY,'#ffd27a',24);
+      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13});
+      burst(muzzle.x,muzzle.y,'#ff9d24',14);burst(muzzle.x,muzzle.y,'#fff3c4',8);
+      applyBulletHit(best,dmg,hitX,hitY,{smoky:true},barrel.critChance||0);
       if(best.hp<=0){
         const j=en.indexOf(best);
         if(j>=0)killEnemy(best,j);
       }
     }else{
-      impactExplosion(muzzle.x+ca*34,muzzle.y+sa*34,'#ffd27a',10);
+      const missX=muzzle.x+ca*34,missY=muzzle.y+sa*34;
+      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:missX,y2:missY,life:.10,maxLife:.10});
+      burst(muzzle.x,muzzle.y,'#ff9d24',14);burst(muzzle.x,muzzle.y,'#fff3c4',8);
+      impactExplosion(missX,missY,'#ffd27a',18);
     }
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
@@ -534,9 +538,13 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const critical=critChance>0&&Math.random()<critChance;
   const damage=critical?baseDamage*2:baseDamage;
   target.hp-=damage;
-  target.hitFlash=.08;
-  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:.7,col:'#ff3b3b'});
-  impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',critical?26:18);
+  target.hitFlash=critChance>0||b?.smoky?.16:.08;
+  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:b?.smoky?.85:.7,col:'#ff3b3b'});
+  impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',b?.smoky?34:(critical?26:18));
+  if(b?.smoky){
+    burst(bx,by,'#fff4c7',18);
+    for(let i=0;i<8;i++){const a=Math.random()*6.283,s=90+Math.random()*150;ps.push({x:bx,y:by,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.22+Math.random()*.18,col:'#ff9d24',size:2.5+Math.random()*2.5})}
+  }
   soundImpact(true);
   return {profile,ricochet:false,critical};
 }
@@ -1677,6 +1685,16 @@ function draw(){
     tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
+  }
+  // Smoky is an instant-hit cannon, so render a short-lived tracer to make the shot visible.
+  for(let i=smokyTracers.length-1;i>=0;i--){
+    const t=smokyTracers[i],a=Math.max(0,t.life/t.maxLife);
+    x.save();x.globalAlpha=a;x.lineCap='round';
+    x.strokeStyle='#ff9d24';x.lineWidth=7*a;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();
+    x.strokeStyle='#fff6d2';x.lineWidth=2.2*a;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();
+    x.fillStyle='#fff6d2';x.beginPath();x.arc(t.x1,t.y1,6*a,0,6.283);x.fill();
+    x.restore();
+    t.life-=1/60;if(t.life<=0)smokyTracers.splice(i,1);
   }
   // shell trails / explosions
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,q.size||3.5,0,6.283);x.fill()}x.globalAlpha=1;

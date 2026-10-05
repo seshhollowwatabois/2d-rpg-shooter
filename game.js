@@ -69,6 +69,8 @@ let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);
 let railgunOwnedTier=Math.max(railgunTier,Number(localStorage.getItem('tankRailgunOwnedTier')||0));
 let firebirdTier=Number(localStorage.getItem('tankFirebirdTier')||0);
 let firebirdOwnedTier=Math.max(firebirdTier,Number(localStorage.getItem('tankFirebirdOwnedTier')||0));
+let twinsTier=Number(localStorage.getItem('tankTwinsTier')||0);
+let twinsOwnedTier=Math.max(twinsTier,Number(localStorage.getItem('tankTwinsOwnedTier')||0));
 
 // All turret variants are free equipment. Normalize older saves so newer turrets
 // (including Railgun) cannot disappear from the player's equipment list.

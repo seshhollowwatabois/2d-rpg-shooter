@@ -1837,13 +1837,16 @@ function draw(){
   $('hpBar').style.width=hp*100+'%';$('xpBar').style.width=xp*100+'%';
   $('hpText').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.max;$('xpText').textContent=p.xp+'/'+p.next;
   $('levelText').textContent=p.lv;const topCoins=$('topCoinsText'),topKills=$('topKillsText');if(topCoins)topCoins.textContent=p.coins;if(topKills)topKills.textContent=p.kills;
-  $('reloadBar').style.width=(reloadPct*100)+'%';
+  const reloadBar=$('reloadBar');
+  if(reloadBar)reloadBar.style.width=(reloadPct*100)+'%';
   if(barrel.id==='122mm'&&barrel.flame){
-    $('reloadText').textContent='FUEL';
-    $('reloadText').style.color='#ffd21a';
+    const reloadText=$('reloadText');
+    if(reloadText)reloadText.textContent='FUEL';
+    if(reloadText)reloadText.style.color='#ffd21a';
   }else{
-    $('reloadText').textContent=p.cd>0?'RELOADING':'RELOAD TIME';
-    $('reloadText').style.color=p.cd>0?'#ff4b4b':'#39e66b';
+    const reloadText=$('reloadText');
+    if(reloadText)reloadText.textContent=p.cd>0?'RELOADING':'RELOAD TIME';
+    if(reloadText)reloadText.style.color=p.cd>0?'#ff4b4b':'#39e66b';
   }
   // Reload countdown only; aiming/dispersion UI removed.
   const cursorReload=$('cursorReload');

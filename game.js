@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100622';
+const GAME_VERSION='2026100623';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1246,9 +1246,14 @@ function update(dt){
   const driveSpeed=hull.speed*engine.speed;
   const reverseSpeed=hull.reverse*engine.speed;
   const movingForward=drive>0;
-  const betterEngineBoostActive=engine.id==='better' && movingForward;
+  if(engine.id==='better' && movingForward){
+    p.betterEngineForwardTime=(p.betterEngineForwardTime||0)+dt;
+  }else{
+    p.betterEngineForwardTime=0;
+  }
+  const betterEngineBoostActive=engine.id==='better' && movingForward && p.betterEngineForwardTime>=3;
   const boostedDriveSpeed=betterEngineBoostActive?driveSpeed*1.30:driveSpeed;
-  // Better Engine passive exhaust: small smoke while the boost is active.
+  // Better Engine exhaust smoke begins when the passive activates.
   if(betterEngineBoostActive && Math.random()<dt*7){
     const smokeX=p.x-Math.cos(p.angle)*p.r*.9;
     const smokeY=p.y-Math.sin(p.angle)*p.r*.9;

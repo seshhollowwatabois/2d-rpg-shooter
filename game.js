@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100613';
+const GAME_VERSION='2026100614';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -332,14 +332,28 @@ function startNextWave(){
 }
 
 function pickEnemyTurret(){
-  const roll=Math.random();
+  // Milestone waves use exact tier counts instead of independent RNG, so the
+  // requested progression is guaranteed every time the wave is played.
+  const spawnIndex=5-waveRemaining; // 0..4 in the order enemies are spawned.
   let tier=0;
-  // T1 enemies begin appearing on wave 5; T2 enemies begin appearing on wave 10.
-  if(wave>=10){
-    if(roll<.20)tier=2;
-    else if(roll<.50)tier=1;
+  if(wave===5){
+    // 1x T1 + 4x T0
+    tier=spawnIndex===0?1:0;
+  }else if(wave===10){
+    // 2x T0 + 3x T1
+    tier=spawnIndex<2?0:1;
+  }else if(wave===15){
+    // 2x T0 + 3x T1
+    tier=spawnIndex<2?0:1;
+  }else if(wave===20){
+    // 1x T2 + 4x T1
+    tier=spawnIndex===0?2:1;
+  }else if(wave>20){
+    // After the wave-20 milestone, all regular enemies are at least T1.
+    tier=1;
   }else if(wave>=5){
-    if(roll<.30)tier=1;
+    // Between milestone waves, keep the existing gradual T0/T1 progression.
+    tier=Math.random()<.30?1:0;
   }
   const weaponRoll=Math.random();
   const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';

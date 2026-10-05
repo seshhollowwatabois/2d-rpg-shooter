@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100614';
+const GAME_VERSION='2026100615';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -340,8 +340,8 @@ function pickEnemyTurret(){
     // 1x T1 + 4x T0
     tier=spawnIndex===0?1:0;
   }else if(wave===10){
-    // 2x T0 + 3x T1
-    tier=spawnIndex<2?0:1;
+    // 2x T1 + 3x T0
+    tier=spawnIndex<2?1:0;
   }else if(wave===15){
     // 2x T0 + 3x T1
     tier=spawnIndex<2?0:1;

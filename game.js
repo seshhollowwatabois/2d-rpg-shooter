@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100615';
+const GAME_VERSION='2026100616';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -332,29 +332,35 @@ function startNextWave(){
 }
 
 function pickEnemyTurret(){
-  // Milestone waves use exact tier counts instead of independent RNG, so the
-  // requested progression is guaranteed every time the wave is played.
-  const spawnIndex=5-waveRemaining; // 0..4 in the order enemies are spawned.
+  // Every 5th wave advances the guaranteed tier cycle:
+  // W5: 1x T1 + 4x T0
+  // W10: 2x T1 + 3x T0
+  // W15: 3x T1 + 2x T0
+  // W20: 1x T2 + 4x T1
+  // Then repeat the same pattern at higher tiers until everything reaches T3.
+  const spawnIndex=5-waveRemaining;
+  const cycle=Math.floor((wave-5)/20);
+  const step=((wave-5)%20);
   let tier=0;
-  if(wave===5){
-    // 1x T1 + 4x T0
-    tier=spawnIndex===0?1:0;
-  }else if(wave===10){
-    // 2x T1 + 3x T0
-    tier=spawnIndex<2?1:0;
-  }else if(wave===15){
-    // 2x T0 + 3x T1
-    tier=spawnIndex<2?0:1;
-  }else if(wave===20){
-    // 1x T2 + 4x T1
-    tier=spawnIndex===0?2:1;
-  }else if(wave>20){
-    // After the wave-20 milestone, all regular enemies are at least T1.
-    tier=1;
-  }else if(wave>=5){
-    // Between milestone waves, keep the existing gradual T0/T1 progression.
-    tier=Math.random()<.30?1:0;
+  if(step===0){
+    tier=cycle+1;
+    if(spawnIndex>0)tier=cycle;
+  }else if(step===5){
+    tier=cycle+1;
+    if(spawnIndex<2)tier=cycle+1;
+    else tier=cycle;
+  }else if(step===10){
+    tier=cycle+1;
+    if(spawnIndex<3)tier=cycle+1;
+    else tier=cycle;
+  }else if(step===15){
+    tier=cycle+2;
+    if(spawnIndex===0)tier=cycle+2;
+    else tier=cycle+1;
+  }else{
+    tier=Math.min(3,cycle);
   }
+  tier=Math.max(0,Math.min(3,tier));
   const weaponRoll=Math.random();
   const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
   return {id,tier};

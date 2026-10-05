@@ -1414,7 +1414,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.save();x.translate(turretX,0);x.rotate(turretAngle-hullAngle);
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
-  const tr=tr*(visualTurret.scale||1);
+  const tr=r*(visualTurret.scale||1);
   const railAccent=visualTurret.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))].beam:null;
 
   // Turret silhouette varies with weapon class.

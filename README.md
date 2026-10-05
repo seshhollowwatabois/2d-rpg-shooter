@@ -20,3 +20,5 @@ First playable browser prototype of a top-down 2D RPG shooter.
 
 ## Roadmap
 Weapons/reload, inventory, loot, NPCs, quests, shops, multiple maps, bosses, saves and improved art.
+
+<!-- GitHub Pages deployment trigger -->

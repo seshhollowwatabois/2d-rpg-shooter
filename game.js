@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100608';
+const GAME_VERSION='2026100609';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -340,7 +340,7 @@ function makeEnemy(){
   en.push({
     x:a,y:b,
     r:20*hull.scale,
-    speed:hull.speed*.4*engine.speed,
+    speed:hull.speed*engine.speed,
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,turretId,engineId,

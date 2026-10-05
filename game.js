@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100619';
+const GAME_VERSION='2026100620';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1134,7 +1134,7 @@ function renderShop(){
           const rt=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;const turn=item.id==='railgun'?item.turn*(rt?.turnMult||1):item.turn;const min=Math.round(gun.minDamage*(rt?.damageMult||1));const max=Math.round(gun.maxDamage*(rt?.damageMult||1));const reload=gun.reloadTime*(rt?.reloadMult||1);addStat('Turret Rotation',turn.toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',min+'-'+max);addStat('Reload Time',reload.toFixed(2)+'s');addStat('Size',item.scale.toFixed(2)+'x');
         }
       }else if(type==='engine'){
-        addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');
+        addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');if(item.id==='better')addStat('Passive','+30% forward speed while moving; ends when you stop',true);
       }else{
         const activeRailTier=item.id==='122mmLong'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
         const displayedMinDamage=item.id==='122mmLong'?Math.round(item.minDamage*(activeRailTier?.damageMult||1)):item.minDamage;

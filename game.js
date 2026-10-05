@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100509';
+const GAME_VERSION='2026100510';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -541,7 +541,7 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   const damage=critical?baseDamage*2:baseDamage;
   target.hp-=damage;
   target.hitFlash=(critChance>0||b?.smoky) ? .16 : .08;
-  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:Math.round(damage)+(critical?' CRIT':''),life:(b?.smoky ? .85 : .7),col:'#ff3b3b'});
+  dmgTexts.push({x:target.x,y:target.y-target.r-8,text:critical?'CRIT '+Math.round(damage):Math.round(damage),life:(b?.smoky ? .85 : .7),col:critical?'#fff07a':'#ff3b3b',kind:critical?'crit':undefined});
   impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',b?.smoky?34:(critical?26:18));
   if(b?.smoky){
     burst(bx,by,'#fff4c7',18);

@@ -12,9 +12,9 @@ const hulls=[
 ];
 const turrets=[
   {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
-  {id:'rapid',name:'Twins',cost:0,turn:2.4,scale:.9},
-  {id:'fast',name:'Firebird',cost:0,turn:3.4,scale:.82},
-  {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1.08}
+  {id:'rapid',name:'Twins',cost:0,turn:2.4,scale:1},
+  {id:'fast',name:'Firebird',cost:0,turn:3.4,scale:1},
+  {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100611';
+const GAME_VERSION='2026100612';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -317,11 +317,24 @@ function addXp(n){
   p.xp+=n;
   while(p.xp>=p.next){p.xp-=p.next;p.lv++;p.next=Math.floor(p.next*1.28);p.hp=p.max;p.speed+=3;burst(p.x,p.y,'#78b7ff',35)}
 }
-function waveSize(w){return 3+w*2;}
+function waveSize(w){return 5;}
 function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;soundWave();const el=document.getElementById('waveDisplay');if(el){el.textContent='WAVE '+wave;el.classList.remove('wavePulse');void el.offsetWidth;el.classList.add('wavePulse')}}
 
 function pickEnemyTurret(){
   const roll=Math.random();
+  // Higher waves can field stronger turret tiers.
+  if(wave>=10){
+    if(roll<.35)return 'standard';
+    if(roll<.70)return 'rapid';
+    if(roll<.85)return 'fast';
+    return 'tier2';
+  }
+  if(wave>=5){
+    if(roll<.45)return 'standard';
+    if(roll<.75)return 'rapid';
+    if(roll<.90)return 'fast';
+    return 'tier1';
+  }
   if(roll<.55)return 'standard';
   if(roll<.85)return 'rapid';
   return 'fast';
@@ -351,7 +364,7 @@ function makeEnemy(){
   const turretId=pickEnemyTurret();
     const engineId=pickEnemyEngine();
   const hull=hulls.find(v=>v.id===hullId)||hulls[0];
-  const turret=turrets.find(v=>v.id===turretId)||turrets[0];
+  const turret=turrets.find(v=>v.id===turretId)||turrets.find(v=>v.id==='standard')||turrets[0];
   const engine=engines.find(v=>v.id===engineId)||engines[0];
   const heavy=hullId==='heavy';
   const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;

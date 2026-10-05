@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100514';
+const GAME_VERSION='2026100515';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -603,7 +603,7 @@ function enemyShoot(e){
       const offset=e.twinsNextBarrel===1?side:-side;
       const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
       const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
-      ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:enemyTwinsTierData.col});
+      const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor});
       burst(mx,my,enemyTwinsTierData.col,3);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
@@ -823,7 +823,7 @@ function renderShop(){
         q.beginPath();q.moveTo(-r*.34,-r*.27);q.lineTo(r*.20,-r*.23);q.lineTo(r*.35,-r*.10);q.stroke();
         q.beginPath();q.moveTo(-r*.34,r*.27);q.lineTo(r*.20,r*.23);q.lineTo(r*.35,r*.10);q.stroke();
       }else if(visualTurret.id==='rapid'){
-        const twinsAccent=(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col;
+        const twinsVisualTier=Math.max(0,Math.min(3,enemy?twinsTierVisual:twinsTier)); const twinsAccent=(twinsTiers[twinsVisualTier]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[twinsVisualTier]||twinsTiers[0]).col;
         q.fillStyle=twinsAccent;q.globalAlpha=.98;
         q.fillRect(-r*.34,-r*.29,r*.20,r*.12);
         q.fillRect(-r*.34,r*.17,r*.20,r*.12);
@@ -1336,7 +1336,7 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
@@ -1692,7 +1692,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100510';
+const GAME_VERSION='2026100511';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -428,7 +428,7 @@ function shoot(){
     }
     if(best){
       const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
-      const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
+      const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
       smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13});
       burst(muzzle.x,muzzle.y,'#ff9d24',14);burst(muzzle.x,muzzle.y,'#fff3c4',8);
       applyBulletHit(best,dmg,hitX,hitY,{smoky:true},barrel.critChance||0);

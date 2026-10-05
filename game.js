@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100609';
+const GAME_VERSION='2026100610';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -280,6 +280,22 @@ function findOpenPoint(r){
     if(!wallHitCircle(px,py,r))return {x:px,y:py};
   }
   return {x:W/2,y:H/2};
+}
+function enemyAvoidanceAngle(e,targetX,targetY){
+  const desired=Math.atan2(targetY-e.y,targetX-e.x);
+  const look=Math.max(70,Math.min(125,e.speed*.8+e.r*1.5));
+  if(!wallSegmentHit(e.x,e.y,e.x+Math.cos(desired)*look,e.y+Math.sin(desired)*look,Math.max(2,e.r*.92)))return desired;
+  const offsets=[-.35,.35,-.7,.7,-1.05,1.05,-1.4,1.4,-1.75,1.75,-2.1,2.1,-2.55,2.55,Math.PI];
+  let best=desired,bestScore=Infinity;
+  for(const off of offsets){
+    const a=desired+off;
+    const ex=e.x+Math.cos(a)*look,ey=e.y+Math.sin(a)*look;
+    if(wallSegmentHit(e.x,e.y,ex,ey,Math.max(2,e.r*.92)))continue;
+    const targetDist=Math.hypot(targetX-ex,targetY-ey);
+    const score=Math.abs(off)*90+targetDist*.012;
+    if(score<bestScore){bestScore=score;best=a;}
+  }
+  return best;
 }
 function recoverBotFromWall(e){
   if(!wallHitCircle(e.x,e.y,e.r))return false;
@@ -1314,7 +1330,7 @@ function update(dt){
     if(isEnemyFirebird && d>firebirdEngageRange){
       e.idle=false;
       e.wanderTime=0;
-      const chaseAngle=Math.atan2(p.y-e.y,p.x-e.x);
+      const chaseAngle=enemyAvoidanceAngle(e,p.x,p.y);
       const chaseDelta=((chaseAngle-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
       const chaseTurnRate=2.6;
       e.angle+=Math.max(-chaseTurnRate*dt,Math.min(chaseTurnRate*dt,chaseDelta));
@@ -1341,7 +1357,7 @@ function update(dt){
       if(recoverBotFromWall(e)){}
       e.vx=0;e.vy=0;
       if(!e.idle){
-        const wa=Math.atan2(e.wanderY-e.y,e.wanderX-e.x);
+        const wa=enemyAvoidanceAngle(e,e.wanderX,e.wanderY);
         const wda=((wa-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
         const turnRate=2.1;
         e.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,wda));

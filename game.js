@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100617';
+const GAME_VERSION='2026100618';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1170,6 +1170,9 @@ function update(dt){
   if(over||gameScreen!=='game'){stopEngineSound();return;}
   autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent();}
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
+  // Better Engine passive: automatically gives +30% forward speed for 3 seconds
+  // when forward movement begins. It does not trigger while reversing.
+  p.betterEngineBoost=Math.max(0,(p.betterEngineBoost||0)-dt);
   if(p.railCharging){
     p.railCharge=Math.max(0,p.railCharge-dt);
     if(p.railCharge<=0){
@@ -1244,7 +1247,16 @@ function update(dt){
   const hullTurnRate=hull.turn*engine.turn;
   const driveSpeed=hull.speed*engine.speed;
   const reverseSpeed=hull.reverse*engine.speed;
-  p.currentDriveSpeed=drive* (drive>=0?driveSpeed:reverseSpeed);
+  const wasDrivingForward=!!p.forwardDriveActive;
+  const movingForward=drive>0;
+  if(engine.id==='better' && movingForward && !wasDrivingForward){
+    p.betterEngineBoost=3;
+  }
+  if(!movingForward)p.forwardDriveActive=false;
+  else p.forwardDriveActive=true;
+  const betterEngineBoostActive=engine.id==='better' && movingForward && p.betterEngineBoost>0;
+  const boostedDriveSpeed=betterEngineBoostActive?driveSpeed*1.30:driveSpeed;
+  p.currentDriveSpeed=drive* (drive>=0?boostedDriveSpeed:reverseSpeed);
   if(drive||turn)startEngineSound();else stopEngineSound();
   let hullTurnDelta=0;
   if(turn){
@@ -1254,7 +1266,7 @@ function update(dt){
     p.angle+=hullTurnDelta;
   }
   if(drive){
-    const moveSpeed=drive<0?reverseSpeed:driveSpeed;
+    const moveSpeed=drive<0?reverseSpeed:boostedDriveSpeed;
     moveWithWalls(p,Math.cos(p.angle)*drive*moveSpeed*dt,Math.sin(p.angle)*drive*moveSpeed*dt);
   }
   p.x=Math.max(p.r+8,Math.min(W-p.r-8,p.x));p.y=Math.max(p.r+8,Math.min(H-p.r-8,p.y));

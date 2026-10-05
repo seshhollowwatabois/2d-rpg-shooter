@@ -1,3 +1,4 @@
+const GAME_VERSION='2026100506';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -89,6 +90,7 @@ function normalizeOwnedEquipment(){
 }
 normalizeOwnedEquipment();
 
+function updateVersionLabel(){const el=document.getElementById('gameVersion');if(el)el.textContent='v'+GAME_VERSION;}
 function resize(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0)}
 addEventListener('resize',resize);resize();
 
@@ -1819,4 +1821,4 @@ if(fireButton){
   fireButton.addEventListener('touchcancel',stopFire,{passive:false});
 }
 function frame(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(frame)}
-reset();showMenu();requestAnimationFrame(frame);
+updateVersionLabel();reset();showMenu();requestAnimationFrame(frame);

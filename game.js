@@ -322,22 +322,17 @@ function startNextWave(){wave++;waveRemaining=waveSize(wave);waveClearTimer=0;so
 
 function pickEnemyTurret(){
   const roll=Math.random();
-  // Higher waves can field stronger turret tiers.
+  let tier=0;
+  // T1 enemies begin appearing on wave 5; T2 enemies begin appearing on wave 10.
   if(wave>=10){
-    if(roll<.35)return 'standard';
-    if(roll<.70)return 'rapid';
-    if(roll<.85)return 'fast';
-    return 'tier2';
+    if(roll<.20)tier=2;
+    else if(roll<.50)tier=1;
+  }else if(wave>=5){
+    if(roll<.30)tier=1;
   }
-  if(wave>=5){
-    if(roll<.45)return 'standard';
-    if(roll<.75)return 'rapid';
-    if(roll<.90)return 'fast';
-    return 'tier1';
-  }
-  if(roll<.55)return 'standard';
-  if(roll<.85)return 'rapid';
-  return 'fast';
+  const weaponRoll=Math.random();
+  const id=weaponRoll<.55?'standard':weaponRoll<.85?'rapid':'fast';
+  return {id,tier};
 }
 function pickEnemyEngine(){
   const roll=Math.random();
@@ -361,14 +356,16 @@ function makeEnemy(){
   // Every enemy gets a complete loadout from the same shop equipment pool as the player.
   // Stronger equipment is weighted to be rarer so early waves do not become unfair.
   const hullId=pickEnemyHull();
-  const turretId=pickEnemyTurret();
-    const engineId=pickEnemyEngine();
+  const enemyTurret=pickEnemyTurret();
+  const turretId=enemyTurret.id;
+  const turretTier=enemyTurret.tier;
+  const engineId=pickEnemyEngine();
   const hull=hulls.find(v=>v.id===hullId)||hulls[0];
-  const turret=turrets.find(v=>v.id===turretId)||turrets.find(v=>v.id==='standard')||turrets[0];
+  const turret=turrets.find(v=>v.id===turretId)||turrets[0];
   const engine=engines.find(v=>v.id===engineId)||engines[0];
   const heavy=hullId==='heavy';
   const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
-  const enemyFirebirdTier=turretId==='fast'?Math.min(3,Math.floor((wave-1)/4)):0;
+  const enemyFirebirdTier=turretId==='fast'?turretTier:0;
 
   // Enemy HP matches the selected hull's HP exactly; turrets provide no HP bonus.
   const hp=hull.hp;
@@ -379,9 +376,9 @@ function makeEnemy(){
     speed:hull.speed*engine.speed,
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
-    heavy,hullId,turretId,engineId,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,firebirdFuel:5,firebirdMaxFuel:5,
-     twinsTier:turretId==='rapid'?Math.min(3,Math.floor((wave-1)/4)):0,
+    heavy,hullId,turretId,turretTier,engineId,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,
+     twinsTier:turretId==='rapid'?turretTier:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
     idle:Math.random()<.3
   });
@@ -604,6 +601,8 @@ function enemyShoot(e){
   const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
   const barrel=gunForTurret(e.turretId);
   const enemyTwinsTier=Math.max(0,Math.min(3,e.twinsTier||0));
+  const enemySmokyTier=Math.max(0,Math.min(3,e.smokyTier||0));
+  const enemySmokyTierData=smokyTiers[enemySmokyTier]||smokyTiers[0];
   const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
   const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.id==='122mm'&&barrel.flame){
@@ -620,7 +619,7 @@ function enemyShoot(e){
       const damage=minDamage+(maxDamage-minDamage)*damageFalloff;
       applyBulletHit(p,damage,p.x,p.y,null,0);
       applyBurn(p,tierIndex);
-      e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.reloadTime;
+      e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}
     }
     if(flameParticleHit(p,e))burst(e.x+ca*e.r,e.y+sa*e.r,'#ff6a22',2);
@@ -635,7 +634,7 @@ function enemyShoot(e){
       const hitX=muzzleX+ca*Math.max(0,endDist-(e.r+10)),hitY=muzzleY+sa*Math.max(0,endDist-(e.r+10));
       smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:hit? p.x:hitX,y2:hit? p.y:hitY,life:.13,maxLife:.13});
       burst(muzzleX,muzzleY,'#ff9d24',12);burst(muzzleX,muzzleY,'#fff3c4',7);
-      if(hit)applyBulletHit(p,damage,p.x,p.y,{smoky:true},barrel.critChance||0);
+      if(hit)applyBulletHit(p,damage,p.x,p.y,{smoky:true},(barrel.critChance||0)+enemySmokyTierData.critBonus);
     }else if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
       applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
     }
@@ -658,11 +657,11 @@ function enemyShoot(e){
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
     }else{
-      const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))+enemySmokyTierData.damageBonus;
       ebs.push({x:e.x+ca*(e.r+10),y:e.y+sa*(e.r+10),vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
     }
   }
-  e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.reloadTime;
+  e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.reloadTime;
   burst(e.x+ca*e.r,e.y+sa*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);if(e.turretId!=='rapid')soundFire(barrel.id);
 }
 function killEnemy(e,j){

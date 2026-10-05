@@ -463,7 +463,7 @@ function shoot(){
     const side=.12*p.r;
     const offset=p.twinsNextBarrel===1?side:-side;
     const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
-    const dmg=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+    const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
     bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:twinsTierData.col});
     burst(muzzleX,muzzleY,twinsTierData.col,5);
     soundFire(barrel.id);
@@ -575,7 +575,7 @@ function enemyShoot(e){
       // Enemy Twins: one projectile per reload, alternating barrels.
       const side=.12*e.r;
       const offset=e.twinsNextBarrel===1?side:-side;
-      const damage=barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
       const mx=e.x+ca*(e.r+10)-sa*offset,my=e.y+sa*(e.r+10)+ca*offset;
       ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:enemyTwinsTierData.col});
       burst(mx,my,enemyTwinsTierData.col,3);
@@ -586,7 +586,7 @@ function enemyShoot(e){
       ebs.push({x:e.x+ca*(e.r+10),y:e.y+sa*(e.r+10),vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
     }
   }
-  e.fire=barrel.reloadTime;
+  e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.reloadTime;
   burst(e.x+ca*e.r,e.y+sa*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);if(e.turretId!=='rapid')soundFire(barrel.id);
 }
 function killEnemy(e,j){

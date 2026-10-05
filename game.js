@@ -68,9 +68,9 @@ const twinsTiers=[
 ];
 const smokyTiers=[
   {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},
-  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.05,critBonus:.05,accent:'#2dd4bf'},
-  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.10,critBonus:.10,accent:'#ff9f1c'},
-  {tier:3,name:'Smoky Tier 3',damageBonus:15,reloadTime:1.25,turnBonus:.15,critBonus:.15,accent:'#ff3b30'}
+  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.25,critBonus:.05,accent:'#2dd4bf'},
+  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.50,critBonus:.10,accent:'#ff9f1c'},
+  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:.75,critBonus:.15,accent:'#ff3b30'}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},

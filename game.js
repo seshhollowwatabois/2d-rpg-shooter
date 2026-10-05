@@ -1,6 +1,6 @@
-const GAME_VERSION='2026100508';
+const GAME_VERSION='2026100509';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,p,en=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
+let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0;
 const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
@@ -413,6 +413,7 @@ function shoot(){
   const fireAngle=p.turretAngle;
   const ca=Math.cos(fireAngle),sa=Math.sin(fireAngle);
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
+  const twinsTierData=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
 
   // Smoky fires an instant shell: no travel time or projectile velocity.
   // The first enemy in the line of fire is hit immediately, unless a wall blocks it.
@@ -470,7 +471,6 @@ function shoot(){
     return;
   }
 
-  const twinsTierData=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
   const speed=({"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?twinsTierData.speedMult:1);
   if(p.turretId==='rapid'){
     // Twins: one click fires ONE barrel. Alternate left/right on each shot.

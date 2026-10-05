@@ -6,7 +6,7 @@ const keys=new Set(),mouse={x:0,y:0,down:false},touch={active:false,x:0,y:0};
 const mobileDrive={up:false,down:false,left:false,right:false};
 let mobileFire=false;
 const hulls=[
-  {id:'scout',name:'Wasp',cost:50,hp:90,speed:155,reverse:95,turn:2.1,scale:.92},
+  {id:'scout',name:'Wasp',cost:50,hp:90,speed:155,reverse:95,turn:2.1,scale:1},
   {id:'standard',name:'Hornet',cost:0,hp:120,speed:120,reverse:75,turn:1.65,scale:1},
   {id:'heavy',name:'Titan',cost:80,hp:180,speed:90,reverse:60,turn:1.15,scale:1.12}
 ];

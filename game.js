@@ -1690,8 +1690,8 @@ function update(dt){
     // that a player can circle an enemy and get around its gun arc.
     const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
     let turretTurnRate=enemyTurret.turn;
-    if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,.95][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
-    else if(e.turretId==='railgun') turretTurnRate*=(1.25**Math.max(0,Math.min(2,e.turretTier||0)));
+    if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,1.05][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
+    else if(e.turretId==='railgun') turretTurnRate*=([1,1.25,1.5625,2.1904761905][Math.max(0,Math.min(3,e.turretTier||0))]||1);
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.

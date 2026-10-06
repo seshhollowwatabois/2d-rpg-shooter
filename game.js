@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100690';
+const GAME_VERSION='2026100700';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1688,13 +1688,13 @@ function update(dt){
     let tda=((targetTurret-e.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
     // Deliberate turret traverse: fast enough to track normally, but slow enough
     // that a player can circle an enemy and get around its gun arc.
-    const turretTurnRate=1.45;
+    const turretTurnRate=0.65;
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.
     // Their flame consumes a limited fuel pool and regenerates while they are not firing.
     if(isEnemyFirebird){
-      if(d<=firebirdEngageRange && e.firebirdFuel>0 && Math.abs(tda)<0.18){
+      if(d<=firebirdEngageRange && e.firebirdFuel>0 && Math.abs(tda)<0.10){
         enemyShoot(e);
         e.firebirdFuel=Math.max(0,e.firebirdFuel-dt);
       }else{
@@ -1713,7 +1713,7 @@ function update(dt){
         if(d<enemyAttackRange&&!wallRayHit(e.x,e.y,targetTurret,d)){
           // Railgun charging also requires the turret to be genuinely aimed.
           // This prevents the old instant-lock behavior when charge begins.
-          if(Math.abs(tda)<0.12){
+          if(Math.abs(tda)<0.08){
             e.railCharging=true;
             e.railCharge=1;
           }

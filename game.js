@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100702';
+const GAME_VERSION='2026100703';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -79,9 +79,9 @@ const twinsTiers=[
 ];
 const smokyTiers=[
   {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},
-  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.50,critBonus:.05,accent:tierVisuals[1].accent},
-  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:1.00,critBonus:.10,accent:tierVisuals[2].accent},
-  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.50,critBonus:.15,accent:tierVisuals[3].accent}
+  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.06,critBonus:.05,accent:tierVisuals[1].accent},
+  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.12,critBonus:.10,accent:tierVisuals[2].accent},
+  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:.18,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -1689,7 +1689,9 @@ function update(dt){
     // Deliberate turret traverse: fast enough to track normally, but slow enough
     // that a player can circle an enemy and get around its gun arc.
     const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
-    const turretTurnRate=enemyTurret.turn;
+    let turretTurnRate=enemyTurret.turn;
+    if(e.turretId==='standard') turretTurnRate+=([0,.06,.12,.18][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
+    else if(e.turretId==='railgun') turretTurnRate*=(1.1**Math.max(0,Math.min(3,e.turretTier||0)));
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.

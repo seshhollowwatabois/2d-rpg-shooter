@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100719';
+const GAME_VERSION='2026100720';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1613,7 +1613,7 @@ function update(dt){
   // Keep rotation and movement as separate upgradeable stats.
   const hull=hullForPlayer(), turret=turretForPlayer();
   const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
-  const freezeMoveMult=Math.max(.5,1-(p.freezeStacks||0)*.1);
+  const freezeMoveMult=Math.max(.1,1-(p.freezeStacks||0)*.18);
   const hullTurnRate=hull.turn*engine.turn*freezeMoveMult;
   const driveSpeed=hull.speed*engine.speed*freezeMoveMult;
   const reverseSpeed=hull.reverse*engine.speed*freezeMoveMult;
@@ -1760,7 +1760,7 @@ function update(dt){
     }
 
     if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||2)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=2;}}
-    const freezeMoveMult=Math.max(.5,1-(e.freezeStacks||0)*.1);
+    const freezeMoveMult=Math.max(.1,1-(e.freezeStacks||0)*.18);
 
     const enemyBarrel=gunForTurret(e.turretId);
     const isEnemyFirebird=enemyBarrel.id==='122mm'&&enemyBarrel.flame;

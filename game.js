@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100687';
+const GAME_VERSION='2026100688';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -784,7 +784,7 @@ function enemyShoot(e){
       const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
       const baseMuzzle=enemyMuzzlePosition(e,barrel,a);
       const mx=baseMuzzle.x-sa*offset,my=baseMuzzle.y+ca*offset;
-      const projectileColor=tierVisual(enemyTwinsTier).beam; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor,twins:true});
+      const projectileColor=enemyTwinsTierData.col||tierVisual(enemyTwinsTier).beam; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor,twins:true});
       burst(mx,my,projectileColor,14);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;

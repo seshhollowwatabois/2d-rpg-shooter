@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100682';
+const GAME_VERSION='2026100683';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -950,8 +950,8 @@ function renderShop(){
       // Show the currently selected hull tier in the shop preview too.
       const previewHullTier=Math.max(0,Math.min(3,hullTierById[item.id]||0));
       if(previewHullTier>0){
-        const tierMetal=previewHullTier===1?'#2f78ff':previewHullTier===2?'#a13cff':'#ffd23f';
-        const tierDark=previewHullTier===1?'#123b78':previewHullTier===2?'#4a176f':'#755300';
+        const tierMetal=previewHullTier===1?'#20c85a':previewHullTier===2?'#a13cff':'#ffd23f';
+        const tierDark=previewHullTier===1?'#126b32':previewHullTier===2?'#4a176f':'#755300';
         const tierGlow=tierVisual(previewHullTier).glow;
         q.fillStyle=tierDark;
         for(const sy of [-1,1]){q.beginPath();q.roundRect(-L*.30,sy*hullB*.34-rr*.055,L*.62,rr*.11,rr*.045);q.fill()}
@@ -1866,8 +1866,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // reinforcement and machinery without changing the base hull identity.
   const hullTier=Math.max(0,Math.min(3,Number(hullTierVisual)||0));
   if(hullTier>0){
-    const tierMetal=hullTier===1?'#2f78ff':hullTier===2?'#a13cff':'#ffd23f';
-    const tierDark=hullTier===1?'#123b78':hullTier===2?'#4a176f':'#755300';
+    const tierMetal=hullTier===1?'#20c85a':hullTier===2?'#a13cff':'#ffd23f';
+    const tierDark=hullTier===1?'#126b32':hullTier===2?'#4a176f':'#755300';
     const tierGlow=tierVisual(hullTier).glow;
 
     // Tier 1: reinforced side armor and extra fasteners.

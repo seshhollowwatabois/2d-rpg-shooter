@@ -565,6 +565,7 @@ function shoot(){
   if(p.cd>0)return;
   const barrel=gunForTurret(p.turretId);
   if(barrel.id==='122mm'&&barrel.flame&&p.firebirdFuel<=0)return;
+  if(barrel.id==='122mmFreeze'&&barrel.freeze&&p.freezeFuel<=0)return;
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
@@ -605,6 +606,26 @@ function shoot(){
     }
     soundFire(barrel.id);
     p.cd=smokyTierData.reloadTime;
+    return;
+  }
+
+  // Freeze is a continuous cryo stream: it deals light damage and adds freeze stacks.
+  if(barrel.id==='122mmFreeze'&&barrel.freeze){
+    const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
+    const range=tier.range||barrel.range||230;
+    spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
+    for(const e of [...en]){
+      if(!freezeParticleHit(e,p))continue;
+      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
+      const damageFalloff=1-Math.min(1,dist/range);
+      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
+      const dmg=minDamage+(maxDamage-minDamage)*damageFalloff;
+      applyBulletHit(e,dmg,e.x,e.y,null,0);
+      applyFreeze(e);
+      if(e.hp<=0){const j=en.indexOf(e);if(j>=0)killEnemy(e,j);}
+    }
+    soundFire(barrel.id);
+    p.cd=barrel.reloadTime;
     return;
   }
 
@@ -660,6 +681,31 @@ function getHitProfile(target,bx,by){
   if(c>=.5)return {rear:false,zone:'front'};
   if(c<=-.5)return {rear:true,zone:'rear'};
   return {rear:false,zone:'side'};
+}
+function applyFreeze(target){
+  target.freezeStacks=Math.min(5,(target.freezeStacks||0)+1);
+  target.freezeTick=1;
+  burst(target.x,target.y,'#59d9ff',12);
+  target.hitFlash=.05;
+}
+function freezeParticleHit(target,owner){
+  for(const q of ps){
+    if(!q.freezeHit||q.freezeOwner!==owner||q.life<=0)continue;
+    const rr=q.size||3.5,dx=target.x-q.x,dy=target.y-q.y;
+    if(dx*dx+dy*dy<=(target.r+rr)*(target.r+rr))return true;
+  }
+  return false;
+}
+function spawnFreezeParticles(owner,muzzle,angle,tier,cone,range,count=18){
+  const particles=[];
+  for(let i=0;i<count;i++){
+    const t=count<=1?1:(i+1)/count,d=18+t*(range-18);
+    const spread=(Math.random()-.5)*cone*1.7*(.35+.65*t),a=angle+spread;
+    if(wallRayHit(muzzle.x,muzzle.y,a,d))continue;
+    const size=5+Math.random()*5;
+    particles.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:0,vy:0,life:.12+Math.random()*.18,col:Math.random()<.55?tier.flame:Math.random()<.7?tier.accent:tier.core,size,freezeHit:true,freezeOwner:owner});
+  }
+  for(const q of particles)ps.push(q);
 }
 function applyBurn(target,tierIndex=0){
   // Each Firebird hit applies 1 burn stack, up to 5 stacks.

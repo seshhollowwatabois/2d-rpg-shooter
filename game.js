@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100724';
+const GAME_VERSION='2026100725';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1218,12 +1218,12 @@ function renderShop(){
         q.beginPath();q.moveTo(-r*.08,0);q.lineTo(r*.36,0);q.stroke();q.globalAlpha=1;
       }
 
-      const twinsNeutral=visualTurret.id==='rapid'&&Math.max(0,Math.min(3,twinsTier))===0; q.strokeStyle=visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(railAccent||smokyPreviewAccent||'#7f8b75');q.lineWidth=1.25;
+      const twinsNeutral=visualTurret.id==='rapid'&&Math.max(0,Math.min(3,twinsTier))===0; const freezePreview=visualTurret.id==='freeze'?(freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0]):null; q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(railAccent||smokyPreviewAccent||'#7f8b75'));q.lineWidth=1.25;
       q.beginPath();q.moveTo(-r*.28,-r*.40);q.quadraticCurveTo(-r*.08,-r*.29,r*.04,-r*.28);q.stroke();
       q.beginPath();q.moveTo(-r*.28,r*.40);q.quadraticCurveTo(-r*.08,r*.29,r*.04,r*.28);q.stroke();
 
       q.fillStyle='#292e2a';q.beginPath();q.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);q.fill();
-      q.strokeStyle=visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(smokyPreviewAccent||'#89967c');q.stroke();
+      q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(smokyPreviewAccent||'#89967c'));q.stroke();
       q.fillStyle='#292f2a';
       q.beginPath();q.roundRect(r*.08,-r*.18,r*.34,r*.36,5);q.fill();
 
@@ -1237,6 +1237,17 @@ function renderShop(){
           q.fillStyle='#0e1112';q.fillRect(r*(1.46*barrelLength),yy-r*.07,r*.14,r*.14);
           q.fillStyle='#151819';
         }
+      }else if(visualTurret.id==='freeze'){
+        // Exact Freeze muzzle copied from tankBody(); the shop has no separate Freeze design.
+        const freezeVisual=freezePreview;
+        q.fillStyle='#171a18';
+        q.beginPath();q.moveTo(r*.30,-r*.12);q.lineTo(r*.84,-r*.14);q.lineTo(r*1.22,-r*.12);q.lineTo(r*1.30,0);
+        q.lineTo(r*1.22,r*.12);q.lineTo(r*.84,r*.14);q.lineTo(r*.30,r*.12);q.closePath();q.fill();
+        q.fillStyle='#0b0d0c';q.beginPath();q.arc(r*1.27,0,r*.11,0,6.283);q.fill();
+        q.fillStyle=freezeVisual.flame;q.globalAlpha=.9;q.fillRect(r*.76,-r*.13,r*.08,r*.26);q.globalAlpha=1;
+        q.strokeStyle=freezeVisual.accent;q.lineWidth=1.7;
+        q.beginPath();q.moveTo(r*.55,-r*.13);q.lineTo(r*1.02,-r*.18);q.stroke();
+        q.beginPath();q.moveTo(r*.55,r*.13);q.lineTo(r*1.02,r*.18);q.stroke();
       }else if(visualTurret.id==='fast'){
         const fireAccent=fireTier.accent,fireFlame=fireTier.flame;
         q.fillStyle='#171a18';

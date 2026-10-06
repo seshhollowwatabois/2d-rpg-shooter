@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100713';
+const GAME_VERSION='2026100714';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1677,7 +1677,6 @@ function update(dt){
       const freezeTierData=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
       spawnFreezeParticles(p,muzzle,freezeAngle,freezeTierData,firebird.cone||.42,freezeTierData.range||firebird.range||230,18);
       p.freezeActive=true;
-      if(p.cd<=0)p.cd=.5;
     }else{
       p.freezeActive=false;
     }

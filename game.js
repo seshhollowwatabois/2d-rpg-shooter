@@ -663,6 +663,20 @@ function shoot(){
 
   // Firebird is a continuous flamethrower: visual flame stays active while held,
   // but damage is applied only on each 0.50s tick (including the first tick).
+  if(barrel.id==='122mmFreeze'&&barrel.freeze){
+    const tierIndex=Math.max(0,Math.min(3,e.freezeTier||0));
+    const tier=freezeTiers[tierIndex]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42;
+    spawnFreezeParticles(e,{x:e.x,y:e.y},a,tier,cone,range,18);
+    if(freezeParticleHit(p,e)&&e.fire<=0){
+      const dist=Math.hypot(p.x-e.x,p.y-e.y),damageFalloff=1-Math.min(1,dist/range);
+      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
+      applyBulletHit(p,minDamage+(maxDamage-minDamage)*damageFalloff,p.x,p.y,null,0);
+      applyFreeze(p);
+      e.fire=barrel.reloadTime;
+      if(p.hp<=0){p.hp=0;die();return;}
+    }
+    return;
+  }
   if(barrel.id==='122mm'&&barrel.flame){
     const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
     const range=tier.range||barrel.range||230;
@@ -1537,6 +1551,8 @@ function update(dt){
     if(e.corpseTime<=0)deadTanks.splice(i,1);
   }
 
+  // Firebird and Freeze both use a 5-second continuous firing pool.
+  if(p.turretId==='freeze' && p.freezeFuel<5 && !mouse.down && !mobileFire && !keys.has(' '))p.freezeFuel=Math.min(5,p.freezeFuel+dt*.5);
   // Firebird fuel: 5 seconds of firing capacity, recovering fully in 10 seconds when not firing.
   if(p.turretId==='fast' && p.firebirdFuel<8 && !mouse.down && !mobileFire && !keys.has(' ')){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
@@ -1717,10 +1733,16 @@ function update(dt){
       }
     }
 
+    if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||1)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=1;}}
+
     const enemyBarrel=gunForTurret(e.turretId);
     const isEnemyFirebird=enemyBarrel.id==='122mm'&&enemyBarrel.flame;
     const enemyFireTier=firebirdTiers[Math.max(0,Math.min(3,e.firebirdTier||0))]||firebirdTiers[0];
     const firebirdEngageRange=Math.min(enemyFireTier.range||230,300);
+    const isEnemyFreeze=enemyBarrel.id==='122mmFreeze'&&enemyBarrel.freeze;
+    const enemyFreezeTier=freezeTiers[Math.max(0,Math.min(3,e.freezeTier||0))]||freezeTiers[0];
+    const freezeEngageRange=Math.min(enemyFreezeTier.range||230,300);
+
 
     // Firebirds actively close the distance instead of trying to flame the player from far away.
     if(isEnemyFirebird && d>firebirdEngageRange){
@@ -1789,7 +1811,17 @@ function update(dt){
 
     // Firebirds only fire after closing to their dedicated close-range distance.
     // Their flame consumes a limited fuel pool and regenerates while they are not firing.
-    if(isEnemyFirebird){
+    if(isEnemyFreeze){
+      if(d>freezeEngageRange){
+        e.idle=false;e.wanderTime=0;
+        const chaseAngle=enemyAvoidanceAngle(e,p.x,p.y),chaseDelta=((chaseAngle-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+        e.angle+=Math.max(-2.6*dt,Math.min(2.6*dt,chaseDelta));
+        const freezeMoveMult=Math.max(0,1-(e.freezeStacks||0)*.2);
+        const moveVx=Math.cos(e.angle)*e.speed*freezeMoveMult,moveVy=Math.sin(e.angle)*e.speed*freezeMoveMult;
+        const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);if(moved){e.vx=moveVx;e.vy=moveVy;}
+      }
+      if(d<=freezeEngageRange&&e.freezeFuel>0&&Math.abs(tda)<.10){enemyShoot(e);e.freezeFuel=Math.max(0,e.freezeFuel-dt);}else{e.freezeFuel=Math.min(e.freezeMaxFuel||5,e.freezeFuel+dt*.5);}
+    }else if(isEnemyFirebird){
       if(d<=firebirdEngageRange && e.firebirdFuel>0 && Math.abs(tda)<0.10){
         enemyShoot(e);
         e.firebirdFuel=Math.max(0,e.firebirdFuel-dt);

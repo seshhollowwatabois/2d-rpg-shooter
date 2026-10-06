@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100671';
+const GAME_VERSION='2026100672';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -763,10 +763,11 @@ function die(){
   if(!p||p.dead)return;
   saveCurrent();
   over=true;
+  // Keep the render/update loop alive during the death sequence; only gameplay input is disabled.
   stopEngineSound();
   p.hp=0;p.dead=true;
   playerDeathTank={x:p.x,y:p.y,r:p.r,angle:p.angle,turretAngle:p.turretAngle,turretId:p.turretId,hullId:p.hullId,firebirdTier:firebirdTier,twinsTier:twinsTier,smokyTier:smokyTier,railTier:railgunTier};
-  playerDeathTimer=.95;
+  playerDeathTimer=3;
   // Use the same death burst style as destroyed enemies, centered on the player's tank.
   burst(p.x,p.y,'#d85b68',28);
   burst(p.x,p.y,'#ff9d24',18);

@@ -2094,7 +2094,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):(enemy?smokyTierVisual:smokyTier)));
+  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?(enemy?(e?.freezeTier||0):freezeTier):(enemy?smokyTierVisual:smokyTier)));
   const visualTier=tierVisual(visualTierIndex);
   const railAccent=visualTurret.id==='railgun'&&visualTierIndex>0?visualTier.accent:null;
   const smokyAccent=visualTurret.id==='standard'&&visualTierIndex>0?visualTier.accent:null;
@@ -2116,6 +2116,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.lineTo(-tr*.12,tr*.49);
     x.lineTo(-tr*.52,tr*.36);
     x.quadraticCurveTo(-tr*.63,0,-tr*.52,-tr*.36);
+  }else if(visualTurret.id==='freeze'){
+    x.moveTo(-tr*.54,-tr*.34);x.lineTo(tr*.05,-tr*.48);x.lineTo(tr*.43,-tr*.28);x.quadraticCurveTo(tr*.56,0,tr*.43,tr*.28);x.lineTo(tr*.05,tr*.48);x.lineTo(-tr*.54,tr*.34);x.quadraticCurveTo(-tr*.62,0,-tr*.54,-tr*.34);
   }else if(visualTurret.id==='rapid'){
     // Twins: compact rounded turret with a broad front and twin gun mounts.
     x.moveTo(-tr*.50,-tr*.34);x.quadraticCurveTo(-tr*.18,-tr*.45,tr*.24,-tr*.39);
@@ -2151,6 +2153,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.globalAlpha=1;x.strokeStyle=smokyAccent;x.lineWidth=tr*.055;
     x.beginPath();x.moveTo(-tr*.20,-tr*.21);x.lineTo(tr*.29,-tr*.12);x.stroke();
     x.beginPath();x.moveTo(-tr*.20,tr*.21);x.lineTo(tr*.29,tr*.12);x.stroke();
+  }else if(visualTurret.id==='freeze'){
+    const freezeVisual=freezeTiers[Math.max(0,Math.min(3,enemy?(e?.freezeTier||0):freezeTier))]||freezeTiers[0];
+    x.fillStyle=enemy?'#273d46':'#263f4a';x.beginPath();x.moveTo(-tr*.36,-tr*.27);x.lineTo(tr*.20,-tr*.31);x.lineTo(tr*.37,-tr*.13);x.lineTo(tr*.20,tr*.31);x.lineTo(-tr*.36,tr*.27);x.closePath();x.fill();
+    x.fillStyle=freezeVisual.flame;x.globalAlpha=.92;x.beginPath();x.moveTo(-tr*.34,-tr*.23);x.lineTo(tr*.16,-tr*.27);x.lineTo(tr*.29,-tr*.12);x.lineTo(-tr*.25,-tr*.15);x.closePath();x.fill();x.beginPath();x.moveTo(-tr*.34,tr*.23);x.lineTo(tr*.16,tr*.27);x.lineTo(tr*.29,tr*.12);x.lineTo(-tr*.25,tr*.15);x.closePath();x.fill();x.globalAlpha=1;
+    x.strokeStyle=freezeVisual.accent;x.lineWidth=tr*.055;x.beginPath();x.moveTo(-tr*.18,-tr*.21);x.lineTo(tr*.31,-tr*.11);x.stroke();x.beginPath();x.moveTo(-tr*.18,tr*.21);x.lineTo(tr*.31,tr*.11);x.stroke();
   }else if(visualTurret.id==='fast'){
     // Firebird armor accents use the exact same palette as the active flame tier.
     // This keeps the turret visually tied to its flame instead of using one fixed accent color.
@@ -2217,6 +2224,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
       x.fillStyle='#0e1112';x.fillRect(tr*(1.46*barrelLength),yy-tr*.07,tr*.14,tr*.14);
       x.fillStyle='#151819';
     }
+  }else if(visualTurret.id==='freeze'){
+    const freezeVisual=freezeTiers[Math.max(0,Math.min(3,enemy?(e?.freezeTier||0):freezeTier))]||freezeTiers[0];
+    x.fillStyle='#171a18';x.beginPath();x.moveTo(tr*.30,-tr*.12);x.lineTo(tr*.84,-tr*.14);x.lineTo(tr*1.22,-tr*.12);x.lineTo(tr*1.30,0);x.lineTo(tr*1.22,tr*.12);x.lineTo(tr*.84,tr*.14);x.lineTo(tr*.30,tr*.12);x.closePath();x.fill();
+    x.fillStyle='#0b0d0c';x.beginPath();x.arc(tr*1.27,0,tr*.11,0,6.283);x.fill();x.fillStyle=freezeVisual.flame;x.globalAlpha=.9;x.fillRect(tr*.76,-tr*.13,tr*.08,tr*.26);x.globalAlpha=1;x.strokeStyle=freezeVisual.accent;x.lineWidth=1.7;x.beginPath();x.moveTo(tr*.55,-tr*.13);x.lineTo(tr*1.02,-tr*.18);x.stroke();x.beginPath();x.moveTo(tr*.55,tr*.13);x.lineTo(tr*1.02,tr*.18);x.stroke();
   }else if(visualTurret.id==='fast'){
     // Thick Firebird nozzle with tier-matched heat bands.
     const fireAccentTier=firebirdTiers[Math.max(0,Math.min(3,firebirdTierVisual||0))]||firebirdTiers[0];

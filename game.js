@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100686';
+const GAME_VERSION='2026100687';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1316,15 +1316,15 @@ function renderShop(){
         const gun=gunForTurret(item.id);
         if(item.id==='rapid'){
           const t=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
-          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage*t.damageMult).toFixed(1)+'-'+(gun.maxDamage*t.damageMult).toFixed(1));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Projectile Speed',Math.round(900*t.speedMult));addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(gun.minDamage*t.damageMult).toFixed(1)+'-'+(gun.maxDamage*t.damageMult).toFixed(1));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Projectile Speed',Math.round(900*t.speedMult));addStat('Tier','T'+t.tier);
         }else if(item.id==='standard'){
           const t=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
-          addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round(((gun.critChance||0)+(t.critBonus||0))*100)+'%');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round(((gun.critChance||0)+(t.critBonus||0))*100)+'%');addStat('Tier','T'+t.tier);
         }else if(item.id==='fast'){
           const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
         }else{
-          const rt=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;const turn=item.id==='railgun'?item.turn*(rt?.turnMult||1):item.turn;const min=Math.round(gun.minDamage*(rt?.damageMult||1));const max=Math.round(gun.maxDamage*(rt?.damageMult||1));const reload=gun.reloadTime*(rt?.reloadMult||1);addStat('Turret Rotation',turn.toFixed(2),true);addStat('Gun',gun.name);addStat('Damage',min+'-'+max);addStat('Reload Time',reload.toFixed(2)+'s');addStat('Size',item.scale.toFixed(2)+'x');
+          const rt=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;const turn=item.id==='railgun'?item.turn*(rt?.turnMult||1):item.turn;const min=Math.round(gun.minDamage*(rt?.damageMult||1));const max=Math.round(gun.maxDamage*(rt?.damageMult||1));const reload=gun.reloadTime*(rt?.reloadMult||1);addStat('Turret Rotation',turn.toFixed(2),true);addStat('Damage',min+'-'+max);addStat('Reload Time',reload.toFixed(2)+'s');addStat('Size',item.scale.toFixed(2)+'x');
         }
       }else if(type==='engine'){
         addStat('Forward Speed', '+'+Math.round((item.speed-1)*100)+'%',true);addStat('Reverse Speed','+'+Math.round((item.speed-1)*100)+'%');addStat('Hull Rotation','+'+Math.round((item.turn-1)*100)+'%');if(item.id==='better')addStat('Passive','After 2s forward: +30% forward speed',true);

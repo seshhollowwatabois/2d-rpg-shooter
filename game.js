@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100715';
+const GAME_VERSION='2026100716';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -98,9 +98,9 @@ const firebirdTiers=[
 ];
 const freezeTiers=[
   {tier:0,name:'Standard Freeze',directBonus:0,range:230,turnMult:1,flame:'#59d9ff',core:'#e7fbff',accent:'#35aeea'},
-  {tier:1,name:'Freeze Tier 1',directBonus:5,range:280,turnMult:1.2,flame:tierVisuals[1].beam,core:tierVisuals[1].glow,accent:tierVisuals[1].accent},
-  {tier:2,name:'Freeze Tier 2',directBonus:10,range:330,turnMult:1.44,flame:tierVisuals[2].beam,core:tierVisuals[2].glow,accent:tierVisuals[2].accent},
-  {tier:3,name:'Freeze Tier 3',directBonus:15,range:380,turnMult:1.728,flame:tierVisuals[3].beam,core:tierVisuals[3].glow,accent:tierVisuals[3].accent}
+  {tier:1,name:'Freeze Tier 1',directBonus:5,range:280,turnMult:1.2,flame:tierVisuals[0].beam,core:tierVisuals[0].glow,accent:tierVisuals[0].accent},
+  {tier:2,name:'Freeze Tier 2',directBonus:10,range:330,turnMult:1.44,flame:tierVisuals[0].beam,core:tierVisuals[0].glow,accent:tierVisuals[0].accent},
+  {tier:3,name:'Freeze Tier 3',directBonus:15,range:380,turnMult:1.728,flame:tierVisuals[0].beam,core:tierVisuals[0].glow,accent:tierVisuals[0].accent}
 ];
 // Storage is optional: blocked/private/corrupted storage must never stop boot.
 function safeStorageGet(key,fallback=''){
@@ -1832,6 +1832,8 @@ function update(dt){
     // that a player can circle an enemy and get around its gun arc.
     const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
     let turretTurnRate=enemyTurret.turn;
+    // Freeze stacks slow turret rotation as well as hull movement: 10% per stack, max 50%.
+    turretTurnRate*=Math.max(.5,1-(e.freezeStacks||0)*.1);
     if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,1.05][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
     else if(e.turretId==='freeze') turretTurnRate*=([1,1.2,1.44,1.728][Math.max(0,Math.min(3,e.freezeTier||0))]||1);
     else if(e.turretId==='railgun') turretTurnRate*=([1,1.25,1.5625,2.1904761905][Math.max(0,Math.min(3,e.turretTier||0))]||1);

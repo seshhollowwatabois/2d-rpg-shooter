@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100714';
+const GAME_VERSION='2026100715';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -644,7 +644,7 @@ function shoot(){
       if(along<=0||side>allowedSide)continue;
       if(wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,dist-e.r)))continue;
       const falloff=1-Math.min(1,dist/range);
-      const dmg=(10+tier.directBonus)+(11*falloff);
+      const dmg=(15+tier.directBonus)+(11*falloff);
       applyBulletHit(e,dmg,e.x,e.y,null,0);
       applyFreeze(e);
       if(e.hp<=0){const j=en.indexOf(e);if(j>=0)killEnemy(e,j);}
@@ -804,7 +804,7 @@ function enemyShoot(e){
     spawnFreezeParticles(e,muzzle,a,tier,cone,range,18);
     if(freezeParticleHit(p,e,muzzle,a,range,cone)&&e.fire<=0){
       const dist=Math.hypot(p.x-muzzle.x,p.y-muzzle.y),falloff=1-Math.min(1,dist/range);
-      applyBulletHit(p,(10+tier.directBonus)+(11*falloff),p.x,p.y,null,0);applyFreeze(p);e.fire=barrel.reloadTime;
+      applyBulletHit(p,(15+tier.directBonus)+(11*falloff),p.x,p.y,null,0);applyFreeze(p);e.fire=barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}
     }
     return;
@@ -1443,10 +1443,10 @@ function renderShop(){
           addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round(((gun.critChance||0)+(t.critBonus||0))*100)+'%');addStat('Tier','T'+t.tier);
         }else if(item.id==='freeze'){
           const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
-          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(15+t.directBonus)+'-'+(26+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);
         }else if(item.id==='fast'){
           const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
-          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(15+t.directBonus)+'-'+(26+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
         }else{
           const rt=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;const turn=item.id==='railgun'?item.turn*(rt?.turnMult||1):item.turn;const min=Math.round(gun.minDamage*(rt?.damageMult||1));const max=Math.round(gun.maxDamage*(rt?.damageMult||1));const reload=gun.reloadTime*(rt?.reloadMult||1);addStat('Turret Rotation',turn.toFixed(2),true);addStat('Damage',min+'-'+max);addStat('Reload Time',reload.toFixed(2)+'s');addStat('Size',item.scale.toFixed(2)+'x');
         }

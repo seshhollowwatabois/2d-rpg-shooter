@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100666';
+const GAME_VERSION='2026100667';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -590,7 +590,7 @@ function shoot(){
     const offset=p.twinsNextBarrel===1?side:-side;
     const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
     const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
-    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:twinsTierData.col});
+    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:twinsTierData.col,twins:true});
     burst(muzzleX,muzzleY,twinsTierData.col,5);
     soundFire(barrel.id);
     p.twinsNextBarrel=p.twinsNextBarrel===1?-1:1;
@@ -654,7 +654,7 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   target.hp-=damage;
   target.hitFlash=(critChance>0||b?.smoky) ? .16 : .08;
   dmgTexts.push({x:target.x,y:target.y-target.r-8,text:critical?'CRIT '+Math.round(damage):Math.round(damage),life:(b?.smoky ? .85 : .7),col:critical?'#39d353':'#ff3b3b',kind:critical?'crit':undefined});
-  impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',b?.smoky?34:(critical?26:18));
+  impactExplosion(bx,by,b?.twins?(b.col||'#3da9ff'):(critical?'#fff07a':'#ffd27a'),b?.smoky?34:(critical?26:18));
   if(b?.smoky){
     burst(bx,by,'#fff4c7',18);
     for(let i=0;i<8;i++){const a=Math.random()*6.283,s=90+Math.random()*150;ps.push({x:bx,y:by,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.22+Math.random()*.18,col:'#ff9d24',size:2.5+Math.random()*2.5})}
@@ -734,7 +734,7 @@ function enemyShoot(e){
       const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
       const baseMuzzle=enemyMuzzlePosition(e,barrel,a);
       const mx=baseMuzzle.x-sa*offset,my=baseMuzzle.y+ca*offset;
-      const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor});
+      const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor,twins:true});
       burst(mx,my,enemyTwinsTierData.col,3);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;

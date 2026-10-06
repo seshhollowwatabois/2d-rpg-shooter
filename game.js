@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100684';
+const GAME_VERSION='2026100685';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -424,6 +424,23 @@ function pickEnemyHull(){
   const kvChance=Math.min(.85,.45+(wave-6)*.08);
   return r<kvChance?'heavy':(r<.5?'scout':'standard');
 }
+function pickEnemyHullTier(turretTier){
+  // Higher turret tiers strongly increase the chance of a higher-tier hull.
+  // T0: 85/13/2/0, T1: 55/35/9/1, T2: 25/40/28/7, T3: 5/20/40/35.
+  const r=Math.random();
+  const chances=[
+    [0.85,0.13,0.02,0.00],
+    [0.55,0.35,0.09,0.01],
+    [0.25,0.40,0.28,0.07],
+    [0.05,0.20,0.40,0.35]
+  ][Math.max(0,Math.min(3,Number(turretTier)||0))];
+  let total=0;
+  for(let tier=0;tier<chances.length;tier++){
+    total+=chances[tier];
+    if(r<total)return tier;
+  }
+  return 3;
+}
 function makeEnemy(){
   if(waveRemaining<=0)return;
   const side=Math.floor(Math.random()*4);let a,b;
@@ -436,7 +453,7 @@ function makeEnemy(){
   const enemyTurret=pickEnemyTurret();
   const turretId=enemyTurret.id;
   const turretTier=enemyTurret.tier;
-  const hullTier=enemyStageOverride!==null?enemyStageOverride:turretTier;
+  const hullTier=pickEnemyHullTier(turretTier);
   const engineId=pickEnemyEngine();
   const hull=hulls.find(v=>v.id===hullId)||hulls[0];
   const turret=turrets.find(v=>v.id===turretId)||turrets[0];

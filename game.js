@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100685';
+const GAME_VERSION='2026100686';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -458,18 +458,23 @@ function makeEnemy(){
   const hull=hulls.find(v=>v.id===hullId)||hulls[0];
   const turret=turrets.find(v=>v.id===turretId)||turrets[0];
   const engine=engines.find(v=>v.id===engineId)||engines[0];
+  const hullTierData=hullTiers[Math.max(0,Math.min(3,hullTier))]||hullTiers[0];
   const heavy=hullId==='heavy';
   const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
   const enemyFirebirdTier=turretId==='fast'?turretTier:0;
 
-  // Enemy HP matches the selected hull's HP exactly; turrets provide no HP bonus.
-  const hp=hull.hp;
+  // Hull tier affects the enemy's actual stats as well as its appearance.
+  const hp=Math.round(hull.hp*hullTierData.hpMult);
+  const speed=hull.speed*engine.speed*hullTierData.speedMult;
+  const turnRate=hull.turn*engine.turn*hullTierData.turnMult;
+  const reverseSpeed=hull.reverse*engine.speed*hullTierData.reverseMult;
 
   en.push({
     x:a,y:b,
     r:20*hull.scale,
-    speed:hull.speed*engine.speed,
-    turnRate:hull.turn*engine.turn,
+    speed,
+    reverseSpeed,
+    turnRate,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,hullTier,turretId,turretTier,engineId,
     angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,railCharging:false,railCharge:0,
@@ -2226,7 +2231,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];

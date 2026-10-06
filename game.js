@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100680';
+const GAME_VERSION='2026100681';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -84,7 +84,7 @@ const smokyTiers=[
   {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.50,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const firebirdTiers=[
-  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:tierVisuals[0].beam,core:tierVisuals[0].glow,accent:tierVisuals[0].accent},
+  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
   {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:280,turnMult:1.2,flame:tierVisuals[1].beam,core:tierVisuals[1].glow,accent:tierVisuals[1].accent},
   {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:tierVisuals[2].beam,core:tierVisuals[2].glow,accent:tierVisuals[2].accent},
   {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:tierVisuals[3].beam,core:tierVisuals[3].glow,accent:tierVisuals[3].accent}

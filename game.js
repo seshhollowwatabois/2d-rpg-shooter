@@ -674,7 +674,12 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   target.hp-=damage;
   target.hitFlash=(critChance>0||b?.smoky) ? .16 : .08;
   dmgTexts.push({x:target.x,y:target.y-target.r-8,text:critical?'CRIT '+Math.round(damage):Math.round(damage),life:(b?.smoky ? .85 : .7),col:critical?'#39d353':'#ff3b3b',kind:critical?'crit':undefined});
-  impactExplosion(bx,by,b?.twins?(b.col||'#3da9ff'):(critical?'#fff07a':'#ffd27a'),b?.smoky?34:(critical?26:18));
+  if(b?.twins){
+    // Twins uses a single compact hit flash instead of a particle cloud at the hull.
+    ps.push({x:bx,y:by,vx:0,vy:0,life:.10,col:b.col||'#3da9ff',size:7});
+  }else{
+    impactExplosion(bx,by,critical?'#fff07a':'#ffd27a',b?.smoky?34:(critical?26:18));
+  }
   if(b?.smoky){
     burst(bx,by,'#fff4c7',18);
     for(let i=0;i<8;i++){const a=Math.random()*6.283,s=90+Math.random()*150;ps.push({x:bx,y:by,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.22+Math.random()*.18,col:'#ff9d24',size:2.5+Math.random()*2.5})}

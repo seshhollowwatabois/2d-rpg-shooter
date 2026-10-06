@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100675';
+const GAME_VERSION='2026100676';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1150,7 +1150,7 @@ function renderShop(){
         const tier=document.createElement('div');
         tier.className='railgunTierMiniRow'+(current?' current':'');
         const label=document.createElement('span');
-        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+' • HP ×'+t.hpMult.toFixed(2)+' • Speed ×'+t.speedMult.toFixed(2)+'</small>';
+        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
         const b=document.createElement('button');
         b.className='tierInlineButton';
         b.textContent=current?'CURRENT':owned?'SELECT':t.tier===(hullOwnedTierById[item.id]||0)+1?'UPGRADE':'LOCKED';

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100677';
+const GAME_VERSION='2026100678';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -942,6 +942,31 @@ function renderShop(){
         q.beginPath();q.arc(px,py,rr*.035,0,6.283);q.fill();
       }
       q.fillStyle='#46d9df';q.fillRect(L*.39,-rr*.045,rr*.11,rr*.09);
+
+      // Show the currently selected hull tier in the shop preview too.
+      const previewHullTier=Math.max(0,Math.min(3,hullTierById[item.id]||0));
+      if(previewHullTier>0){
+        const tierMetal=previewHullTier===1?'#9aa59c':previewHullTier===2?'#b7c0ba':'#d0d7d1';
+        const tierDark=previewHullTier===1?'#3d463e':previewHullTier===2?'#303932':'#252c28';
+        const tierGlow=previewHullTier===1?'#4fd1c5':previewHullTier===2?'#a78bfa':'#ffd23f';
+        q.fillStyle=tierDark;
+        for(const sy of [-1,1]){q.beginPath();q.roundRect(-L*.30,sy*hullB*.34-rr*.055,L*.62,rr*.11,rr*.045);q.fill()}
+        q.fillStyle=tierMetal;
+        for(const sy of [-1,1]){q.beginPath();q.roundRect(-L*.04,sy*hullB*.34-rr*.035,L*.32,rr*.07,rr*.025);q.fill()}
+        if(previewHullTier>=2){
+          q.fillStyle=tierMetal;q.beginPath();q.moveTo(L*.20,-hullB*.42);q.lineTo(L*.52,-hullB*.16);q.lineTo(L*.52,hullB*.16);q.lineTo(L*.20,hullB*.42);q.lineTo(L*.12,hullB*.30);q.lineTo(L*.39,0);q.lineTo(L*.12,-hullB*.30);q.closePath();q.fill();
+          q.fillStyle=tierDark;q.beginPath();q.roundRect(-L*.42,-hullB*.52,L*.30,hullB*.12,rr*.04);q.fill();q.beginPath();q.roundRect(-L*.42,hullB*.40,L*.30,hullB*.12,rr*.04);q.fill();
+          q.fillStyle=tierGlow;q.fillRect(-L*.38,-hullB*.49,L*.22,rr*.035);q.fillRect(-L*.38,hullB*.455,L*.22,rr*.035);
+        }
+        if(previewHullTier>=3){
+          q.fillStyle=tierDark;for(const sy of [-1,1]){q.beginPath();q.roundRect(-L*.48,sy*(hullB*.47)-rr*.075,L*.82,rr*.15,rr*.055);q.fill()}
+          q.fillStyle=tierMetal;q.beginPath();q.moveTo(L*.40,-hullB*.30);q.lineTo(L*.61,-hullB*.13);q.lineTo(L*.61,hullB*.13);q.lineTo(L*.40,hullB*.30);q.lineTo(L*.28,hullB*.18);q.lineTo(L*.48,0);q.lineTo(L*.28,-hullB*.18);q.closePath();q.fill();
+          q.fillStyle=tierGlow;for(const sy of [-1,1])q.fillRect(-L*.26,sy*(hullB*.43)-rr*.025,L*.42,rr*.05);
+          q.globalAlpha=.8;q.fillRect(-L*.47,-hullB*.24,rr*.07,hullB*.48);q.globalAlpha=1;
+          q.strokeStyle=tierGlow;q.lineWidth=Math.max(1,rr*.045);q.beginPath();q.arc(-L*.30,0,rr*.11,0,6.283);q.stroke();
+        }
+        q.fillStyle=tierGlow;q.globalAlpha=.9;q.fillRect(-rr*.035,-hullB*.18,rr*.07,hullB*.36);q.globalAlpha=1;
+      }
 
       // Match the actual hull's turret ring and placement.
       q.fillStyle='#343c34';q.beginPath();q.arc(turretX,0,rr*(isTitan?.62:isWasp?.50:.57),0,6.283);q.fill();

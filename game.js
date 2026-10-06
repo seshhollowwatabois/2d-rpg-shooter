@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100712';
+const GAME_VERSION='2026100713';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -582,7 +582,6 @@ function shoot(){
   const barrel=gunForTurret(p.turretId);
   if(barrel.id==='122mm'&&barrel.flame&&p.firebirdFuel<=0)return;
   if(barrel.id==='122mmFreeze'&&barrel.freeze&&p.freezeFuel<=0)return;
-  if(barrel.id==='122mmFreeze'&&barrel.freeze&&p.freezeFuel<=0)return;
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
@@ -626,56 +625,32 @@ function shoot(){
     return;
   }
 
-  // Freeze is a continuous cryo stream: it deals light damage and adds freeze stacks.
+  // Freeze is a continuous cryo stream. Use a deterministic cone test for damage
+  // instead of relying on rendered particles, so damage cannot disappear when a
+  // particle misses between frames.
   if(barrel.id==='122mmFreeze'&&barrel.freeze){
     const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
     const range=tier.range||barrel.range||230;
-    spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
+    const cone=barrel.cone||.42;
+    spawnFreezeParticles(p,muzzle,fireAngle,tier,cone,range,18);
+    const ca=Math.cos(fireAngle),sa=Math.sin(fireAngle);
     for(const e of [...en]){
-      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue
-      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
-      const damageFalloff=1-Math.min(1,dist/range);
-      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
-      const dmg=minDamage+(maxDamage-minDamage)*damageFalloff;
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y;
+      const dist=Math.hypot(dx,dy);
+      if(dist>range+e.r||dist<1)continue;
+      const along=dx*ca+dy*sa;
+      const side=Math.abs(dx*sa-dy*ca);
+      const allowedSide=Math.tan(cone*.5)*Math.max(0,along)+e.r;
+      if(along<=0||side>allowedSide)continue;
+      if(wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,dist-e.r)))continue;
+      const falloff=1-Math.min(1,dist/range);
+      const dmg=(10+tier.directBonus)+(11*falloff);
       applyBulletHit(e,dmg,e.x,e.y,null,0);
       applyFreeze(e);
       if(e.hp<=0){const j=en.indexOf(e);if(j>=0)killEnemy(e,j);}
     }
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
-    return;
-  }
-
-  // Freeze is a continuous cryo stream: it deals light damage and adds freeze stacks.
-  if(barrel.id==='122mmFreeze'&&barrel.freeze){
-    const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
-    const range=tier.range||barrel.range||230;
-    spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
-    for(const e of [...en]){
-      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue
-      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y),damageFalloff=1-Math.min(1,dist/range);
-      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
-      applyBulletHit(e,minDamage+(maxDamage-minDamage)*damageFalloff,e.x,e.y,null,0);
-      applyFreeze(e);
-      if(e.hp<=0){const j=en.indexOf(e);if(j>=0)killEnemy(e,j);}
-    }
-    soundFire(barrel.id);p.cd=barrel.reloadTime;return;
-  }
-
-  // Firebird is a continuous flamethrower: visual flame stays active while held,
-  // but damage is applied only on each 0.50s tick (including the first tick).
-  if(barrel.id==='122mmFreeze'&&barrel.freeze){
-    const tierIndex=Math.max(0,Math.min(3,e.freezeTier||0));
-    const tier=freezeTiers[tierIndex]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42;
-    spawnFreezeParticles(e,{x:e.x,y:e.y},a,tier,cone,range,18);
-    if(freezeParticleHit(p,e)&&e.fire<=0){
-      const dist=Math.hypot(p.x-e.x,p.y-e.y),damageFalloff=1-Math.min(1,dist/range);
-      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
-      applyBulletHit(p,minDamage+(maxDamage-minDamage)*damageFalloff,p.x,p.y,null,0);
-      applyFreeze(p);
-      e.fire=barrel.reloadTime;
-      if(p.hp<=0){p.hp=0;die();return;}
-    }
     return;
   }
   if(barrel.id==='122mm'&&barrel.flame){

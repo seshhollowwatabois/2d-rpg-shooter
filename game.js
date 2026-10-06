@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100705';
+const GAME_VERSION='2026100706';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -67,9 +67,9 @@ const tierVisuals=[{tier:0,accent:'#ffffff',glow:'#ffffff',beam:'#ffffff'},{tier
 const tierVisual=t=>tierVisuals[Math.max(0,Math.min(3,Number(t)||0))]||tierVisuals[0];
 const railgunTiers=[
   {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,turnMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#20c85a',glow:'#66ef8d',damageMult:1.2,reloadMult:.75,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
-  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.44,reloadMult:.50,pierceDamageMult:.83,hullMoveMult:.60,turnMult:2.8},
-  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
+  {tier:1,name:'Railgun Tier 1',beam:'#20c85a',glow:'#66ef8d',damageMult:1.2,reloadMult:.75,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.25},
+  {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.44,reloadMult:.50,pierceDamageMult:.83,hullMoveMult:.60,turnMult:1.5625},
+  {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:2.1904761905}
 ];
 const twinsTiers=[
   {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,turnMult:1,col:'#3da9ff'},
@@ -79,9 +79,9 @@ const twinsTiers=[
 ];
 const smokyTiers=[
   {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},
-  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.06,critBonus:.05,accent:tierVisuals[1].accent},
-  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.12,critBonus:.10,accent:tierVisuals[2].accent},
-  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:.18,critBonus:.15,accent:tierVisuals[3].accent}
+  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.20,critBonus:.05,accent:tierVisuals[1].accent},
+  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.40,critBonus:.10,accent:tierVisuals[2].accent},
+  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.05,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},

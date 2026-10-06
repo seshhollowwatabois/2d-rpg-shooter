@@ -1,6 +1,6 @@
-const GAME_VERSION='2026100672';
+const GAME_VERSION='2026100673';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
+let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0,menuPausedGame=false;
 let enemyStageOverride=null,enemyDifficultyOpen=false;
@@ -218,7 +218,7 @@ function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
-  en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
+  en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
   walls=[
@@ -768,6 +768,7 @@ function die(){
   p.hp=0;p.dead=true;
   playerDeathTank={x:p.x,y:p.y,r:p.r,angle:p.angle,turretAngle:p.turretAngle,turretId:p.turretId,hullId:p.hullId,firebirdTier:firebirdTier,twinsTier:twinsTier,smokyTier:smokyTier,railTier:railgunTier};
   playerDeathTimer=3;
+  playerDeathElapsed=0;
   // Use the same death burst style as destroyed enemies, centered on the player's tank.
   burst(p.x,p.y,'#d85b68',28);
   burst(p.x,p.y,'#ff9d24',18);
@@ -1243,9 +1244,56 @@ function renderShop(){
 }
 
 function update(dt){
+  // During the 3-second death sequence, keep visual effects fully animated.
+  // Gameplay is paused, but particles, shells, beams, wreck drift and damage text
+  // continue updating so the death scene never appears frozen.
   if(playerDeathTimer>0){
+    playerDeathElapsed+=dt;
     playerDeathTimer-=dt;
-    if(playerDeathTimer<=0){playerDeathTimer=0;playerDeathTank=null;showMenu(false);return;}
+
+    for(let i=ps.length-1;i>=0;i--){
+      const q=ps[i];
+      q.x+=(q.vx||0)*dt;
+      q.y+=(q.vy||0)*dt;
+      q.vx=(q.vx||0)*Math.pow(.94,dt*60);
+      q.vy=(q.vy||0)*Math.pow(.94,dt*60);
+      q.life-=dt;
+      if(q.life<=0)ps.splice(i,1);
+    }
+    for(let i=smokyTracers.length-1;i>=0;i--){
+      smokyTracers[i].life-=dt;
+      if(smokyTracers[i].life<=0)smokyTracers.splice(i,1);
+    }
+    for(let i=railBeams.length-1;i>=0;i--){
+      railBeams[i].life-=dt;
+      if(railBeams[i].life<=0)railBeams.splice(i,1);
+    }
+    for(let i=deadTanks.length-1;i>=0;i--){
+      const e=deadTanks[i];
+      if((e.deathDrift||0)>0){
+        const factor=Math.max(0,e.deathDrift);
+        moveWithWalls(e,(e.deathVx||0)*factor*dt,(e.deathVy||0)*factor*dt);
+        e.deathDrift=Math.max(0,e.deathDrift-dt);
+        e.deathVx=(e.deathVx||0)*Math.max(0,1-dt);
+        e.deathVy=(e.deathVy||0)*Math.max(0,1-dt);
+      }
+      e.corpseTime=Math.max(0,(e.corpseTime||0)-dt);
+      if(e.corpseTime<=0)deadTanks.splice(i,1);
+    }
+    for(let i=dmgTexts.length-1;i>=0;i--){
+      const q=dmgTexts[i];
+      q.life-=dt;
+      q.y-=24*dt;
+      if(q.life<=0)dmgTexts.splice(i,1);
+    }
+
+    if(playerDeathTimer<=0){
+      playerDeathTimer=0;
+      playerDeathTank=null;
+      showMenu(false);
+      return;
+    }
+    return;
   }
   if(over||gameScreen!=='game'){stopEngineSound();return;}
   autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent();}
@@ -1960,6 +2008,20 @@ function draw(){
     x.globalCompositeOperation='multiply';
     tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0);
     x.globalCompositeOperation='source-over';
+    x.restore();
+  }
+  // Death message fades in slowly over the first 1.6 seconds of the death sequence.
+  if(playerDeathTank){
+    const fade=Math.max(0,Math.min(1,playerDeathElapsed/1.6));
+    x.save();
+    x.globalAlpha=fade;
+    x.textAlign='center';
+    x.textBaseline='middle';
+    x.font='900 58px system-ui, sans-serif';
+    x.shadowColor='rgba(120,0,0,.45)';
+    x.shadowBlur=10;
+    x.fillStyle='#d71920';
+    x.fillText('YOU DIED',W/2,H/2);
     x.restore();
   }
   // Destroyed tanks keep the exact normal tank geometry, but are rendered black.

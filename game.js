@@ -1883,7 +1883,7 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0,freezeTierVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
@@ -2094,7 +2094,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?(enemy?(e?.freezeTier||0):freezeTier):(enemy?smokyTierVisual:smokyTier)));
+  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?freezeTierVisual:(enemy?smokyTierVisual:smokyTier)));
   const visualTier=tierVisual(visualTierIndex);
   const railAccent=visualTurret.id==='railgun'&&visualTierIndex>0?visualTier.accent:null;
   const smokyAccent=visualTurret.id==='standard'&&visualTierIndex>0?visualTier.accent:null;
@@ -2154,7 +2154,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.moveTo(-tr*.20,-tr*.21);x.lineTo(tr*.29,-tr*.12);x.stroke();
     x.beginPath();x.moveTo(-tr*.20,tr*.21);x.lineTo(tr*.29,tr*.12);x.stroke();
   }else if(visualTurret.id==='freeze'){
-    const freezeVisual=freezeTiers[Math.max(0,Math.min(3,enemy?(e?.freezeTier||0):freezeTier))]||freezeTiers[0];
+    const freezeVisual=freezeTiers[Math.max(0,Math.min(3,freezeTierVisual||0))]||freezeTiers[0];
     x.fillStyle=enemy?'#273d46':'#263f4a';x.beginPath();x.moveTo(-tr*.36,-tr*.27);x.lineTo(tr*.20,-tr*.31);x.lineTo(tr*.37,-tr*.13);x.lineTo(tr*.20,tr*.31);x.lineTo(-tr*.36,tr*.27);x.closePath();x.fill();
     x.fillStyle=freezeVisual.flame;x.globalAlpha=.92;x.beginPath();x.moveTo(-tr*.34,-tr*.23);x.lineTo(tr*.16,-tr*.27);x.lineTo(tr*.29,-tr*.12);x.lineTo(-tr*.25,-tr*.15);x.closePath();x.fill();x.beginPath();x.moveTo(-tr*.34,tr*.23);x.lineTo(tr*.16,tr*.27);x.lineTo(tr*.29,tr*.12);x.lineTo(-tr*.25,tr*.15);x.closePath();x.fill();x.globalAlpha=1;
     x.strokeStyle=freezeVisual.accent;x.lineWidth=tr*.055;x.beginPath();x.moveTo(-tr*.18,-tr*.21);x.lineTo(tr*.31,-tr*.11);x.stroke();x.beginPath();x.moveTo(-tr*.18,tr*.21);x.lineTo(tr*.31,tr*.11);x.stroke();

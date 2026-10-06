@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100681';
+const GAME_VERSION='2026100682';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -63,11 +63,11 @@ function turretForPlayer(){
   }
   return t;
 }
-const tierVisuals=[{tier:0,accent:'#ffffff',glow:'#ffffff',beam:'#ffffff'},{tier:1,accent:'#145dff',glow:'#5c8dff',beam:'#145dff'},{tier:2,accent:'#a13cff',glow:'#d58cff',beam:'#a13cff'},{tier:3,accent:'#ffd23f',glow:'#fff0a0',beam:'#ffd23f'}];
+const tierVisuals=[{tier:0,accent:'#ffffff',glow:'#ffffff',beam:'#ffffff'},{tier:1,accent:'#20c85a',glow:'#66ef8d',beam:'#20c85a'},{tier:2,accent:'#a13cff',glow:'#d58cff',beam:'#a13cff'},{tier:3,accent:'#ffd23f',glow:'#fff0a0',beam:'#ffd23f'}];
 const tierVisual=t=>tierVisuals[Math.max(0,Math.min(3,Number(t)||0))]||tierVisuals[0];
 const railgunTiers=[
   {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,turnMult:1},
-  {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.2,reloadMult:.75,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
+  {tier:1,name:'Railgun Tier 1',beam:'#20c85a',glow:'#66ef8d',damageMult:1.2,reloadMult:.75,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
   {tier:2,name:'Railgun Tier 2',beam:'#a13cff',glow:'#d58cff',damageMult:1.44,reloadMult:.50,pierceDamageMult:.83,hullMoveMult:.60,turnMult:2.8},
   {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100706';
+const GAME_VERSION='2026100707';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -24,6 +24,7 @@ const turrets=[
   {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
   {id:'rapid',name:'Twins',cost:0,turn:1.45,scale:1},
   {id:'fast',name:'Firebird',cost:0,turn:1.8,scale:1},
+  {id:'freeze',name:'Freeze',cost:0,turn:1.7,scale:1},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1}
 ];
 const engines=[
@@ -35,12 +36,14 @@ const barrels=[
   {id:'57mm',name:'57mm Barrel',cost:0,minDamage:20,maxDamage:25,reloadTime:2,scale:.82,length:.82,instant:true,critChance:.10},
   {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
   {id:'122mm',name:'Firebird',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
+  {id:'122mmFreeze',name:'Freeze',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,freeze:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
 ];
 function gunForTurret(turretId){
   if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];
   if(turretId==='fast')return barrels.find(v=>v.id==='122mm')||barrels[2];
-  if(turretId==='railgun')return barrels.find(v=>v.id==='122mmLong')||barrels[3];
+  if(turretId==='freeze')return barrels.find(v=>v.id==='122mmFreeze')||barrels[3];
+  if(turretId==='railgun')return barrels.find(v=>v.id==='122mmLong')||barrels[4];
   return barrels.find(v=>v.id==='57mm')||barrels[0];
 }
 function turretForPlayer(){
@@ -59,6 +62,10 @@ function turretForPlayer(){
   }
   if(t.id==='fast'){
     const tier=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
+    return {...t,turn:t.turn*(tier.turnMult||1)};
+  }
+  if(t.id==='freeze'){
+    const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
     return {...t,turn:t.turn*(tier.turnMult||1)};
   }
   return t;
@@ -89,6 +96,12 @@ const firebirdTiers=[
   {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:tierVisuals[2].beam,core:tierVisuals[2].glow,accent:tierVisuals[2].accent},
   {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:tierVisuals[3].beam,core:tierVisuals[3].glow,accent:tierVisuals[3].accent}
 ];
+const freezeTiers=[
+  {tier:0,name:'Standard Freeze',directBonus:0,range:230,turnMult:1,flame:'#59d9ff',core:'#e7fbff',accent:'#35aeea'},
+  {tier:1,name:'Freeze Tier 1',directBonus:5,range:280,turnMult:1.2,flame:tierVisuals[1].beam,core:tierVisuals[1].glow,accent:tierVisuals[1].accent},
+  {tier:2,name:'Freeze Tier 2',directBonus:10,range:330,turnMult:1.44,flame:tierVisuals[2].beam,core:tierVisuals[2].glow,accent:tierVisuals[2].accent},
+  {tier:3,name:'Freeze Tier 3',directBonus:15,range:380,turnMult:1.728,flame:tierVisuals[3].beam,core:tierVisuals[3].glow,accent:tierVisuals[3].accent}
+];
 // Storage is optional: blocked/private/corrupted storage must never stop boot.
 function safeStorageGet(key,fallback=''){
   try{const value=window.localStorage.getItem(key);return value===null?fallback:value}catch(e){return fallback}
@@ -112,6 +125,7 @@ let equippedEngine=safeStorageGet('tankEquippedEngine')||'standard';
 let railgunTier=Number(safeStorageGet('tankRailgunTier')||0);
 let railgunOwnedTier=Math.max(railgunTier,Number(safeStorageGet('tankRailgunOwnedTier')||0));
 let firebirdTier=Number(safeStorageGet('tankFirebirdTier')||0);
+let freezeTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankFreezeTier')||0)));
 let firebirdOwnedTier=Math.max(firebirdTier,Number(safeStorageGet('tankFirebirdOwnedTier')||0));
 let twinsTier=Number(safeStorageGet('tankTwinsTier')||0);
 let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier')||0));
@@ -242,7 +256,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -383,7 +397,7 @@ function pickEnemyTurret(){
   if(enemyStageOverride!==null){
     // Difficulty test rounds use the selected tier, while keeping all four weapons equally likely.
     const weaponRoll=Math.random();
-    const id=weaponRoll<.25?'standard':weaponRoll<.50?'rapid':weaponRoll<.75?'fast':'railgun';
+    const id=weaponRoll<.20?'standard':weaponRoll<.40?'rapid':weaponRoll<.60?'fast':weaponRoll<.80?'freeze':'railgun';
     return {id,tier:enemyStageOverride};
   }
   // Every 5 waves, one more enemy gets the next tier:
@@ -462,6 +476,7 @@ function makeEnemy(){
   const heavy=hullId==='heavy';
   const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
   const enemyFirebirdTier=turretId==='fast'?turretTier:0;
+  const enemyFreezeTier=turretId==='freeze'?turretTier:0;
 
   // Hull tier affects the enemy's actual stats as well as its appearance.
   const hp=Math.round(hull.hp*hullTierData.hpMult);
@@ -477,7 +492,7 @@ function makeEnemy(){
     turnRate,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,hullTier,turretId,turretTier,engineId,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,railCharging:false,railCharge:0,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,freezeStacks:0,freezeTick:1,freezeTier:enemyFreezeTier,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,railCharging:false,railCharge:0,
      twinsTier:turretId==='rapid'?turretTier:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3 ,
     idle:Math.random()<.3
@@ -566,6 +581,7 @@ function shoot(){
   const barrel=gunForTurret(p.turretId);
   if(barrel.id==='122mm'&&barrel.flame&&p.firebirdFuel<=0)return;
   if(barrel.id==='122mmFreeze'&&barrel.freeze&&p.freezeFuel<=0)return;
+  if(barrel.id==='122mmFreeze'&&barrel.freeze&&p.freezeFuel<=0)return;
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
@@ -627,6 +643,22 @@ function shoot(){
     soundFire(barrel.id);
     p.cd=barrel.reloadTime;
     return;
+  }
+
+  // Freeze is a continuous cryo stream: it deals light damage and adds freeze stacks.
+  if(barrel.id==='122mmFreeze'&&barrel.freeze){
+    const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
+    const range=tier.range||barrel.range||230;
+    spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
+    for(const e of [...en]){
+      if(!freezeParticleHit(e,p))continue;
+      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y),damageFalloff=1-Math.min(1,dist/range);
+      const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
+      applyBulletHit(e,minDamage+(maxDamage-minDamage)*damageFalloff,e.x,e.y,null,0);
+      applyFreeze(e);
+      if(e.hp<=0){const j=en.indexOf(e);if(j>=0)killEnemy(e,j);}
+    }
+    soundFire(barrel.id);p.cd=barrel.reloadTime;return;
   }
 
   // Firebird is a continuous flamethrower: visual flame stays active while held,
@@ -705,6 +737,21 @@ function spawnFreezeParticles(owner,muzzle,angle,tier,cone,range,count=18){
     const size=5+Math.random()*5;
     particles.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:0,vy:0,life:.12+Math.random()*.18,col:Math.random()<.55?tier.flame:Math.random()<.7?tier.accent:tier.core,size,freezeHit:true,freezeOwner:owner});
   }
+  for(const q of particles)ps.push(q);
+}
+function applyFreeze(target){
+  target.freezeStacks=Math.min(5,(target.freezeStacks||0)+1);
+  target.freezeTick=1;
+  burst(target.x,target.y,'#59d9ff',12);
+  target.hitFlash=.05;
+}
+function freezeParticleHit(target,owner){
+  for(const q of ps){if(!q.freezeHit||q.freezeOwner!==owner||q.life<=0)continue;const rr=q.size||3.5,dx=target.x-q.x,dy=target.y-q.y;if(dx*dx+dy*dy<=(target.r+rr)*(target.r+rr))return true;}
+  return false;
+}
+function spawnFreezeParticles(owner,muzzle,angle,tier,cone,range,count=18){
+  const particles=[];
+  for(let i=0;i<count;i++){const t=count<=1?1:(i+1)/count,d=18+t*(range-18),spread=(Math.random()-.5)*cone*1.7*(.35+.65*t),a=angle+spread;if(wallRayHit(muzzle.x,muzzle.y,a,d))continue;const size=5+Math.random()*5;particles.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:0,vy:0,life:.12+Math.random()*.18,col:Math.random()<.55?tier.flame:Math.random()<.7?tier.accent:tier.core,size,freezeHit:true,freezeOwner:owner});}
   for(const q of particles)ps.push(q);
 }
 function applyBurn(target,tierIndex=0){

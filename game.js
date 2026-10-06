@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100723';
+const GAME_VERSION='2026100724';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1137,30 +1137,38 @@ function renderShop(){
         q.lineTo(-r*.52,r*.36);
         q.quadraticCurveTo(-r*.63,0,-r*.52,-r*.36);
       }else if(visualTurret.id==='freeze'){
-        const freezePreviewTier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
+        // EXACT same Freeze turret body used by tankBody(); only the canvas variable changes.
+        const freezeVisual=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
         const ft=Math.max(0,Math.min(3,freezeTier));
-        // Shop Freeze preview mirrors the actual in-game Freeze turret geometry.
-        q.fillStyle='#171a18';q.beginPath();
-        q.moveTo(r*.30,-r*.12);q.lineTo(r*.84,-r*.14);q.lineTo(r*1.22,-r*.12);q.lineTo(r*1.30,0);
-        q.lineTo(r*1.22,r*.12);q.lineTo(r*.84,r*.14);q.lineTo(r*.30,r*.12);q.closePath();q.fill();
-        q.fillStyle='#0b0d0c';q.beginPath();q.arc(r*1.27,0,r*.11,0,6.283);q.fill();
-        q.fillStyle=freezePreviewTier.flame;q.globalAlpha=.9;q.fillRect(r*.76,-r*.13,r*.08,r*.26);q.globalAlpha=1;
-        q.strokeStyle=freezePreviewTier.accent;q.lineWidth=1.7;
-        q.beginPath();q.moveTo(r*.55,-r*.13);q.lineTo(r*1.02,-r*.18);q.stroke();
-        q.beginPath();q.moveTo(r*.55,r*.13);q.lineTo(r*1.02,r*.18);q.stroke();
-        if(ft>=1){
-          q.strokeStyle=freezePreviewTier.accent;q.lineWidth=1.4+ft*.5;
-          q.beginPath();q.moveTo(r*.45,-r*.19);q.lineTo(r*.96,-r*.25);q.stroke();
-          q.beginPath();q.moveTo(r*.45,r*.19);q.lineTo(r*.96,r*.25);q.stroke();
-        }
-        if(ft>=2){
-          q.fillStyle=freezePreviewTier.accent;q.globalAlpha=.9;
-          q.fillRect(r*.62,-r*.055,r*.24,r*.11);
+        q.fillStyle='#263f4a';
+        q.beginPath();
+        q.moveTo(-r*.50,-r*.25);q.lineTo(-r*.24,-r*.43);q.lineTo(r*.18,-r*.39);
+        q.lineTo(r*.48,-r*.18);q.lineTo(r*.52,0);q.lineTo(r*.48,r*.18);
+        q.lineTo(r*.18,r*.39);q.lineTo(-r*.24,r*.43);q.lineTo(-r*.50,r*.25);
+        q.lineTo(-r*.58,0);q.closePath();q.fill();
+        if(ft>0){
+          q.fillStyle=freezeVisual.accent;q.globalAlpha=.9;
+          q.beginPath();q.moveTo(-r*.42,-r*.34);q.lineTo(r*.10,-r*.46);q.lineTo(r*.30,-r*.32);q.lineTo(-r*.25,-r*.22);q.closePath();q.fill();
+          q.beginPath();q.moveTo(-r*.42,r*.34);q.lineTo(r*.10,r*.46);q.lineTo(r*.30,r*.32);q.lineTo(-r*.25,r*.22);q.closePath();q.fill();
           q.globalAlpha=1;
         }
+        q.fillStyle='#17313b';q.beginPath();q.roundRect(-r*.27,-r*.19,r*.45,r*.38,r*.06);q.fill();
+        q.fillStyle=freezeVisual.flame;q.globalAlpha=.95;
+        q.beginPath();q.moveTo(-r*.24,-r*.13);q.lineTo(r*.16,-r*.16);q.lineTo(r*.34,-r*.08);q.lineTo(r*.17,0);q.lineTo(r*.34,r*.08);q.lineTo(r*.16,r*.16);q.lineTo(-r*.24,r*.13);q.closePath();q.fill();
+        q.globalAlpha=1;
+        q.fillStyle=freezeVisual.core;q.globalAlpha=.95;q.fillRect(-r*.02,-r*.09,r*.25,r*.18);q.globalAlpha=1;
+        q.fillStyle=freezeVisual.accent;q.globalAlpha=.95;
+        q.beginPath();q.moveTo(r*.24,-r*.22);q.lineTo(r*.49,-r*.11);q.lineTo(r*.37,0);q.lineTo(r*.49,r*.11);q.lineTo(r*.24,r*.22);q.lineTo(r*.30,0);q.closePath();q.fill();
+        q.globalAlpha=1;
+        if(ft>=2){
+          q.strokeStyle=freezeVisual.accent;q.lineWidth=r*.055;
+          q.beginPath();q.moveTo(-r*.42,-r*.29);q.lineTo(-r*.14,-r*.34);q.lineTo(r*.08,-r*.27);q.stroke();
+          q.beginPath();q.moveTo(-r*.42,r*.29);q.lineTo(-r*.14,r*.34);q.lineTo(r*.08,r*.27);q.stroke();
+        }
         if(ft>=3){
-          q.strokeStyle=freezePreviewTier.core;q.lineWidth=1.2;
-          q.beginPath();q.moveTo(r*.70,0);q.lineTo(r*1.22,0);q.stroke();
+          q.strokeStyle=freezeVisual.core;q.lineWidth=r*.045;
+          q.beginPath();q.moveTo(-r*.50,-r*.15);q.lineTo(-r*.31,-r*.30);q.lineTo(-r*.06,-r*.33);q.stroke();
+          q.beginPath();q.moveTo(-r*.50,r*.15);q.lineTo(-r*.31,r*.30);q.lineTo(-r*.06,r*.33);q.stroke();
         }
       }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);

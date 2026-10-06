@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100710';
+const GAME_VERSION='2026100711';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -126,6 +126,7 @@ let railgunTier=Number(safeStorageGet('tankRailgunTier')||0);
 let railgunOwnedTier=Math.max(railgunTier,Number(safeStorageGet('tankRailgunOwnedTier')||0));
 let firebirdTier=Number(safeStorageGet('tankFirebirdTier')||0);
 let freezeTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankFreezeTier')||0)));
+let freezeOwnedTier=Math.max(freezeTier,Math.min(3,Number(safeStorageGet('tankFreezeOwnedTier')||0)));
 let firebirdOwnedTier=Math.max(firebirdTier,Number(safeStorageGet('tankFirebirdOwnedTier')||0));
 let twinsTier=Number(safeStorageGet('tankTwinsTier')||0);
 let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier')||0));
@@ -631,7 +632,7 @@ function shoot(){
     const range=tier.range||barrel.range||230;
     spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
     for(const e of [...en]){
-      if(!freezeParticleHit(e,p))continue;
+      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue;
       const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
       const damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
@@ -651,7 +652,7 @@ function shoot(){
     const range=tier.range||barrel.range||230;
     spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
     for(const e of [...en]){
-      if(!freezeParticleHit(e,p))continue;
+      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue;
       const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y),damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
       applyBulletHit(e,minDamage+(maxDamage-minDamage)*damageFalloff,e.x,e.y,null,0);
@@ -673,6 +674,16 @@ function shoot(){
       applyBulletHit(p,minDamage+(maxDamage-minDamage)*damageFalloff,p.x,p.y,null,0);
       applyFreeze(p);
       e.fire=barrel.reloadTime;
+      if(p.hp<=0){p.hp=0;die();return;}
+    }
+    return;
+  }
+  if(barrel.id==='122mmFreeze'&&barrel.freeze){
+    const tier=freezeTiers[Math.max(0,Math.min(3,e.freezeTier||0))]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42,muzzle=enemyMuzzlePosition(e,barrel,a);
+    spawnFreezeParticles(e,muzzle,a,tier,cone,range,18);
+    if(freezeParticleHit(p,e,muzzle,a,range,cone)&&e.fire<=0){
+      const dist=Math.hypot(p.x-muzzle.x,p.y-muzzle.y),falloff=1-Math.min(1,dist/range);
+      applyBulletHit(p,(10+tier.directBonus)+(11*falloff),p.x,p.y,null,0);applyFreeze(p);e.fire=barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}
     }
     return;
@@ -734,7 +745,8 @@ function applyFreeze(target){
   burst(target.x,target.y,'#59d9ff',12);
   target.hitFlash=.05;
 }
-function freezeParticleHit(target,owner){
+function freezeParticleHit(target,owner,muzzle=null,angle=0,range=230,cone=.42){
+  if(muzzle){const dx=target.x-muzzle.x,dy=target.y-muzzle.y,d=Math.hypot(dx,dy),da=Math.abs(((Math.atan2(dy,dx)-angle+Math.PI*3)%(Math.PI*2))-Math.PI);if(d<=range+target.r&&da<=cone*.5+Math.asin(Math.min(1,target.r/Math.max(d,1)))&&!wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-target.r)))return true;}
   for(const q of ps){
     if(!q.freezeHit||q.freezeOwner!==owner||q.life<=0)continue;
     const rr=q.size||3.5,dx=target.x-q.x,dy=target.y-q.y;
@@ -947,6 +959,8 @@ function saveShop(){
   safeStorageSet('tankFirebirdTier',String(firebirdTier)); safeStorageSet('tankTwinsTier',String(twinsTier)); safeStorageSet('tankTwinsOwnedTier',String(twinsOwnedTier));
   safeStorageSet('tankSmokyTier',String(smokyTier)); safeStorageSet('tankSmokyOwnedTier',String(smokyOwnedTier));
   safeStorageSet('tankFirebirdOwnedTier',String(firebirdOwnedTier));
+  safeStorageSet('tankFreezeTier',String(freezeTier));
+  safeStorageSet('tankFreezeOwnedTier',String(freezeOwnedTier));
   safeStorageSet('tankHullTiers',JSON.stringify(hullTierById));
   safeStorageSet('tankHullOwnedTiers',JSON.stringify(hullOwnedTierById));
 }
@@ -1310,7 +1324,7 @@ function renderShop(){
         p.turretId=item.id;
         p.railCharging=false;
         p.railCharge=0;
-        p.firebirdTier=firebirdTier; p.twinsTier=twinsTier; p.smokyTier=smokyTier;
+        p.firebirdTier=firebirdTier; p.freezeTier=freezeTier; p.twinsTier=twinsTier; p.smokyTier=smokyTier;
       }
     }else if(type==='engine'){
       if(!ownedEngines.includes(item.id))ownedEngines.push(item.id);
@@ -1409,6 +1423,16 @@ function renderShop(){
       });
       info.appendChild(tiers);
     }
+    if(type==='turret'&&item.id==='freeze'&&isSelected){
+      const tiers=document.createElement('div');tiers.className='railgunTierMini';
+      freezeTiers.forEach(t=>{
+        const owned=t.tier<=freezeOwnedTier,tier=document.createElement('div');tier.className='railgunTierMiniRow'+(t.tier===freezeTier?' current':'');
+        const label=document.createElement('span');label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
+        const b=document.createElement('button');b.className='tierInlineButton';b.textContent=t.tier===freezeTier?'CURRENT':owned?'SELECT':t.tier===freezeOwnedTier+1?'UPGRADE':'LOCKED';b.disabled=t.tier===freezeTier||(!owned&&t.tier!==freezeOwnedTier+1);
+        b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===freezeOwnedTier+1)freezeOwnedTier=t.tier;freezeTier=t.tier;if(p)p.freezeTier=freezeTier;saveShop();renderShop()};
+        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
+      });info.appendChild(tiers);
+    }
     if(type==='turret'&&item.id==='fast'&&isSelected){
       const tiers=document.createElement('div');tiers.className='railgunTierMini';
       firebirdTiers.forEach(t=>{
@@ -1451,7 +1475,10 @@ function renderShop(){
         }else if(item.id==='standard'){
           const t=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
           addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round(((gun.critChance||0)+(t.critBonus||0))*100)+'%');addStat('Tier','T'+t.tier);
-        }else if(item.id==='fast'){
+        }else if(item.id==='freeze'){
+          const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
+          addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);
+        }        }else if(item.id==='fast'){
           const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
         }else{

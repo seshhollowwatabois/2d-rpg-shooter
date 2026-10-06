@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100689';
+const GAME_VERSION='2026100690';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -242,7 +242,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,collisionCd:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -479,7 +479,7 @@ function makeEnemy(){
     heavy,hullId,hullTier,turretId,turretTier,engineId,
     angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,railCharging:false,railCharge:0,
      twinsTier:turretId==='rapid'?turretTier:0,
-    wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,collisionCd:0,
+    wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3 ,
     idle:Math.random()<.3
   });
   waveRemaining--;
@@ -1729,39 +1729,7 @@ function update(dt){
       }
     }
   }
-  // Player/enemy ramming deals collision damage.
-  // Enemy/enemy collisions stay damage-free so bots cannot destroy each other.
-  p.collisionCd=Math.max(0,(p.collisionCd||0)-dt);
-  for(const e of [...en]){
-    if(!en.includes(e))continue;
-    e.collisionCd=Math.max(0,(e.collisionCd||0)-dt);
-    const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;
-    if(d>=min)continue;
-    safeSeparateTanks(p,e);
-    const pv=p.currentDriveSpeed||0;
-    const pvx=Math.cos(p.angle)*pv,pvy=Math.sin(p.angle)*pv;
-    const evx=e.vx||0,evy=e.vy||0;
-    const relativeSpeed=Math.hypot(pvx-evx,pvy-evy);
-    if(relativeSpeed<25 || (p.collisionCd>0 && e.collisionCd>0))continue;
-    const ramMult={scout:.75,standard:1,heavy:1.65};
-    const playerRamMult=ramMult[p.hullId||'standard']||1;
-    const enemyRamMult=ramMult[e.hullId||'standard']||1;
-    const impact=Math.min(45,Math.max(4,5+relativeSpeed*.075));
-    if(p.collisionCd<=0){
-      const enemyDamage=impact*playerRamMult;
-      e.hp-=enemyDamage;e.hitFlash=.16;p.collisionCd=.45;
-      dmgTexts.push({x:e.x,y:e.y-e.r-8,text:Math.round(enemyDamage),life:.7,col:'#ff9d24',kind:'collision'});
-      impactExplosion(e.x,e.y,'#ff9d24',10);soundImpact(false);
-      if(e.hp<=0){e.hp=0;const idx=en.indexOf(e);if(idx>=0)killEnemy(e,idx);}
-    }
-    if(e.collisionCd<=0 && p.inv<=0 && en.includes(e)){
-      const playerDamage=impact*enemyRamMult;
-      p.hp-=playerDamage;p.inv=.28;e.collisionCd=.45;
-      dmgTexts.push({x:p.x,y:p.y-p.r-8,text:Math.round(playerDamage),life:.7,col:'#ff9d24',kind:'collision'});
-      impactExplosion(p.x,p.y,'#ff9d24',10);soundHit();
-      if(p.hp<=0){p.hp=0;die();return;}
-    }
-  }
+  // Tank collisions are purely physical. They never deal collision/ram damage.\n  for(const e of [...en]){\n    if(!en.includes(e))continue;\n    const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;\n    if(d<min)safeSeparateTanks(p,e);\n  }
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }

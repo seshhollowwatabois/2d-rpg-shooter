@@ -1656,6 +1656,17 @@ function update(dt){
       p.firebirdActive=false;
     }
   }
+  if(firebird.id==='122mmFreeze'&&firebird.freeze){
+    if(fireHeld&&p.freezeFuel>0){
+      const freezeAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,freezeAngle);
+      const freezeTierData=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
+      spawnFreezeParticles(p,muzzle,freezeAngle,freezeTierData,firebird.cone||.42,freezeTierData.range||firebird.range||230,18);
+      p.freezeActive=true;
+      if(p.cd<=0)p.cd=.5;
+    }else{
+      p.freezeActive=false;
+    }
+  }
   if(firebird.id==='122mm'&&firebird.flame&&fireHeld&&p.firebirdFuel>0)p.firebirdFuel=Math.max(0,p.firebirdFuel-dt);
   if(firebird.id==='122mmFreeze'&&firebird.freeze&&fireHeld&&p.freezeFuel>0)p.freezeFuel=Math.max(0,p.freezeFuel-dt);
   if(fireHeld)shoot();
@@ -2390,8 +2401,10 @@ function draw(){
       : barrel.reloadTime;
   // Railgun charge drains the reload bar toward zero before the shot,
   // then the normal reload cycle starts from empty after firing.
-  const reloadPct=barrel.id==='122mm'&&barrel.flame
-    ?Math.max(0,Math.min(1,p.firebirdFuel/(p.firebirdMaxFuel||8)))
+  const reloadPct=(barrel.id==='122mm'&&barrel.flame)
+    ?Math.max(0,Math.min(1,p.firebirdFuel/(p.firebirdMaxFuel||5)))
+    :(barrel.id==='122mmFreeze'&&barrel.freeze)
+      ?Math.max(0,Math.min(1,p.freezeFuel/(p.freezeMaxFuel||5)))
     :p.railCharging
       ?Math.max(0,Math.min(1,p.railCharge))
       :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
@@ -2406,7 +2419,7 @@ function draw(){
   $('levelText').textContent=p.lv;const topCoins=$('topCoinsText'),topKills=$('topKillsText');if(topCoins)topCoins.textContent=p.coins;if(topKills)topKills.textContent=p.kills;
   const reloadBar=$('reloadBar');
   if(reloadBar)reloadBar.style.width=(reloadPct*100)+'%';
-  if(barrel.id==='122mm'&&barrel.flame){
+  if((barrel.id==='122mm'&&barrel.flame)||(barrel.id==='122mmFreeze'&&barrel.freeze)){
     const reloadText=$('reloadText');
     if(reloadText)reloadText.textContent='FUEL';
     if(reloadText)reloadText.style.color='#ffd21a';

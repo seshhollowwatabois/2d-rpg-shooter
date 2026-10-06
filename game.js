@@ -573,7 +573,7 @@ function fireRailgun(){
   burst(muzzleX,muzzleY,'#ffffff',12);
   soundRailFire();
 }
-function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;return smokyTier}
+function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;if(turretId==='freeze')return freezeTier;return smokyTier}
 function shoot(){
   const coarse=window.matchMedia?.('(pointer:coarse)').matches;
   if(coarse&&!mobileFire)return;
@@ -1735,6 +1735,7 @@ function update(dt){
     }
 
     if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||1)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=1;}}
+    const freezeMoveMult=Math.max(0,1-(e.freezeStacks||0)*.2);
 
     const enemyBarrel=gunForTurret(e.turretId);
     const isEnemyFirebird=enemyBarrel.id==='122mm'&&enemyBarrel.flame;
@@ -1751,10 +1752,10 @@ function update(dt){
       e.wanderTime=0;
       const chaseAngle=enemyAvoidanceAngle(e,p.x,p.y);
       const chaseDelta=((chaseAngle-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-      const chaseTurnRate=2.6;
+      const chaseTurnRate=2.6*freezeMoveMult;
       e.angle+=Math.max(-chaseTurnRate*dt,Math.min(chaseTurnRate*dt,chaseDelta));
-      const moveVx=Math.cos(e.angle)*e.speed;
-      const moveVy=Math.sin(e.angle)*e.speed;
+      const moveVx=Math.cos(e.angle)*e.speed*freezeMoveMult;
+      const moveVy=Math.sin(e.angle)*e.speed*freezeMoveMult;
       const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);
       if(moved){e.vx=moveVx;e.vy=moveVy;}
       if(!moved){
@@ -1778,12 +1779,12 @@ function update(dt){
       if(!e.idle){
         const wa=enemyAvoidanceAngle(e,e.wanderX,e.wanderY);
         const wda=((wa-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
-        const turnRate=2.1;
+        const turnRate=2.1*freezeMoveMult;
         e.angle+=Math.max(-turnRate*dt,Math.min(turnRate*dt,wda));
         const wd=Math.hypot(e.wanderX-e.x,e.wanderY-e.y);
         if(wd>28){
-          const moveVx=Math.cos(e.angle)*e.speed;
-          const moveVy=Math.sin(e.angle)*e.speed;
+          const moveVx=Math.cos(e.angle)*e.speed*freezeMoveMult;
+          const moveVy=Math.sin(e.angle)*e.speed*freezeMoveMult;
           const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);
           if(moved){e.vx=moveVx;e.vy=moveVy;}
           if(!moved){
@@ -1807,6 +1808,7 @@ function update(dt){
     const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
     let turretTurnRate=enemyTurret.turn;
     if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,1.05][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
+    else if(e.turretId==='freeze') turretTurnRate*=([1,1.2,1.44,1.728][Math.max(0,Math.min(3,e.freezeTier||0))]||1);
     else if(e.turretId==='railgun') turretTurnRate*=([1,1.25,1.5625,2.1904761905][Math.max(0,Math.min(3,e.turretTier||0))]||1);
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
@@ -1817,7 +1819,6 @@ function update(dt){
         e.idle=false;e.wanderTime=0;
         const chaseAngle=enemyAvoidanceAngle(e,p.x,p.y),chaseDelta=((chaseAngle-e.angle+Math.PI*3)%(Math.PI*2))-Math.PI;
         e.angle+=Math.max(-2.6*dt,Math.min(2.6*dt,chaseDelta));
-        const freezeMoveMult=Math.max(0,1-(e.freezeStacks||0)*.2);
         const moveVx=Math.cos(e.angle)*e.speed*freezeMoveMult,moveVy=Math.sin(e.angle)*e.speed*freezeMoveMult;
         const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);if(moved){e.vx=moveVx;e.vy=moveVy;}
       }

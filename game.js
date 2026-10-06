@@ -2333,7 +2333,7 @@ function draw(){
     x.save();
     x.globalAlpha=Math.max(0,Math.min(1,playerDeathTimer/.55));
     x.globalCompositeOperation='multiply';
-    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0);
+    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0,d.freezeTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2358,7 +2358,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2386,7 +2386,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
@@ -2400,7 +2400,7 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0);
+  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

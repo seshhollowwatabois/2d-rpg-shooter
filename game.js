@@ -789,7 +789,7 @@ function die(){
   // Keep the render/update loop alive during the death sequence; only gameplay input is disabled.
   stopEngineSound();
   p.hp=0;p.dead=true;
-  playerDeathTank={x:p.x,y:p.y,r:p.r,angle:p.angle,turretAngle:p.turretAngle,turretId:p.turretId,hullId:p.hullId,firebirdTier:firebirdTier,twinsTier:twinsTier,smokyTier:smokyTier,railTier:railgunTier};
+  playerDeathTank={x:p.x,y:p.y,r:p.r,angle:p.angle,turretAngle:p.turretAngle,turretId:p.turretId,hullId:p.hullId,hullTier:hullTierById[p.hullId]||0,firebirdTier:firebirdTier,twinsTier:twinsTier,smokyTier:smokyTier,railTier:railgunTier};
   playerDeathTimer=3;
   playerDeathElapsed=0;
   // Use the same death burst style as destroyed enemies, centered on the player's tank.

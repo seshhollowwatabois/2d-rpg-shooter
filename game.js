@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100673';
+const GAME_VERSION='2026100674';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -11,6 +11,14 @@ const hulls=[
   {id:'scout',name:'Wasp',cost:50,hp:90,speed:155,reverse:95,turn:2.1,scale:1},
   {id:'standard',name:'Hornet',cost:0,hp:120,speed:120,reverse:75,turn:1.65,scale:1},
   {id:'heavy',name:'Titan',cost:80,hp:180,speed:90,reverse:60,turn:1.15,scale:1}
+];
+// Hull tiers work like turret tiers, but each hull has its own upgrade track.
+// T0 is the stock chassis; later tiers improve survivability and mobility.
+const hullTiers=[
+  {tier:0,name:'Standard Hull',hpMult:1,speedMult:1,reverseMult:1,turnMult:1},
+  {tier:1,name:'Hull Tier 1',hpMult:1.20,speedMult:1.10,reverseMult:1.10,turnMult:1.20},
+  {tier:2,name:'Hull Tier 2',hpMult:1.44,speedMult:1.20,reverseMult:1.20,turnMult:1.44},
+  {tier:3,name:'Hull Tier 3',hpMult:1.728,speedMult:1.30,reverseMult:1.30,turnMult:1.728}
 ];
 const turrets=[
   {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
@@ -107,6 +115,21 @@ let twinsTier=Number(safeStorageGet('tankTwinsTier')||0);
 let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier')||0));
 let smokyTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankSmokyTier')||0)));
 let smokyOwnedTier=Math.max(smokyTier,Math.min(3,Number(safeStorageGet('tankSmokyOwnedTier')||0)));
+let hullTierById={scout:0,standard:0,heavy:0};
+let hullOwnedTierById={scout:0,standard:0,heavy:0};
+try{
+  const savedHullTiers=JSON.parse(safeStorageGet('tankHullTiers','{}'));
+  const savedOwnedHullTiers=JSON.parse(safeStorageGet('tankHullOwnedTiers','{}'));
+  for(const h of hulls){
+    hullTierById[h.id]=Math.max(0,Math.min(3,Number(savedHullTiers?.[h.id]??0)));
+    hullOwnedTierById[h.id]=Math.max(hullTierById[h.id],Math.min(3,Number(savedOwnedHullTiers?.[h.id]??0)));
+  }
+}catch(e){}
+function getHullTier(id){return hullTiers[Math.max(0,Math.min(3,hullTierById[id]||0))]||hullTiers[0]}
+function effectiveHull(base){
+  const t=getHullTier(base.id);
+  return {...base,hp:Math.round(base.hp*t.hpMult),speed:base.speed*t.speedMult,reverse:base.reverse*t.reverseMult,turn:base.turn*t.turnMult,tier:t.tier,tierName:t.name};
+}
 
 // All turret variants are free equipment. Normalize older saves so newer turrets
 // (including Railgun) cannot disappear from the player's equipment list.
@@ -215,7 +238,7 @@ function startNewGame(){
   reset();p.coins=0;p.lv=1;p.xp=0;p.next=120;p.kills=0;saveShop();showGame();
 }
 function reset(){
-  const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
+  const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
@@ -776,7 +799,7 @@ function die(){
   $('death').hidden=true;
   $('cursorReload').hidden=true;
 }
-function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
+function hullForPlayer(){return effectiveHull(hulls.find(v=>v.id===p.hullId)||hulls[0])}
 function saveShop(){
   safeStorageSet('tankOwnedHulls',JSON.stringify(ownedHulls));
   safeStorageSet('tankOwnedTurrets',JSON.stringify(ownedTurrets));
@@ -789,6 +812,8 @@ function saveShop(){
   safeStorageSet('tankFirebirdTier',String(firebirdTier)); safeStorageSet('tankTwinsTier',String(twinsTier)); safeStorageSet('tankTwinsOwnedTier',String(twinsOwnedTier));
   safeStorageSet('tankSmokyTier',String(smokyTier)); safeStorageSet('tankSmokyOwnedTier',String(smokyOwnedTier));
   safeStorageSet('tankFirebirdOwnedTier',String(firebirdOwnedTier));
+  safeStorageSet('tankHullTiers',JSON.stringify(hullTierById));
+  safeStorageSet('tankHullOwnedTiers',JSON.stringify(hullOwnedTierById));
 }
 let shopCategory='hull',selectedShopItem=null;
 
@@ -1082,11 +1107,13 @@ function renderShop(){
       if(!ownedHulls.includes(item.id))ownedHulls.push(item.id);
       equippedHull=item.id;
       if(p){
-        const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
+        const activeHull=effectiveHull(item);
         p.hullId=item.id;
-        p.r=20*item.scale;
-        p.max=item.hp;
+        p.r=20*activeHull.scale;
+        p.max=activeHull.hp;
+        p.speed=activeHull.speed*((engines.find(v=>v.id===equippedEngine)||engines[0]).speed);
         p.hp=Math.min(p.hp,p.max);
+        p.hullTier=hullTierById[item.id]||0;
       }
      }else if(type==='turret'){
       if(!ownedTurrets.includes(item.id))ownedTurrets.push(item.id);
@@ -1194,8 +1221,9 @@ function renderShop(){
       const grid=document.createElement('div');grid.className='shopStatGrid';
       const addStat=(label,value,accent=false)=>{const d=document.createElement('div');d.className='shopStat'+(accent?' accent':'');d.innerHTML='<span>'+label+'</span><b>'+value+'</b>';grid.appendChild(d)};
       if(type==='hull'){
-        addStat('Hit Points',item.hp,true);addStat('Forward Speed',item.speed);addStat('Reverse Speed',item.reverse);addStat('Hull Turn',item.turn.toFixed(2));
-        addStat('Size',item.scale.toFixed(2)+'x');
+        const ht=effectiveHull(item);
+        addStat('Hit Points',ht.hp,true);addStat('Forward Speed',ht.speed.toFixed(1));addStat('Reverse Speed',ht.reverse.toFixed(1));addStat('Hull Turn',ht.turn.toFixed(2));
+        addStat('Size',ht.scale.toFixed(2)+'x');addStat('Tier','T'+ht.tier);
       }else if(type==='turret'){
         const gun=gunForTurret(item.id);
         if(item.id==='rapid'){
@@ -1368,7 +1396,7 @@ function update(dt){
   if(mobileDrive.right)turn=1;
 
   // Keep rotation and movement as separate upgradeable stats.
-  const hull=hulls.find(v=>v.id===p.hullId)||hulls[0], turret=turretForPlayer();
+  const hull=hullForPlayer(), turret=turretForPlayer();
   const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const hullTurnRate=hull.turn*engine.turn;
   const driveSpeed=hull.speed*engine.speed;

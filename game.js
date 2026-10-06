@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100718';
+const GAME_VERSION='2026100719';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -2441,7 +2441,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0,e.freezeStacks||0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];

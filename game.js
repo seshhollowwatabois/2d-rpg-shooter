@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100678';
+const GAME_VERSION='2026100679';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -63,6 +63,8 @@ function turretForPlayer(){
   }
   return t;
 }
+const tierVisuals=[{tier:0,accent:'#ffffff',glow:'#ffffff',beam:'#ffffff'},{tier:1,accent:'#145dff',glow:'#5c8dff',beam:'#145dff'},{tier:2,accent:'#a13cff',glow:'#d58cff',beam:'#a13cff'},{tier:3,accent:'#ffd23f',glow:'#fff0a0',beam:'#ffd23f'}];
+const tierVisual=t=>tierVisuals[Math.max(0,Math.min(3,Number(t)||0))]||tierVisuals[0];
 const railgunTiers=[
   {tier:0,name:'Standard Railgun',beam:'#79faff',glow:'#bffcff',damageMult:1,reloadMult:1,pierceDamageMult:.50,hullMoveMult:1,turnMult:1},
   {tier:1,name:'Railgun Tier 1',beam:'#145dff',glow:'#5c8dff',damageMult:1.2,reloadMult:.75,pierceDamageMult:.67,hullMoveMult:.80,turnMult:1.8},
@@ -70,22 +72,22 @@ const railgunTiers=[
   {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:4}
 ];
 const twinsTiers=[
-  {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,turnMult:1,col:'#3da9ff'},
-  {tier:1,name:'Twins Tier 1',damageMult:1.2,reloadTime:.25,speedMult:1.2,turnMult:1.2,col:'#a13cff'},
-  {tier:2,name:'Twins Tier 2',damageMult:1.44,reloadTime:.20,speedMult:1.44,turnMult:1.44,col:'#ffd23f'},
-  {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:'#39d353'}
+  {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,turnMult:1,col:tierVisuals[0].beam},
+  {tier:1,name:'Twins Tier 1',damageMult:1.2,reloadTime:.25,speedMult:1.2,turnMult:1.2,col:tierVisuals[1].beam},
+  {tier:2,name:'Twins Tier 2',damageMult:1.44,reloadTime:.20,speedMult:1.44,turnMult:1.44,col:tierVisuals[2].beam},
+  {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:tierVisuals[3].beam}
 ];
 const smokyTiers=[
-  {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},
-  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.50,critBonus:.05,accent:'#2dd4bf'},
-  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:1.00,critBonus:.10,accent:'#ff9f1c'},
-  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.50,critBonus:.15,accent:'#ff3b30'}
+  {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:tierVisuals[0].accent},
+  {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.50,critBonus:.05,accent:tierVisuals[1].accent},
+  {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:1.00,critBonus:.10,accent:tierVisuals[2].accent},
+  {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.50,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const firebirdTiers=[
-  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
-  {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:280,turnMult:1.2,flame:'#b83b16',core:'#ffd08a',accent:'#d86a22'},
-  {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
-  {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
+  {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:tierVisuals[0].beam,core:tierVisuals[0].glow,accent:tierVisuals[0].accent},
+  {tier:1,name:'Firebird Tier 1',directBonus:5,burnBonus:1,range:280,turnMult:1.2,flame:tierVisuals[1].beam,core:tierVisuals[1].glow,accent:tierVisuals[1].accent},
+  {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:tierVisuals[2].beam,core:tierVisuals[2].glow,accent:tierVisuals[2].accent},
+  {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:tierVisuals[3].beam,core:tierVisuals[3].glow,accent:tierVisuals[3].accent}
 ];
 // Storage is optional: blocked/private/corrupted storage must never stop boot.
 function safeStorageGet(key,fallback=''){
@@ -434,6 +436,7 @@ function makeEnemy(){
   const enemyTurret=pickEnemyTurret();
   const turretId=enemyTurret.id;
   const turretTier=enemyTurret.tier;
+  const hullTier=enemyStageOverride!==null?enemyStageOverride:turretTier;
   const engineId=pickEnemyEngine();
   const hull=hulls.find(v=>v.id===hullId)||hulls[0];
   const turret=turrets.find(v=>v.id===turretId)||turrets[0];
@@ -451,7 +454,7 @@ function makeEnemy(){
     speed:hull.speed*engine.speed,
     turnRate:hull.turn*engine.turn,
     hp,max:hp,dmg:heavy?35:20,
-    heavy,hullId,turretId,turretTier,engineId,
+    heavy,hullId,hullTier,turretId,turretTier,engineId,
     angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,railCharging:false,railCharge:0,
      twinsTier:turretId==='rapid'?turretTier:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3,
@@ -533,6 +536,7 @@ function fireRailgun(){
   burst(muzzleX,muzzleY,'#ffffff',12);
   soundRailFire();
 }
+function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;return smokyTier}
 function shoot(){
   const coarse=window.matchMedia?.('(pointer:coarse)').matches;
   if(coarse&&!mobileFire)return;
@@ -564,7 +568,7 @@ function shoot(){
       const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
       const smokyMin=barrel.minDamage+smokyTierData.damageBonus,smokyMax=barrel.maxDamage+smokyTierData.damageBonus;
       const dmg=smokyMin+Math.random()*(smokyMax-smokyMin);
-      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13});
+      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13,col:tierVisual(smokyTier).beam});
       burst(muzzle.x,muzzle.y,'#ff9d24',14);burst(muzzle.x,muzzle.y,'#fff3c4',8);
       applyBulletHit(best,dmg,hitX,hitY,{smoky:true},barrel.critChance+(smokyTierData.critBonus||0));
       if(best.hp<=0){
@@ -573,7 +577,7 @@ function shoot(){
       }
     }else{
       const missX=muzzle.x+ca*34,missY=muzzle.y+sa*34;
-      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:missX,y2:missY,life:.10,maxLife:.10});
+      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:missX,y2:missY,life:.10,maxLife:.10,col:tierVisual(smokyTier).beam});
       burst(muzzle.x,muzzle.y,'#ff9d24',14);burst(muzzle.x,muzzle.y,'#fff3c4',8);
       impactExplosion(missX,missY,'#ffd27a',18);
     }
@@ -737,8 +741,8 @@ function enemyShoot(e){
       const hit=along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along);
       const endDist=hit?along:Math.min(range,260);
       const hitX=muzzleX+ca*Math.max(0,endDist-(e.r+10)),hitY=muzzleY+sa*Math.max(0,endDist-(e.r+10));
-      smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:hit? p.x:hitX,y2:hit? p.y:hitY,life:.13,maxLife:.13});
-      burst(muzzleX,muzzleY,'#ff9d24',12);burst(muzzleX,muzzleY,'#fff3c4',7);
+      smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:hit? p.x:hitX,y2:hit? p.y:hitY,life:.13,maxLife:.13,col:enemySmokyTierData.accent});
+      burst(muzzleX,muzzleY,enemySmokyTierData.accent,12);burst(muzzleX,muzzleY,enemySmokyTierData.accent,7);
       if(hit)applyBulletHit(p,smokyDamage,p.x,p.y,{smoky:true},(barrel.critChance||0)+(enemySmokyTierData.critBonus||0));
     }else if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
       applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
@@ -758,7 +762,7 @@ function enemyShoot(e){
       const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
       const baseMuzzle=enemyMuzzlePosition(e,barrel,a);
       const mx=baseMuzzle.x-sa*offset,my=baseMuzzle.y+ca*offset;
-      const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor,twins:true});
+      const projectileColor=tierVisual(enemyTwinsTier).beam; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor,twins:true});
       burst(mx,my,projectileColor,14);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
@@ -769,7 +773,7 @@ function enemyShoot(e){
     }
   }
   e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.reloadTime;
-  burst(e.x+ca*e.r,e.y+sa*e.r,barrel.instant?'#ffd27a':'#ff875f',barrel.instant?9:4);if(e.turretId!=='rapid')soundFire(barrel.id);
+  burst(e.x+ca*e.r,e.y+sa*e.r,tierVisual(e.turretTier||0).beam,barrel.instant?9:4);if(e.turretId!=='rapid')soundFire(barrel.id);
 }
 function killEnemy(e,j){
   // Keep the tank's momentum for one second after death, then ease it smoothly to a stop.
@@ -1855,10 +1859,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // Hull upgrade visuals: each player hull tier adds increasingly obvious armor,
   // reinforcement and machinery without changing the base hull identity.
   const hullTier=Math.max(0,Math.min(3,Number(hullTierVisual)||0));
-  if(!enemy&&hullTier>0){
+  if(hullTier>0){
     const tierMetal=hullTier===1?'#9aa59c':hullTier===2?'#b7c0ba':'#d0d7d1';
     const tierDark=hullTier===1?'#3d463e':hullTier===2?'#303932':'#252c28';
-    const tierGlow=hullTier===1?'#4fd1c5':hullTier===2?'#a78bfa':'#ffd23f';
+    const tierGlow=tierVisual(hullTier).accent;
 
     // Tier 1: reinforced side armor and extra fasteners.
     x.fillStyle=tierDark;
@@ -1918,12 +1922,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const activeRailVisualTier=railgunTiers[Math.max(0,Math.min(3,enemy?railgunTierVisual:railgunTier))]||railgunTiers[0];
-  // T0 is deliberately unaccented. Every upgraded tier uses its own tier color;
-  // enemies must use their own turretTier rather than the player's selected tier.
-  const railAccent=visualTurret.id==='railgun'&&activeRailVisualTier.tier>0?activeRailVisualTier.beam:null;
-  const activeSmokyVisualTier=smokyTiers[Math.max(0,Math.min(3,enemy?smokyTierVisual:smokyTier))]||smokyTiers[0];
-  const smokyAccent=visualTurret.id==='standard'?activeSmokyVisualTier.accent:null;
+  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):(enemy?smokyTierVisual:smokyTier)));
+  const visualTier=tierVisual(visualTierIndex);
+  const railAccent=visualTurret.id==='railgun'&&visualTierIndex>0?visualTier.accent:null;
+  const smokyAccent=visualTurret.id==='standard'&&visualTierIndex>0?visualTier.accent:null;
+  const universalTurretAccent=visualTierIndex>0?visualTier.accent:null;
 
   // Turret silhouette varies with weapon class.
   x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';x.beginPath();
@@ -2021,13 +2024,13 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.globalAlpha=1;
   }
 
-  x.strokeStyle=railAccent||smokyAccent||(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
+  x.strokeStyle=universalTurretAccent||(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
   x.beginPath();x.moveTo(-tr*.28,-tr*.40);x.quadraticCurveTo(-tr*.08,-tr*.29,tr*.04,-tr*.28);x.stroke();
   x.beginPath();x.moveTo(-tr*.28,tr*.40);x.quadraticCurveTo(-tr*.08,tr*.29,tr*.04,tr*.28);x.stroke();
 
   // Hatch and mantlet.
   x.fillStyle='#292e2a';x.beginPath();x.ellipse(-tr*.18,0,tr*.17,tr*.12,0,0,6.283);x.fill();
-  x.strokeStyle=smokyAccent||'#89967c';x.stroke();
+  x.strokeStyle=universalTurretAccent||'#89967c';x.stroke();
   x.fillStyle=enemy?'#252729':'#292f2a';
   x.beginPath();x.roundRect(tr*.08,-tr*.18,tr*.34,tr*.36,5);x.fill();
 
@@ -2074,7 +2077,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     }
   }
 
-  x.fillStyle=railAccent||smokyAccent||(enemy?(heavy?'#746a5d':'#9b5458'):'#849176');
+  x.fillStyle=universalTurretAccent||(enemy?(heavy?'#746a5d':'#9b5458'):'#849176');
   x.beginPath();x.arc(-tr*.36,-tr*.23,tr*.04,0,6.283);x.fill();
   x.beginPath();x.arc(-tr*.36,tr*.23,tr*.04,0,6.283);x.fill();
 
@@ -2172,7 +2175,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2180,9 +2183,9 @@ function draw(){
   for(let i=smokyTracers.length-1;i>=0;i--){
     const t=smokyTracers[i],a=Math.max(0,t.life/t.maxLife);
     x.save();x.globalAlpha=a;x.lineCap='round';
-    x.strokeStyle='#ff9d24';x.lineWidth=7*a;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();
-    x.strokeStyle='#fff6d2';x.lineWidth=2.2*a;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();
-    x.fillStyle='#fff6d2';x.beginPath();x.arc(t.x1,t.y1,6*a,0,6.283);x.fill();
+    x.strokeStyle=t.col||'#ff9d24';x.lineWidth=7*a;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();
+    x.strokeStyle=t.col||'#fff6d2';x.lineWidth=2.2*a;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();
+    x.fillStyle=t.col||'#fff6d2';x.beginPath();x.arc(t.x1,t.y1,6*a,0,6.283);x.fill();
     x.restore();
     t.life-=1/60;if(t.life<=0)smokyTracers.splice(i,1);
   }

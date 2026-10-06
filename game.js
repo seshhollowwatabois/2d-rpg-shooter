@@ -79,9 +79,18 @@ const firebirdTiers=[
   {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
   {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
 ];
-let ownedHulls=JSON.parse(localStorage.getItem('tankOwnedHulls')||'["standard"]');
-let ownedTurrets=JSON.parse(localStorage.getItem('tankOwnedTurrets')||'["standard"]');
-let ownedEngines=JSON.parse(localStorage.getItem('tankOwnedEngines')||'["standard"]');
+function loadArray(key,fallback){
+  try{
+    const raw=localStorage.getItem(key);
+    const value=raw?JSON.parse(raw):fallback;
+    return Array.isArray(value)?value:fallback;
+  }catch(e){
+    return fallback;
+  }
+}
+let ownedHulls=loadArray('tankOwnedHulls',['standard']);
+let ownedTurrets=loadArray('tankOwnedTurrets',['standard']);
+let ownedEngines=loadArray('tankOwnedEngines',['standard']);
 let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
 let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
 let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';

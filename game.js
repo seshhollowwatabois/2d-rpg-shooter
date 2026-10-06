@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100679';
+const GAME_VERSION='2026100680';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -78,7 +78,7 @@ const twinsTiers=[
   {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:tierVisuals[3].beam}
 ];
 const smokyTiers=[
-  {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:tierVisuals[0].accent},
+  {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},
   {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.50,critBonus:.05,accent:tierVisuals[1].accent},
   {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:1.00,critBonus:.10,accent:tierVisuals[2].accent},
   {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.50,critBonus:.15,accent:tierVisuals[3].accent}
@@ -950,11 +950,14 @@ function renderShop(){
       // Show the currently selected hull tier in the shop preview too.
       const previewHullTier=Math.max(0,Math.min(3,hullTierById[item.id]||0));
       if(previewHullTier>0){
-        const tierMetal=previewHullTier===1?'#9aa59c':previewHullTier===2?'#b7c0ba':'#d0d7d1';
-        const tierDark=previewHullTier===1?'#3d463e':previewHullTier===2?'#303932':'#252c28';
-        const tierGlow=previewHullTier===1?'#4fd1c5':previewHullTier===2?'#a78bfa':'#ffd23f';
+        const tierMetal=previewHullTier===1?'#2f78ff':previewHullTier===2?'#a13cff':'#ffd23f';
+        const tierDark=previewHullTier===1?'#123b78':previewHullTier===2?'#4a176f':'#755300';
+        const tierGlow=tierVisual(previewHullTier).glow;
         q.fillStyle=tierDark;
         for(const sy of [-1,1]){q.beginPath();q.roundRect(-L*.30,sy*hullB*.34-rr*.055,L*.62,rr*.11,rr*.045);q.fill()}
+        q.strokeStyle=tierGlow;q.lineWidth=Math.max(1.5,rr*.055);
+        q.beginPath();q.roundRect(-L*.31,-hullB*.39,L*.64,rr*.15,rr*.05);q.stroke();
+        q.beginPath();q.roundRect(-L*.31,hullB*.24,L*.64,rr*.15,rr*.05);q.stroke();
         q.fillStyle=tierMetal;
         for(const sy of [-1,1]){q.beginPath();q.roundRect(-L*.04,sy*hullB*.34-rr*.035,L*.32,rr*.07,rr*.025);q.fill()}
         if(previewHullTier>=2){
@@ -969,7 +972,10 @@ function renderShop(){
           q.globalAlpha=.8;q.fillRect(-L*.47,-hullB*.24,rr*.07,hullB*.48);q.globalAlpha=1;
           q.strokeStyle=tierGlow;q.lineWidth=Math.max(1,rr*.045);q.beginPath();q.arc(-L*.30,0,rr*.11,0,6.283);q.stroke();
         }
-        q.fillStyle=tierGlow;q.globalAlpha=.9;q.fillRect(-rr*.035,-hullB*.18,rr*.07,hullB*.36);q.globalAlpha=1;
+        q.fillStyle=tierGlow;q.globalAlpha=.98;q.fillRect(-rr*.055,-hullB*.22,rr*.11,hullB*.44);q.globalAlpha=1;
+        q.strokeStyle=tierGlow;q.lineWidth=Math.max(1.2,rr*.045);
+        q.beginPath();q.moveTo(-L*.48,-hullB*.18);q.lineTo(-L*.30,-hullB*.30);q.lineTo(-L*.12,-hullB*.18);q.stroke();
+        q.beginPath();q.moveTo(-L*.48,hullB*.18);q.lineTo(-L*.30,hullB*.30);q.lineTo(-L*.12,hullB*.18);q.stroke();
       }
 
       // Match the actual hull's turret ring and placement.
@@ -988,7 +994,7 @@ function renderShop(){
       const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
       const smokyVisualTier=item.id==='standard'?smokyTiers[Math.max(0,Math.min(3,smokyTier))]:null;
-      const smokyPreviewAccent=smokyVisualTier?.accent||null;
+      const smokyPreviewAccent=smokyVisualTier&&smokyVisualTier.tier>0?smokyVisualTier.accent:null;
       const railAccent=railTier&&railTier.tier>0?(railTier.tier===1?railgunTiers[0].beam:railTier.beam):null;
 
       q.fillStyle='#343c34';
@@ -1860,9 +1866,9 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   // reinforcement and machinery without changing the base hull identity.
   const hullTier=Math.max(0,Math.min(3,Number(hullTierVisual)||0));
   if(hullTier>0){
-    const tierMetal=hullTier===1?'#9aa59c':hullTier===2?'#b7c0ba':'#d0d7d1';
-    const tierDark=hullTier===1?'#3d463e':hullTier===2?'#303932':'#252c28';
-    const tierGlow=tierVisual(hullTier).accent;
+    const tierMetal=hullTier===1?'#2f78ff':hullTier===2?'#a13cff':'#ffd23f';
+    const tierDark=hullTier===1?'#123b78':hullTier===2?'#4a176f':'#755300';
+    const tierGlow=tierVisual(hullTier).glow;
 
     // Tier 1: reinforced side armor and extra fasteners.
     x.fillStyle=tierDark;

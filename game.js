@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100665';
+const GAME_VERSION='2026100666';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1555,7 +1555,7 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
@@ -1709,8 +1709,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const activeRailVisualTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
-  const railAccent=visualTurret.id==='railgun'&&activeRailVisualTier.tier>0?(activeRailVisualTier.tier===1?railgunTiers[0].beam:activeRailVisualTier.beam):null;
+  const activeRailVisualTier=railgunTiers[Math.max(0,Math.min(3,enemy?railgunTierVisual:railgunTier))]||railgunTiers[0];
+  // T0 is deliberately unaccented. Every upgraded tier uses its own tier color;
+  // enemies must use their own turretTier rather than the player's selected tier.
+  const railAccent=visualTurret.id==='railgun'&&activeRailVisualTier.tier>0?activeRailVisualTier.beam:null;
   const activeSmokyVisualTier=smokyTiers[Math.max(0,Math.min(3,enemy?smokyTierVisual:smokyTier))]||smokyTiers[0];
   const smokyAccent=visualTurret.id==='standard'?activeSmokyVisualTier.accent:null;
 
@@ -1926,7 +1928,7 @@ function draw(){
     const a=Math.max(0,b.life/b.maxLife);
     x.save();x.globalAlpha=a;
     x.lineCap='round';const beamTier=Math.max(0,Math.min(3,b.tier===undefined?railgunTier:b.tier));const railTierVisual=railgunTiers[beamTier]||railgunTiers[0];
-    x.strokeStyle=(railTierVisual.tier===0?railgunTiers[1].beam:railTierVisual.beam);x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
+    x.strokeStyle=railTierVisual.tier===0?'#ffffff':railTierVisual.beam;x.lineWidth=4*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
@@ -1937,7 +1939,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -1965,7 +1967,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
@@ -1979,7 +1981,7 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier);
+  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

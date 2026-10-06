@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100703';
+const GAME_VERSION='2026100704';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1690,8 +1690,8 @@ function update(dt){
     // that a player can circle an enemy and get around its gun arc.
     const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
     let turretTurnRate=enemyTurret.turn;
-    if(e.turretId==='standard') turretTurnRate+=([0,.06,.12,.18][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
-    else if(e.turretId==='railgun') turretTurnRate*=(1.1**Math.max(0,Math.min(3,e.turretTier||0)));
+    if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,.60][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
+    else if(e.turretId==='railgun') turretTurnRate*=(1.25**Math.max(0,Math.min(3,e.turretTier||0)));
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.

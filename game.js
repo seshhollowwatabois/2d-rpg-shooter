@@ -1558,6 +1558,7 @@ function update(dt){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
   }
   // Burning tanks take 3 damage every 1 second per stack, up to 5 stacks.
+  if(p.freezeStacks>0){p.freezeTick=(p.freezeTick||1)-dt;if(p.freezeTick<=0){p.freezeStacks=Math.max(0,p.freezeStacks-1);p.freezeTick=1;}}
   if(p.burnStacks>0){
     p.burnTick=(p.burnTick||1)-dt;
     if(p.burnTick<=0){
@@ -1597,9 +1598,10 @@ function update(dt){
   // Keep rotation and movement as separate upgradeable stats.
   const hull=hullForPlayer(), turret=turretForPlayer();
   const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
-  const hullTurnRate=hull.turn*engine.turn;
-  const driveSpeed=hull.speed*engine.speed;
-  const reverseSpeed=hull.reverse*engine.speed;
+  const freezeMoveMult=Math.max(0,1-(p.freezeStacks||0)*.2);
+  const hullTurnRate=hull.turn*engine.turn*freezeMoveMult;
+  const driveSpeed=hull.speed*engine.speed*freezeMoveMult;
+  const reverseSpeed=hull.reverse*engine.speed*freezeMoveMult;
   const movingForward=drive>0;
   if(engine.id==='better' && movingForward){
     p.betterEngineForwardTime=(p.betterEngineForwardTime||0)+dt;
@@ -1654,9 +1656,8 @@ function update(dt){
       p.firebirdActive=false;
     }
   }
-  if(firebird.id==='122mm'&&firebird.flame&&fireHeld&&p.firebirdFuel>0){
-    p.firebirdFuel=Math.max(0,p.firebirdFuel-dt);
-  }
+  if(firebird.id==='122mm'&&firebird.flame&&fireHeld&&p.firebirdFuel>0)p.firebirdFuel=Math.max(0,p.firebirdFuel-dt);
+  if(firebird.id==='122mmFreeze'&&firebird.freeze&&fireHeld&&p.freezeFuel>0)p.freezeFuel=Math.max(0,p.freezeFuel-dt);
   if(fireHeld)shoot();
 
   for(let i=bs.length-1;i>=0;i--){

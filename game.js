@@ -713,7 +713,9 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   return {profile,ricochet:false,critical};
 }
 function enemyShoot(e){
-  const a=Math.atan2(p.y-e.y,p.x-e.x);e.turretAngle=a;
+  // Enemy weapons fire along the turret's actual current facing.
+  // Never snap the turret to the player when a shot is requested.
+  const a=e.turretAngle;
   const barrel=gunForTurret(e.turretId);
   const enemyTwinsTier=Math.max(0,Math.min(3,e.twinsTier||0));
   const enemySmokyTier=Math.max(0,Math.min(3,e.smokyTier||0));
@@ -1684,13 +1686,15 @@ function update(dt){
     // Bots keep their hull pointed along their movement path while the turret independently tracks the player.
     const targetTurret=Math.atan2(p.y-e.y,p.x-e.x);
     let tda=((targetTurret-e.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
-    const turretTurnRate=2.4;
+    // Deliberate turret traverse: fast enough to track normally, but slow enough
+    // that a player can circle an enemy and get around its gun arc.
+    const turretTurnRate=1.45;
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.
     // Their flame consumes a limited fuel pool and regenerates while they are not firing.
     if(isEnemyFirebird){
-      if(d<=firebirdEngageRange && e.firebirdFuel>0){
+      if(d<=firebirdEngageRange && e.firebirdFuel>0 && Math.abs(tda)<0.18){
         enemyShoot(e);
         e.firebirdFuel=Math.max(0,e.firebirdFuel-dt);
       }else{
@@ -1707,13 +1711,17 @@ function update(dt){
       }else if(e.fire<=0){
         const enemyAttackRange=1400;
         if(d<enemyAttackRange&&!wallRayHit(e.x,e.y,targetTurret,d)){
-          e.railCharging=true;
-          e.railCharge=1;
-          e.turretAngle=targetTurret;
+          // Railgun charging also requires the turret to be genuinely aimed.
+          // This prevents the old instant-lock behavior when charge begins.
+          if(Math.abs(tda)<0.12){
+            e.railCharging=true;
+            e.railCharge=1;
+          }
         }
       }
     }else if(e.fire<=0){
-      if(d<620&&!wallRayHit(e.x,e.y,targetTurret,d))enemyShoot(e);
+      // Do not fire until the turret is actually facing the player.
+      if(d<620&&Math.abs(tda)<0.12&&!wallRayHit(e.x,e.y,targetTurret,d))enemyShoot(e);
     }
     // Ram damage is handled once below for both tanks.
   }

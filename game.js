@@ -632,7 +632,7 @@ function shoot(){
     const range=tier.range||barrel.range||230;
     spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
     for(const e of [...en]){
-      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue;
+      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue
       const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
       const damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
@@ -652,7 +652,7 @@ function shoot(){
     const range=tier.range||barrel.range||230;
     spawnFreezeParticles(p,muzzle,fireAngle,tier,barrel.cone||.42,range,18);
     for(const e of [...en]){
-      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue;
+      if(!freezeParticleHit(e,p,muzzle,fireAngle,range,barrel.cone||.42))continue
       const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y),damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
       applyBulletHit(e,minDamage+(maxDamage-minDamage)*damageFalloff,e.x,e.y,null,0);
@@ -674,16 +674,6 @@ function shoot(){
       applyBulletHit(p,minDamage+(maxDamage-minDamage)*damageFalloff,p.x,p.y,null,0);
       applyFreeze(p);
       e.fire=barrel.reloadTime;
-      if(p.hp<=0){p.hp=0;die();return;}
-    }
-    return;
-  }
-  if(barrel.id==='122mmFreeze'&&barrel.freeze){
-    const tier=freezeTiers[Math.max(0,Math.min(3,e.freezeTier||0))]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42,muzzle=enemyMuzzlePosition(e,barrel,a);
-    spawnFreezeParticles(e,muzzle,a,tier,cone,range,18);
-    if(freezeParticleHit(p,e,muzzle,a,range,cone)&&e.fire<=0){
-      const dist=Math.hypot(p.x-muzzle.x,p.y-muzzle.y),falloff=1-Math.min(1,dist/range);
-      applyBulletHit(p,(10+tier.directBonus)+(11*falloff),p.x,p.y,null,0);applyFreeze(p);e.fire=barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}
     }
     return;
@@ -843,6 +833,16 @@ function enemyShoot(e){
   const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
   const enemyRailgunTierData=railgunTiers[enemyRailgunTier]||railgunTiers[0];
   const ca=Math.cos(a),sa=Math.sin(a);
+  if(barrel.id==='122mmFreeze'&&barrel.freeze){
+    const tier=freezeTiers[Math.max(0,Math.min(3,e.freezeTier||0))]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42,muzzle=enemyMuzzlePosition(e,barrel,a);
+    spawnFreezeParticles(e,muzzle,a,tier,cone,range,18);
+    if(freezeParticleHit(p,e,muzzle,a,range,cone)&&e.fire<=0){
+      const dist=Math.hypot(p.x-muzzle.x,p.y-muzzle.y),falloff=1-Math.min(1,dist/range);
+      applyBulletHit(p,(10+tier.directBonus)+(11*falloff),p.x,p.y,null,0);applyFreeze(p);e.fire=barrel.reloadTime;
+      if(p.hp<=0){p.hp=0;die();return;}
+    }
+    return;
+  }
   if(barrel.id==='122mm'&&barrel.flame){
     // The visible flame particles are also the only damage hitbox.
     const range=(firebirdTiers[Math.max(0,Math.min(3,e.firebirdTier||0))]||firebirdTiers[0]).range||barrel.range||230;
@@ -1478,7 +1478,7 @@ function renderShop(){
         }else if(item.id==='freeze'){
           const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);
-        }        }else if(item.id==='fast'){
+        }else if(item.id==='fast'){
           const t=firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]||firebirdTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(10+t.directBonus)+'-'+(21+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Burn / Stack',3+t.burnBonus);addStat('Max Burn Stacks','5');addStat('Tier','T'+t.tier);
         }else{

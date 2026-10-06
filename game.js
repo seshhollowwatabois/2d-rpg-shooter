@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100711';
+const GAME_VERSION='2026100712';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -760,15 +760,6 @@ function applyFreeze(target){
   target.freezeTick=1;
   burst(target.x,target.y,'#59d9ff',12);
   target.hitFlash=.05;
-}
-function freezeParticleHit(target,owner){
-  for(const q of ps){if(!q.freezeHit||q.freezeOwner!==owner||q.life<=0)continue;const rr=q.size||3.5,dx=target.x-q.x,dy=target.y-q.y;if(dx*dx+dy*dy<=(target.r+rr)*(target.r+rr))return true;}
-  return false;
-}
-function spawnFreezeParticles(owner,muzzle,angle,tier,cone,range,count=18){
-  const particles=[];
-  for(let i=0;i<count;i++){const t=count<=1?1:(i+1)/count,d=18+t*(range-18),spread=(Math.random()-.5)*cone*1.7*(.35+.65*t),a=angle+spread;if(wallRayHit(muzzle.x,muzzle.y,a,d))continue;const size=5+Math.random()*5;particles.push({x:muzzle.x+Math.cos(a)*d,y:muzzle.y+Math.sin(a)*d,vx:0,vy:0,life:.12+Math.random()*.18,col:Math.random()<.55?tier.flame:Math.random()<.7?tier.accent:tier.core,size,freezeHit:true,freezeOwner:owner});}
-  for(const q of particles)ps.push(q);
 }
 function applyBurn(target,tierIndex=0){
   // Each Firebird hit applies 1 burn stack, up to 5 stacks.

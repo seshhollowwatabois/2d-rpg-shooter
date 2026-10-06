@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100700';
+const GAME_VERSION='2026100701';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -22,8 +22,8 @@ const hullTiers=[
 ];
 const turrets=[
   {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
-  {id:'rapid',name:'Twins',cost:0,turn:2.4,scale:1},
-  {id:'fast',name:'Firebird',cost:0,turn:3.4,scale:1},
+  {id:'rapid',name:'Twins',cost:0,turn:1.7,scale:1},
+  {id:'fast',name:'Firebird',cost:0,turn:2.2,scale:1},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1}
 ];
 const engines=[
@@ -1688,7 +1688,8 @@ function update(dt){
     let tda=((targetTurret-e.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
     // Deliberate turret traverse: fast enough to track normally, but slow enough
     // that a player can circle an enemy and get around its gun arc.
-    const turretTurnRate=0.65;
+    const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
+    const turretTurnRate=enemyTurret.turn;
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.

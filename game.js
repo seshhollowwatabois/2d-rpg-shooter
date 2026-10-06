@@ -81,10 +81,10 @@ const firebirdTiers=[
 ];
 // Storage is optional: blocked/private/corrupted storage must never stop boot.
 function safeStorageGet(key,fallback=''){
-  try{const value=window.safeStorageGet(key);return value===null?fallback:value}catch(e){return fallback}
+  try{const value=window.localStorage.getItem(key);return value===null?fallback:value}catch(e){return fallback}
 }
 function safeStorageSet(key,value){
-  try{window.safeStorageSet(key,String(value));return true}catch(e){return false}
+  try{window.localStorage.setItem(key,String(value));return true}catch(e){return false}
 }
 function loadArray(key,fallback){
   try{

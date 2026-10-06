@@ -1598,7 +1598,7 @@ function update(dt){
   // Keep rotation and movement as separate upgradeable stats.
   const hull=hullForPlayer(), turret=turretForPlayer();
   const engine=engines.find(v=>v.id===equippedEngine)||engines[0];
-  const freezeMoveMult=Math.max(0,1-(p.freezeStacks||0)*.2);
+  const freezeMoveMult=Math.max(.5,1-(p.freezeStacks||0)*.1);
   const hullTurnRate=hull.turn*engine.turn*freezeMoveMult;
   const driveSpeed=hull.speed*engine.speed*freezeMoveMult;
   const reverseSpeed=hull.reverse*engine.speed*freezeMoveMult;
@@ -1746,7 +1746,7 @@ function update(dt){
     }
 
     if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||1)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=1;}}
-    const freezeMoveMult=Math.max(0,1-(e.freezeStacks||0)*.2);
+    const freezeMoveMult=Math.max(.5,1-(e.freezeStacks||0)*.1);
 
     const enemyBarrel=gunForTurret(e.turretId);
     const isEnemyFirebird=enemyBarrel.id==='122mm'&&enemyBarrel.flame;

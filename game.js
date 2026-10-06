@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100676';
+const GAME_VERSION='2026100677';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1682,7 +1682,7 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
@@ -1826,6 +1826,63 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.arc(px,py,r*.035,0,6.283);x.fill();
   }
   if(!enemy){x.fillStyle='#46d9df';x.fillRect(L*.39,-r*.045,r*.11,r*.09)}
+
+  // Hull upgrade visuals: each player hull tier adds increasingly obvious armor,
+  // reinforcement and machinery without changing the base hull identity.
+  const hullTier=Math.max(0,Math.min(3,Number(hullTierVisual)||0));
+  if(!enemy&&hullTier>0){
+    const tierMetal=hullTier===1?'#9aa59c':hullTier===2?'#b7c0ba':'#d0d7d1';
+    const tierDark=hullTier===1?'#3d463e':hullTier===2?'#303932':'#252c28';
+    const tierGlow=hullTier===1?'#4fd1c5':hullTier===2?'#a78bfa':'#ffd23f';
+
+    // Tier 1: reinforced side armor and extra fasteners.
+    x.fillStyle=tierDark;
+    for(const sy of [-1,1]){
+      x.beginPath();
+      x.roundRect(-L*.30,sy*hullB*.34-r*.055,L*.62,r*.11,r*.045);x.fill();
+    }
+    x.fillStyle=tierMetal;
+    for(const sy of [-1,1]){
+      x.beginPath();x.roundRect(-L*.04,sy*hullB*.34-r*.035,L*.32,r*.07,r*.025);x.fill();
+    }
+    if(hullTier>=2){
+      // Tier 2: larger bolt-on armor modules and a reinforced nose wedge.
+      x.fillStyle=tierMetal;
+      x.beginPath();
+      x.moveTo(L*.20,-hullB*.42);x.lineTo(L*.52,-hullB*.16);x.lineTo(L*.52,hullB*.16);x.lineTo(L*.20,hullB*.42);
+      x.lineTo(L*.12,hullB*.30);x.lineTo(L*.39,0);x.lineTo(L*.12,-hullB*.30);x.closePath();x.fill();
+      x.fillStyle=tierDark;
+      x.beginPath();x.roundRect(-L*.42,-hullB*.52,L*.30,hullB*.12,r*.04);x.fill();
+      x.beginPath();x.roundRect(-L*.42,hullB*.40,L*.30,hullB*.12,r*.04);x.fill();
+      x.fillStyle=tierGlow;
+      x.fillRect(-L*.38,-hullB*.49,L*.22,r*.035);
+      x.fillRect(-L*.38,hullB*.455,L*.22,r*.035);
+    }
+    if(hullTier>=3){
+      // Tier 3: heavy external armor skirts, front ram plate and glowing power vents.
+      x.fillStyle=tierDark;
+      for(const sy of [-1,1]){
+        x.beginPath();
+        x.roundRect(-L*.48,sy*(hullB*.47)-r*.075,L*.82,r*.15,r*.055);x.fill();
+      }
+      x.fillStyle=tierMetal;
+      x.beginPath();
+      x.moveTo(L*.40,-hullB*.30);x.lineTo(L*.61,-hullB*.13);x.lineTo(L*.61,hullB*.13);x.lineTo(L*.40,hullB*.30);
+      x.lineTo(L*.28,hullB*.18);x.lineTo(L*.48,0);x.lineTo(L*.28,-hullB*.18);x.closePath();x.fill();
+      x.fillStyle=tierGlow;
+      for(const sy of [-1,1]){
+        x.fillRect(-L*.26,sy*(hullB*.43)-r*.025,L*.42,r*.05);
+      }
+      x.globalAlpha=.8;
+      x.fillRect(-L*.47,-hullB*.24,r*.07,hullB*.48);
+      x.globalAlpha=1;
+      x.strokeStyle=tierGlow;x.lineWidth=Math.max(1,r*.045);
+      x.beginPath();x.arc(-L*.30,0,r*.11,0,6.283);x.stroke();
+    }
+    // Upgrade badge/tech strip sits behind the turret so it reads as part of the hull.
+    x.fillStyle=tierGlow;x.globalAlpha=.9;
+    x.fillRect(-r*.035,-hullB*.18,r*.07,hullB*.36);x.globalAlpha=1;
+  }
 
   // One turret ring only. Placement is part of the hull silhouette.
   x.fillStyle=enemy?(heavy?'#363432':'#513033'):'#343c34';
@@ -2065,7 +2122,7 @@ function draw(){
     x.save();
     x.globalAlpha=Math.max(0,Math.min(1,playerDeathTimer/.55));
     x.globalCompositeOperation='multiply';
-    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0);
+    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2090,7 +2147,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2118,7 +2175,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
@@ -2132,7 +2189,7 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier);
+  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

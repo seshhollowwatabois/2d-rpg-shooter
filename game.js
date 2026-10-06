@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100669';
+const GAME_VERSION='2026100668';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -585,33 +585,13 @@ function shoot(){
 
   const speed=({"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?twinsTierData.speedMult:1);
   if(p.turretId==='rapid'){
-    // Twins uses the same instant-hit shooting animation as Smoky, but much faster.
-    // One barrel fires per click and alternates left/right.
+    // Twins: one click fires ONE barrel. Alternate left/right on each shot.
     const side=.12*p.r;
     const offset=p.twinsNextBarrel===1?side:-side;
     const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
-    let best=null,bestDist=1400;
-    for(const e of en){
-      const dx=e.x-muzzleX,dy=e.y-muzzleY;
-      const along=dx*ca+dy*sa,sideDist=Math.abs(dx*sa-dy*ca);
-      if(along<=0||along>=bestDist||sideDist>e.r)continue;
-      if(wallRayHit(muzzleX,muzzleY,fireAngle,along))continue;
-      best=e;bestDist=along;
-    }
-    const shotEnd=best?bestDist:34;
-    const hitX=muzzleX+ca*shotEnd,hitY=muzzleY+sa*shotEnd;
-    smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:best?hitX:muzzleX+ca*34,y2:best?hitY:muzzleY+sa*34,life:.09,maxLife:.09});
-    burst(muzzleX,muzzleY,twinsTierData.col,8);
-    if(best){
-      const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
-      applyBulletHit(best,dmg,hitX,hitY,{twins:true,col:twinsTierData.col},0);
-      if(best.hp<=0){
-        const j=en.indexOf(best);
-        if(j>=0)killEnemy(best,j);
-      }
-    }else{
-      burst(muzzleX+ca*34,muzzleY+sa*34,twinsTierData.col,4);
-    }
+    const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
+    bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:twinsTierData.col,twins:true});
+    burst(muzzleX,muzzleY,twinsTierData.col,14);
     soundFire(barrel.id);
     p.twinsNextBarrel=p.twinsNextBarrel===1?-1:1;
   }else{
@@ -753,23 +733,14 @@ function enemyShoot(e){
   }else{
     const speed=({"57mm":1000,"85mm":900,"122mm":1600}[barrel.id]||1300)*(barrel.id==='85mm'?enemyTwinsTierData.speedMult:1);
     if(e.turretId==='rapid'){
-      // Enemy Twins uses the same instant-hit tracer animation as Smoky, but faster.
+      // Enemy Twins: one projectile per reload, alternating barrels.
       const side=.12*e.r;
       const offset=e.twinsNextBarrel===1?side:-side;
+      const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
       const baseMuzzle=enemyMuzzlePosition(e,barrel,a);
       const mx=baseMuzzle.x-sa*offset,my=baseMuzzle.y+ca*offset;
-      const hitDx=p.x-mx,hitDy=p.y-my;
-      const along=hitDx*ca+hitDy*sa,sideDist=Math.abs(hitDx*sa-hitDy*ca);
-      const hit=along>0&&along<1400&&sideDist<=p.r&&!wallRayHit(mx,my,a,along);
-      const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col;
-      smokyTracers.push({x1:mx,y1:my,x2:hit?p.x:mx+ca*34,y2:hit?p.y:my+sa*34,life:.09,maxLife:.09,col:projectileColor});
-      burst(mx,my,projectileColor,8);
-      if(hit){
-        const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
-        applyBulletHit(p,damage,p.x,p.y,{twins:true,col:projectileColor},0);
-      }else{
-        burst(mx+ca*34,my+sa*34,projectileColor,4);
-      }
+      const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor,twins:true});
+      burst(mx,my,projectileColor,14);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
     }else{

@@ -1156,6 +1156,28 @@ function renderShop(){
         q.lineTo(-r*.12,r*.49);
         q.lineTo(-r*.52,r*.36);
         q.quadraticCurveTo(-r*.63,0,-r*.52,-r*.36);
+      }else if(visualTurret.id==='freeze'){
+        const freezePreviewTier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
+        const ft=Math.max(0,Math.min(3,freezeTier));
+        q.fillStyle='#263f4a';q.beginPath();
+        q.moveTo(-r*.50,-r*.25);q.lineTo(-r*.24,-r*.43);q.lineTo(r*.18,-r*.39);
+        q.lineTo(r*.48,-r*.18);q.lineTo(r*.52,0);q.lineTo(r*.48,r*.18);
+        q.lineTo(r*.18,r*.39);q.lineTo(-r*.24,r*.43);q.lineTo(-r*.50,r*.25);q.lineTo(-r*.58,0);q.closePath();q.fill();
+        if(ft>0){
+          q.fillStyle=freezePreviewTier.accent;q.globalAlpha=.9;
+          q.beginPath();q.moveTo(-r*.42,-r*.34);q.lineTo(r*.10,-r*.46);q.lineTo(r*.30,-r*.32);q.lineTo(-r*.25,-r*.22);q.closePath();q.fill();
+          q.beginPath();q.moveTo(-r*.42,r*.34);q.lineTo(r*.10,r*.46);q.lineTo(r*.30,r*.32);q.lineTo(-r*.25,r*.22);q.closePath();q.fill();
+          q.globalAlpha=1;
+        }
+        q.fillStyle='#17313b';q.beginPath();q.roundRect(-r*.27,-r*.19,r*.45,r*.38,r*.06);q.fill();
+        q.fillStyle=freezePreviewTier.flame;q.globalAlpha=.95;
+        q.beginPath();q.moveTo(-r*.24,-r*.13);q.lineTo(r*.16,-r*.16);q.lineTo(r*.34,-r*.08);q.lineTo(r*.17,0);q.lineTo(r*.34,r*.08);q.lineTo(r*.16,r*.16);q.lineTo(-r*.24,r*.13);q.closePath();q.fill();
+        q.globalAlpha=1;q.fillStyle=freezePreviewTier.core;q.globalAlpha=.95;q.fillRect(-r*.02,-r*.09,r*.25,r*.18);q.globalAlpha=1;
+        q.fillStyle=freezePreviewTier.accent;q.globalAlpha=.95;
+        q.beginPath();q.moveTo(r*.24,-r*.22);q.lineTo(r*.49,-r*.11);q.lineTo(r*.37,0);q.lineTo(r*.49,r*.11);q.lineTo(r*.24,r*.22);q.lineTo(r*.30,0);q.closePath();q.fill();
+        q.globalAlpha=1;
+        if(ft>=2){q.strokeStyle=freezePreviewTier.accent;q.lineWidth=r*.055;q.beginPath();q.moveTo(-r*.42,-r*.29);q.lineTo(-r*.14,-r*.34);q.lineTo(r*.08,-r*.27);q.stroke();q.beginPath();q.moveTo(-r*.42,r*.29);q.lineTo(-r*.14,r*.34);q.lineTo(r*.08,r*.27);q.stroke()}
+        if(ft>=3){q.strokeStyle=freezePreviewTier.core;q.lineWidth=r*.045;q.beginPath();q.moveTo(-r*.50,-r*.15);q.lineTo(-r*.31,-r*.30);q.lineTo(-r*.06,-r*.33);q.stroke();q.beginPath();q.moveTo(-r*.50,r*.15);q.lineTo(-r*.31,r*.30);q.lineTo(-r*.06,r*.33);q.stroke()}
       }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
         q.quadraticCurveTo(r*.52,-r*.24,r*.52,0);q.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
@@ -2154,10 +2176,46 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.moveTo(-tr*.20,-tr*.21);x.lineTo(tr*.29,-tr*.12);x.stroke();
     x.beginPath();x.moveTo(-tr*.20,tr*.21);x.lineTo(tr*.29,tr*.12);x.stroke();
   }else if(visualTurret.id==='freeze'){
+    // Freeze is deliberately a cryogenic projector, not a Firebird clone:
+    // angular ice-shell body, split side fins and a faceted front shroud.
     const freezeVisual=freezeTiers[Math.max(0,Math.min(3,freezeTierVisual||0))]||freezeTiers[0];
-    x.fillStyle=enemy?'#273d46':'#263f4a';x.beginPath();x.moveTo(-tr*.36,-tr*.27);x.lineTo(tr*.20,-tr*.31);x.lineTo(tr*.37,-tr*.13);x.lineTo(tr*.20,tr*.31);x.lineTo(-tr*.36,tr*.27);x.closePath();x.fill();
-    x.fillStyle=freezeVisual.flame;x.globalAlpha=.92;x.beginPath();x.moveTo(-tr*.34,-tr*.23);x.lineTo(tr*.16,-tr*.27);x.lineTo(tr*.29,-tr*.12);x.lineTo(-tr*.25,-tr*.15);x.closePath();x.fill();x.beginPath();x.moveTo(-tr*.34,tr*.23);x.lineTo(tr*.16,tr*.27);x.lineTo(tr*.29,tr*.12);x.lineTo(-tr*.25,tr*.15);x.closePath();x.fill();x.globalAlpha=1;
-    x.strokeStyle=freezeVisual.accent;x.lineWidth=tr*.055;x.beginPath();x.moveTo(-tr*.18,-tr*.21);x.lineTo(tr*.31,-tr*.11);x.stroke();x.beginPath();x.moveTo(-tr*.18,tr*.21);x.lineTo(tr*.31,tr*.11);x.stroke();
+    const ft=Math.max(0,Math.min(3,freezeTierVisual||0));
+    x.fillStyle=enemy?'#273b43':'#263f4a';
+    x.beginPath();
+    x.moveTo(-tr*.50,-tr*.25);x.lineTo(-tr*.24,-tr*.43);x.lineTo(tr*.18,-tr*.39);
+    x.lineTo(tr*.48,-tr*.18);x.lineTo(tr*.52,0);x.lineTo(tr*.48,tr*.18);
+    x.lineTo(tr*.18,tr*.39);x.lineTo(-tr*.24,tr*.43);x.lineTo(-tr*.50,tr*.25);
+    x.lineTo(-tr*.58,0);x.closePath();x.fill();
+
+    // Tier-colored cryo armor rails — same upgrade language as the other turrets.
+    if(ft>0){
+      x.fillStyle=freezeVisual.accent;x.globalAlpha=.9;
+      x.beginPath();x.moveTo(-tr*.42,-tr*.34);x.lineTo(tr*.10,-tr*.46);x.lineTo(tr*.30,-tr*.32);x.lineTo(-tr*.25,-tr*.22);x.closePath();x.fill();
+      x.beginPath();x.moveTo(-tr*.42,tr*.34);x.lineTo(tr*.10,tr*.46);x.lineTo(tr*.30,tr*.32);x.lineTo(-tr*.25,tr*.22);x.closePath();x.fill();
+      x.globalAlpha=1;
+    }
+
+    // Recessed cryo core and ice-shaped front collar.
+    x.fillStyle='#17313b';x.beginPath();x.roundRect(-tr*.27,-tr*.19,tr*.45,tr*.38,tr*.06);x.fill();
+    x.fillStyle=freezeVisual.flame;x.globalAlpha=.95;
+    x.beginPath();x.moveTo(-tr*.24,-tr*.13);x.lineTo(tr*.16,-tr*.16);x.lineTo(tr*.34,-tr*.08);x.lineTo(tr*.17,0);x.lineTo(tr*.34,tr*.08);x.lineTo(tr*.16,tr*.16);x.lineTo(-tr*.24,tr*.13);x.closePath();x.fill();
+    x.globalAlpha=1;
+    x.fillStyle=freezeVisual.core;x.globalAlpha=.95;x.fillRect(-tr*.02,-tr*.09,tr*.25,tr*.18);x.globalAlpha=1;
+
+    x.fillStyle=freezeVisual.accent;x.globalAlpha=.95;
+    x.beginPath();x.moveTo(tr*.24,-tr*.22);x.lineTo(tr*.49,-tr*.11);x.lineTo(tr*.37,0);x.lineTo(tr*.49,tr*.11);x.lineTo(tr*.24,tr*.22);x.lineTo(tr*.30,0);x.closePath();x.fill();
+    x.globalAlpha=1;
+
+    if(ft>=2){
+      x.strokeStyle=freezeVisual.accent;x.lineWidth=tr*.055;
+      x.beginPath();x.moveTo(-tr*.42,-tr*.29);x.lineTo(-tr*.14,-tr*.34);x.lineTo(tr*.08,-tr*.27);x.stroke();
+      x.beginPath();x.moveTo(-tr*.42,tr*.29);x.lineTo(-tr*.14,tr*.34);x.lineTo(tr*.08,tr*.27);x.stroke();
+    }
+    if(ft>=3){
+      x.strokeStyle=freezeVisual.core;x.lineWidth=tr*.045;
+      x.beginPath();x.moveTo(-tr*.50,-tr*.15);x.lineTo(-tr*.31,-tr*.30);x.lineTo(-tr*.06,-tr*.33);x.stroke();
+      x.beginPath();x.moveTo(-tr*.50,tr*.15);x.lineTo(-tr*.31,tr*.30);x.lineTo(-tr*.06,tr*.33);x.stroke();
+    }
   }else if(visualTurret.id==='fast'){
     // Firebird armor accents use the exact same palette as the active flame tier.
     // This keeps the turret visually tied to its flame instead of using one fixed accent color.

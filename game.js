@@ -686,7 +686,8 @@ function enemyShoot(e){
         :baseDamage+(barrel.id==='57mm'?(enemySmokyTierData.damageBonus||0):0);
     const smokyDamage=baseDamage+(barrel.id==='57mm'?(enemySmokyTierData.damageBonus||0):0);
     const range=1400,dx=p.x-e.x,dy=p.y-e.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
-    const enemyMuzzle=enemyMuzzlePosition(e,barrel,a);\n    const muzzleX=enemyMuzzle.x,muzzleY=enemyMuzzle.y;
+    const enemyMuzzle=enemyMuzzlePosition(e,barrel,a);
+    const muzzleX=enemyMuzzle.x,muzzleY=enemyMuzzle.y;
     if(barrel.id==='122mmLong'){
       const hit=along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along);
       const beamEnd=hit?along:Math.min(range,Math.max(90,along));
@@ -717,14 +718,16 @@ function enemyShoot(e){
       const side=.12*e.r;
       const offset=e.twinsNextBarrel===1?side:-side;
       const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*enemyTwinsTierData.damageMult;
-      const baseMuzzle=enemyMuzzlePosition(e,barrel,a);\n      const mx=baseMuzzle.x-sa*offset,my=baseMuzzle.y+ca*offset;
+      const baseMuzzle=enemyMuzzlePosition(e,barrel,a);
+      const mx=baseMuzzle.x-sa*offset,my=baseMuzzle.y+ca*offset;
       const projectileColor=enemyTwinsTier===0?'#3da9ff':enemyTwinsTierData.col; ebs.push({x:mx,y:my,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[],col:projectileColor});
       burst(mx,my,enemyTwinsTierData.col,3);
       soundFire(barrel.id);
       e.twinsNextBarrel=e.twinsNextBarrel===1?-1:1;
     }else{
       const damage=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))+enemySmokyTierData.damageBonus;
-      const enemyMuzzle=enemyMuzzlePosition(e,barrel,a);\n      ebs.push({x:enemyMuzzle.x,y:enemyMuzzle.y,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
+      const enemyMuzzle=enemyMuzzlePosition(e,barrel,a);
+      ebs.push({x:enemyMuzzle.x,y:enemyMuzzle.y,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
     }
   }
   e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.reloadTime;
@@ -1891,7 +1894,8 @@ function draw(){
   for(const e of en){
     if(e.turretId!=='railgun'||!e.railCharging)continue;
     const a=e.turretAngle;
-    const muzzle=enemyMuzzlePosition(e,gunForTurret(e.turretId),a);\n    const muzzleX=muzzle.x,muzzleY=muzzle.y;
+    const muzzle=enemyMuzzlePosition(e,gunForTurret(e.turretId),a);
+    const muzzleX=muzzle.x,muzzleY=muzzle.y;
     const progress=1-e.railCharge;
     const tier=railgunTiers[Math.max(0,Math.min(3,e.turretTier||0))]||railgunTiers[0];
     x.save();x.translate(muzzleX,muzzleY);x.rotate(a);x.globalAlpha=.35+.65*progress;

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100717';
+const GAME_VERSION='2026100718';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1903,7 +1903,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
-  const freezeAmount=enemy?Math.min(1,Math.max(0,freezeStacksVisual||0)/5):0;
+  const freezeStacks=Math.max(0,Math.min(5,freezeStacksVisual||0));
+  const freezeAmount=enemy?Math.min(1,Math.pow(freezeStacks/5,0.72)):0;
   const frostColor=v=>{if(!freezeAmount)return v;if(!/^#[0-9a-f]{6}$/i.test(v))return v;const n=parseInt(v.slice(1),16),r0=n>>16,g0=(n>>8)&255,b0=n&255;const rr=Math.round(r0*(1-freezeAmount)+45*freezeAmount),gg=Math.round(g0*(1-freezeAmount)+155*freezeAmount),bb=Math.round(b0*(1-freezeAmount)+235*freezeAmount);return '#'+[rr,gg,bb].map(q=>q.toString(16).padStart(2,'0')).join('')};
   const L=r*2.55*(isTitan?1.10:isWasp?.94:1);
   const B=r*1.18*(isTitan?1.08:isWasp?.90:1);

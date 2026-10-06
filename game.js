@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100674';
+const GAME_VERSION='2026100675';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1142,6 +1142,37 @@ function renderShop(){
     const text=document.createElement('div');text.className='shopItemName';
     text.innerHTML='<b>'+item.name+'</b>';
     info.appendChild(text);
+    if(type==='hull'&&isSelected){
+      const tiers=document.createElement('div');tiers.className='railgunTierMini';
+      hullTiers.forEach(t=>{
+        const owned=t.tier<=(hullOwnedTierById[item.id]||0);
+        const current=t.tier===(hullTierById[item.id]||0);
+        const tier=document.createElement('div');
+        tier.className='railgunTierMiniRow'+(current?' current':'');
+        const label=document.createElement('span');
+        label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+' • HP ×'+t.hpMult.toFixed(2)+' • Speed ×'+t.speedMult.toFixed(2)+'</small>';
+        const b=document.createElement('button');
+        b.className='tierInlineButton';
+        b.textContent=current?'CURRENT':owned?'SELECT':t.tier===(hullOwnedTierById[item.id]||0)+1?'UPGRADE':'LOCKED';
+        b.disabled=current||(!owned&&t.tier!==(hullOwnedTierById[item.id]||0)+1);
+        b.onclick=e=>{
+          e.stopPropagation();initAudio();soundUi();
+          if(!owned&&t.tier===(hullOwnedTierById[item.id]||0)+1)hullOwnedTierById[item.id]=t.tier;
+          hullTierById[item.id]=t.tier;
+          if(p&&p.hullId===item.id){
+            const activeHull=effectiveHull(item);
+            p.hullTier=t.tier;
+            p.max=activeHull.hp;
+            p.hp=Math.min(p.hp,p.max);
+            p.r=20*activeHull.scale;
+            p.speed=activeHull.speed*((engines.find(v=>v.id===equippedEngine)||engines[0]).speed);
+          }
+          saveShop();renderShop();
+        };
+        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
+      });
+      info.appendChild(tiers);
+    }
     if(type==='turret'&&item.id==='standard'&&isSelected){
       const tiers=document.createElement('div');tiers.className='railgunTierMini';
       smokyTiers.forEach(t=>{

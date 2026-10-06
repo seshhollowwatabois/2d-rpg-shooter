@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100701';
+const GAME_VERSION='2026100702';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -22,8 +22,8 @@ const hullTiers=[
 ];
 const turrets=[
   {id:'standard',name:'Smoky',cost:0,turn:1.25,hp:0,scale:1},
-  {id:'rapid',name:'Twins',cost:0,turn:1.7,scale:1},
-  {id:'fast',name:'Firebird',cost:0,turn:2.2,scale:1},
+  {id:'rapid',name:'Twins',cost:0,turn:1.45,scale:1},
+  {id:'fast',name:'Firebird',cost:0,turn:1.8,scale:1},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1}
 ];
 const engines=[

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100720';
+const GAME_VERSION='2026100721';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1137,27 +1137,62 @@ function renderShop(){
         q.lineTo(-r*.52,r*.36);
         q.quadraticCurveTo(-r*.63,0,-r*.52,-r*.36);
       }else if(visualTurret.id==='freeze'){
+        // Classic Tanki-style Freeze shop silhouette: compact armored turret,
+        // large cryo housing and a wide, short freezing nozzle.
         const freezePreviewTier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
         const ft=Math.max(0,Math.min(3,freezeTier));
-        q.fillStyle='#263f4a';q.beginPath();
-        q.moveTo(-r*.50,-r*.25);q.lineTo(-r*.24,-r*.43);q.lineTo(r*.18,-r*.39);
-        q.lineTo(r*.48,-r*.18);q.lineTo(r*.52,0);q.lineTo(r*.48,r*.18);
-        q.lineTo(r*.18,r*.39);q.lineTo(-r*.24,r*.43);q.lineTo(-r*.50,r*.25);q.lineTo(-r*.58,0);q.closePath();q.fill();
+        const ice=freezePreviewTier.flame||'#59d9ff';
+        const iceCore=freezePreviewTier.core||'#e7fbff';
+        const iceAccent=freezePreviewTier.accent||'#35aeea';
+        q.fillStyle='#3b4644';
+        q.beginPath();
+        q.moveTo(-r*.49,-r*.29);q.quadraticCurveTo(-r*.36,-r*.48,-r*.08,-r*.49);
+        q.lineTo(r*.25,-r*.42);q.quadraticCurveTo(r*.47,-r*.30,r*.49,-r*.08);
+        q.lineTo(r*.49,r*.08);q.quadraticCurveTo(r*.47,r*.30,r*.25,r*.42);
+        q.lineTo(-r*.08,r*.49);q.quadraticCurveTo(-r*.36,r*.48,-r*.49,r*.29);
+        q.quadraticCurveTo(-r*.59,0,-r*.49,-r*.29);q.closePath();q.fill();
+        q.fillStyle='#252d2c';
+        q.beginPath();q.moveTo(-r*.47,0);q.lineTo(-r*.30,-r*.28);q.lineTo(r*.08,-r*.34);
+        q.lineTo(r*.35,-r*.20);q.lineTo(r*.42,0);q.lineTo(r*.35,r*.20);
+        q.lineTo(r*.08,r*.34);q.lineTo(-r*.30,r*.28);q.closePath();q.fill();
+        q.fillStyle='#56615e';
+        q.beginPath();q.moveTo(-r*.34,-r*.36);q.lineTo(r*.05,-r*.40);q.lineTo(r*.30,-r*.28);
+        q.lineTo(-r*.13,-r*.22);q.closePath();q.fill();
+        q.beginPath();q.moveTo(-r*.34,r*.36);q.lineTo(r*.05,r*.40);q.lineTo(r*.30,r*.28);
+        q.lineTo(-r*.13,r*.22);q.closePath();q.fill();
+        q.fillStyle='#172c32';
+        q.beginPath();q.roundRect(-r*.30,-r*.18,r*.57,r*.36,r*.07);q.fill();
+        q.strokeStyle='#6b7773';q.lineWidth=1.2;q.stroke();
+        q.fillStyle='#26383a';
+        q.beginPath();q.moveTo(r*.18,-r*.19);q.lineTo(r*.43,-r*.17);q.lineTo(r*.56,-r*.10);
+        q.lineTo(r*.56,r*.10);q.lineTo(r*.43,r*.17);q.lineTo(r*.18,r*.19);q.closePath();q.fill();
+        q.fillStyle='#101b1c';q.beginPath();q.ellipse(r*.55,0,r*.105,r*.13,0,0,6.283);q.fill();
+        q.strokeStyle=iceAccent;q.lineWidth=1.5;q.globalAlpha=.95;
+        q.beginPath();q.ellipse(r*.55,0,r*.085,r*.105,0,0,6.283);q.stroke();
+        q.globalAlpha=1;
+        q.fillStyle=iceCore;q.globalAlpha=.95;
+        q.beginPath();q.ellipse(r*.55,0,r*.042,r*.065,0,0,6.283);q.fill();q.globalAlpha=1;
+        q.strokeStyle=iceAccent;q.lineWidth=r*.045;q.globalAlpha=.9;
+        q.beginPath();q.moveTo(-r*.24,-r*.22);q.lineTo(r*.18,-r*.25);q.lineTo(r*.39,-r*.15);q.stroke();
+        q.beginPath();q.moveTo(-r*.24,r*.22);q.lineTo(r*.18,r*.25);q.lineTo(r*.39,r*.15);q.stroke();
+        q.globalAlpha=1;
         if(ft>0){
-          q.fillStyle=freezePreviewTier.accent;q.globalAlpha=.9;
-          q.beginPath();q.moveTo(-r*.42,-r*.34);q.lineTo(r*.10,-r*.46);q.lineTo(r*.30,-r*.32);q.lineTo(-r*.25,-r*.22);q.closePath();q.fill();
-          q.beginPath();q.moveTo(-r*.42,r*.34);q.lineTo(r*.10,r*.46);q.lineTo(r*.30,r*.32);q.lineTo(-r*.25,r*.22);q.closePath();q.fill();
+          q.fillStyle=iceAccent;q.globalAlpha=.92;
+          q.beginPath();q.moveTo(-r*.43,-r*.31);q.lineTo(-r*.18,-r*.43);q.lineTo(r*.03,-r*.39);q.lineTo(-r*.20,-r*.27);q.closePath();q.fill();
+          q.beginPath();q.moveTo(-r*.43,r*.31);q.lineTo(-r*.18,r*.43);q.lineTo(r*.03,r*.39);q.lineTo(-r*.20,r*.27);q.closePath();q.fill();
           q.globalAlpha=1;
         }
-        q.fillStyle='#17313b';q.beginPath();q.roundRect(-r*.27,-r*.19,r*.45,r*.38,r*.06);q.fill();
-        q.fillStyle=freezePreviewTier.flame;q.globalAlpha=.95;
-        q.beginPath();q.moveTo(-r*.24,-r*.13);q.lineTo(r*.16,-r*.16);q.lineTo(r*.34,-r*.08);q.lineTo(r*.17,0);q.lineTo(r*.34,r*.08);q.lineTo(r*.16,r*.16);q.lineTo(-r*.24,r*.13);q.closePath();q.fill();
-        q.globalAlpha=1;q.fillStyle=freezePreviewTier.core;q.globalAlpha=.95;q.fillRect(-r*.02,-r*.09,r*.25,r*.18);q.globalAlpha=1;
-        q.fillStyle=freezePreviewTier.accent;q.globalAlpha=.95;
-        q.beginPath();q.moveTo(r*.24,-r*.22);q.lineTo(r*.49,-r*.11);q.lineTo(r*.37,0);q.lineTo(r*.49,r*.11);q.lineTo(r*.24,r*.22);q.lineTo(r*.30,0);q.closePath();q.fill();
-        q.globalAlpha=1;
-        if(ft>=2){q.strokeStyle=freezePreviewTier.accent;q.lineWidth=r*.055;q.beginPath();q.moveTo(-r*.42,-r*.29);q.lineTo(-r*.14,-r*.34);q.lineTo(r*.08,-r*.27);q.stroke();q.beginPath();q.moveTo(-r*.42,r*.29);q.lineTo(-r*.14,r*.34);q.lineTo(r*.08,r*.27);q.stroke()}
-        if(ft>=3){q.strokeStyle=freezePreviewTier.core;q.lineWidth=r*.045;q.beginPath();q.moveTo(-r*.50,-r*.15);q.lineTo(-r*.31,-r*.30);q.lineTo(-r*.06,-r*.33);q.stroke();q.beginPath();q.moveTo(-r*.50,r*.15);q.lineTo(-r*.31,r*.30);q.lineTo(-r*.06,r*.33);q.stroke()}
+        if(ft>=2){
+          q.strokeStyle=iceAccent;q.lineWidth=r*.05;
+          q.beginPath();q.moveTo(-r*.46,-r*.08);q.lineTo(-r*.31,-r*.18);q.lineTo(-r*.12,-r*.15);q.stroke();
+          q.beginPath();q.moveTo(-r*.46,r*.08);q.lineTo(-r*.31,r*.18);q.lineTo(-r*.12,r*.15);q.stroke();
+        }
+        if(ft>=3){
+          q.fillStyle=iceCore;q.globalAlpha=.9;
+          q.fillRect(-r*.43,-r*.045,r*.28,r*.09);
+          q.fillRect(-r*.43,r*.045,r*.28,r*.09);
+          q.globalAlpha=1;
+        }
       }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
         q.quadraticCurveTo(r*.52,-r*.24,r*.52,0);q.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);

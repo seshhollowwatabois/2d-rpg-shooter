@@ -79,29 +79,34 @@ const firebirdTiers=[
   {tier:2,name:'Firebird Tier 2',directBonus:10,burnBonus:2,range:330,turnMult:1.44,flame:'#8d35d6',core:'#e2a0ff',accent:'#b85cff'},
   {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:'#d51f24',core:'#ffb0a0',accent:'#ff4a32'}
 ];
+// Storage is optional: blocked/private/corrupted storage must never stop boot.
+function safeStorageGet(key,fallback=''){
+  try{const value=window.safeStorageGet(key);return value===null?fallback:value}catch(e){return fallback}
+}
+function safeStorageSet(key,value){
+  try{window.safeStorageSet(key,String(value));return true}catch(e){return false}
+}
 function loadArray(key,fallback){
   try{
-    const raw=localStorage.getItem(key);
+    const raw=safeStorageGet(key,'');
     const value=raw?JSON.parse(raw):fallback;
     return Array.isArray(value)?value:fallback;
-  }catch(e){
-    return fallback;
-  }
+  }catch(e){return fallback}
 }
 let ownedHulls=loadArray('tankOwnedHulls',['standard']);
 let ownedTurrets=loadArray('tankOwnedTurrets',['standard']);
 let ownedEngines=loadArray('tankOwnedEngines',['standard']);
-let equippedHull=localStorage.getItem('tankEquippedHull')||'standard';
-let equippedTurret=localStorage.getItem('tankEquippedTurret')||'standard';
-let equippedEngine=localStorage.getItem('tankEquippedEngine')||'standard';
-let railgunTier=Number(localStorage.getItem('tankRailgunTier')||0);
-let railgunOwnedTier=Math.max(railgunTier,Number(localStorage.getItem('tankRailgunOwnedTier')||0));
-let firebirdTier=Number(localStorage.getItem('tankFirebirdTier')||0);
-let firebirdOwnedTier=Math.max(firebirdTier,Number(localStorage.getItem('tankFirebirdOwnedTier')||0));
-let twinsTier=Number(localStorage.getItem('tankTwinsTier')||0);
-let twinsOwnedTier=Math.max(twinsTier,Number(localStorage.getItem('tankTwinsOwnedTier')||0));
-let smokyTier=Math.max(0,Math.min(3,Number(localStorage.getItem('tankSmokyTier')||0)));
-let smokyOwnedTier=Math.max(smokyTier,Math.min(3,Number(localStorage.getItem('tankSmokyOwnedTier')||0)));
+let equippedHull=safeStorageGet('tankEquippedHull')||'standard';
+let equippedTurret=safeStorageGet('tankEquippedTurret')||'standard';
+let equippedEngine=safeStorageGet('tankEquippedEngine')||'standard';
+let railgunTier=Number(safeStorageGet('tankRailgunTier')||0);
+let railgunOwnedTier=Math.max(railgunTier,Number(safeStorageGet('tankRailgunOwnedTier')||0));
+let firebirdTier=Number(safeStorageGet('tankFirebirdTier')||0);
+let firebirdOwnedTier=Math.max(firebirdTier,Number(safeStorageGet('tankFirebirdOwnedTier')||0));
+let twinsTier=Number(safeStorageGet('tankTwinsTier')||0);
+let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier')||0));
+let smokyTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankSmokyTier')||0)));
+let smokyOwnedTier=Math.max(smokyTier,Math.min(3,Number(safeStorageGet('tankSmokyOwnedTier')||0)));
 
 // All turret variants are free equipment. Normalize older saves so newer turrets
 // (including Railgun) cannot disappear from the player's equipment list.
@@ -756,17 +761,17 @@ function killEnemy(e,j){
 function die(){saveCurrent();gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
 function saveShop(){
-  localStorage.setItem('tankOwnedHulls',JSON.stringify(ownedHulls));
-  localStorage.setItem('tankOwnedTurrets',JSON.stringify(ownedTurrets));
-    localStorage.setItem('tankEquippedHull',equippedHull);
-  localStorage.setItem('tankEquippedTurret',equippedTurret);
-    localStorage.setItem('tankOwnedEngines',JSON.stringify(ownedEngines));
-  localStorage.setItem('tankEquippedEngine',equippedEngine);
-  localStorage.setItem('tankRailgunTier',String(railgunTier));
-  localStorage.setItem('tankRailgunOwnedTier',String(railgunOwnedTier));
-  localStorage.setItem('tankFirebirdTier',String(firebirdTier)); localStorage.setItem('tankTwinsTier',String(twinsTier)); localStorage.setItem('tankTwinsOwnedTier',String(twinsOwnedTier));
-  localStorage.setItem('tankSmokyTier',String(smokyTier)); localStorage.setItem('tankSmokyOwnedTier',String(smokyOwnedTier));
-  localStorage.setItem('tankFirebirdOwnedTier',String(firebirdOwnedTier));
+  safeStorageSet('tankOwnedHulls',JSON.stringify(ownedHulls));
+  safeStorageSet('tankOwnedTurrets',JSON.stringify(ownedTurrets));
+    safeStorageSet('tankEquippedHull',equippedHull);
+  safeStorageSet('tankEquippedTurret',equippedTurret);
+    safeStorageSet('tankOwnedEngines',JSON.stringify(ownedEngines));
+  safeStorageSet('tankEquippedEngine',equippedEngine);
+  safeStorageSet('tankRailgunTier',String(railgunTier));
+  safeStorageSet('tankRailgunOwnedTier',String(railgunOwnedTier));
+  safeStorageSet('tankFirebirdTier',String(firebirdTier)); safeStorageSet('tankTwinsTier',String(twinsTier)); safeStorageSet('tankTwinsOwnedTier',String(twinsOwnedTier));
+  safeStorageSet('tankSmokyTier',String(smokyTier)); safeStorageSet('tankSmokyOwnedTier',String(smokyOwnedTier));
+  safeStorageSet('tankFirebirdOwnedTier',String(firebirdOwnedTier));
 }
 let shopCategory='hull',selectedShopItem=null;
 
@@ -2064,5 +2069,34 @@ if(fireButton){
   fireButton.addEventListener('touchend',stopFire,{passive:false});
   fireButton.addEventListener('touchcancel',stopFire,{passive:false});
 }
-function frame(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(frame)}
-updateVersionLabel();reset();showMenu();requestAnimationFrame(frame);
+let runtimeRecoveryUsed=false;
+function showRuntimeError(err,context='GAME RUNTIME'){
+  const message=err&&err.stack||err&&err.message||String(err||'Unknown error');
+  let box=document.getElementById('bootError');
+  if(!box){box=document.createElement('div');box.id='bootError';document.body.appendChild(box)}
+  box.hidden=false;
+  box.textContent=context+' ERROR:\\n'+message+'\\n\\nThe game stopped safely instead of freezing. Reload the page to retry.';
+  box.style.cssText='position:fixed;inset:12px;z-index:99999;background:#5b1010;color:#fff;padding:18px;border:2px solid #f66;border-radius:12px;font:14px monospace;white-space:pre-wrap;overflow:auto';
+}
+function recoverRuntime(err){
+  showRuntimeError(err);
+  if(runtimeRecoveryUsed)return;
+  runtimeRecoveryUsed=true;
+  try{stopEngineSound()}catch(e){}
+  try{over=true;gameScreen='menu';menuPausedGame=false}catch(e){}
+  try{reset();showMenu(false)}catch(e){}
+}
+function frame(t){
+  const dt=Math.min(.033,(t-last)/1000||0);last=t;
+  try{update(dt);draw();runtimeRecoveryUsed=false}catch(err){recoverRuntime(err)}
+  requestAnimationFrame(frame);
+}
+try{
+  updateVersionLabel();
+  reset();
+  showMenu();
+  window.__GAME_BOOT_OK=true;
+}catch(err){
+  showRuntimeError(err,'GAME STARTUP');
+}
+requestAnimationFrame(frame);

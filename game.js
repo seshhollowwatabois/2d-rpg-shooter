@@ -1,6 +1,6 @@
-const GAME_VERSION='2026100670';
+const GAME_VERSION='2026100671';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
+let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0,menuPausedGame=false;
 let enemyStageOverride=null,enemyDifficultyOpen=false;
@@ -218,7 +218,7 @@ function reset(){
   const hull=hulls.find(v=>v.id===equippedHull)||hulls[0], turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
   p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,firebirdActive:false,firebirdTier:firebirdTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
-  en=[];deadTanks=[];bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
+  en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
   walls=[
@@ -759,7 +759,21 @@ function killEnemy(e,j){
   e.dead=true;e.corpseTime=5;e.hitFlash=0;e.fire=0;
   deadTanks.push(e);en.splice(j,1);
 }
-function die(){saveCurrent();gameScreen='game';over=true;stopEngineSound();$('deathStats').textContent='Wave '+wave+' • Level '+p.lv+' • '+p.kills+' kills • '+p.coins+' coins';$('death').hidden=false;$('cursorReload').hidden=true;}
+function die(){
+  if(!p||p.dead)return;
+  saveCurrent();
+  over=true;
+  stopEngineSound();
+  p.hp=0;p.dead=true;
+  playerDeathTank={x:p.x,y:p.y,r:p.r,angle:p.angle,turretAngle:p.turretAngle,turretId:p.turretId,hullId:p.hullId,firebirdTier:firebirdTier,twinsTier:twinsTier,smokyTier:smokyTier,railTier:railgunTier};
+  playerDeathTimer=.95;
+  // Use the same death burst style as destroyed enemies, centered on the player's tank.
+  burst(p.x,p.y,'#d85b68',28);
+  burst(p.x,p.y,'#ff9d24',18);
+  soundExplosion();
+  $('death').hidden=true;
+  $('cursorReload').hidden=true;
+}
 function hullForPlayer(){return hulls.find(v=>v.id===p.hullId)||hulls[0]}
 function saveShop(){
   safeStorageSet('tankOwnedHulls',JSON.stringify(ownedHulls));
@@ -1228,6 +1242,10 @@ function renderShop(){
 }
 
 function update(dt){
+  if(playerDeathTimer>0){
+    playerDeathTimer-=dt;
+    if(playerDeathTimer<=0){playerDeathTimer=0;playerDeathTank=null;showMenu(false);return;}
+  }
   if(over||gameScreen!=='game'){stopEngineSound();return;}
   autoSaveTimer+=dt;if(autoSaveTimer>=5){autoSaveTimer=0;saveCurrent();}
   p.cd=Math.max(0,p.cd-dt);p.inv=Math.max(0,p.inv-dt);
@@ -1933,6 +1951,16 @@ function draw(){
     x.strokeStyle='#ffffff';x.lineWidth=1*a;x.beginPath();x.moveTo(b.x1,b.y1);x.lineTo(b.x2,b.y2);x.stroke();
     x.restore();
   }
+  // Player death: keep the destroyed tank visible during its explosion, then return to menu.
+  if(playerDeathTank){
+    const d=playerDeathTank;
+    x.save();
+    x.globalAlpha=Math.max(0,Math.min(1,playerDeathTimer/.55));
+    x.globalCompositeOperation='multiply';
+    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0);
+    x.globalCompositeOperation='source-over';
+    x.restore();
+  }
   // Destroyed tanks keep the exact normal tank geometry, but are rendered black.
   // Multiply only affects pixels actually painted by the tank, so it cannot create
   // rectangular black patches on the battlefield.
@@ -1982,7 +2010,7 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier);
+  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

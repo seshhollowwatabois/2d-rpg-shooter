@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100669';
+const GAME_VERSION='2026100670';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -591,7 +591,8 @@ function shoot(){
     const muzzleX=muzzle.x-sa*offset,muzzleY=muzzle.y+ca*offset;
     const dmg=(barrel.minDamage+Math.random()*(barrel.maxDamage-barrel.minDamage))*twinsTierData.damageMult;
     bs.push({x:muzzleX,y:muzzleY,vx:ca*speed,vy:sa*speed,r:2.8,life:1.8,dmg,trail:[],col:twinsTierData.col,twins:true});
-    // Twins intentionally have no muzzle shooting explosion.
+    // Small dedicated muzzle flash for Twins, visually distinct from hit explosions.
+    ps.push({x:muzzleX,y:muzzleY,vx:0,vy:0,life:.10,col:twinsTierData.col,size:5.5});
     soundFire(barrel.id);
     p.twinsNextBarrel=p.twinsNextBarrel===1?-1:1;
   }else{

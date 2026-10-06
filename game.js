@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100716';
+const GAME_VERSION='2026100717';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -257,7 +257,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -706,7 +706,7 @@ function getHitProfile(target,bx,by){
 }
 function applyFreeze(target){
   target.freezeStacks=Math.min(5,(target.freezeStacks||0)+1);
-  target.freezeTick=1;
+  target.freezeTick=2;
   burst(target.x,target.y,'#59d9ff',12);
   target.hitFlash=.05;
 }
@@ -732,7 +732,7 @@ function spawnFreezeParticles(owner,muzzle,angle,tier,cone,range,count=18){
 }
 function applyFreeze(target){
   target.freezeStacks=Math.min(5,(target.freezeStacks||0)+1);
-  target.freezeTick=1;
+  target.freezeTick=2;
   burst(target.x,target.y,'#59d9ff',12);
   target.hitFlash=.05;
 }
@@ -1573,7 +1573,7 @@ function update(dt){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
   }
   // Burning tanks take 3 damage every 1 second per stack, up to 5 stacks.
-  if(p.freezeStacks>0){p.freezeTick=(p.freezeTick||1)-dt;if(p.freezeTick<=0){p.freezeStacks=Math.max(0,p.freezeStacks-1);p.freezeTick=1;}}
+  if(p.freezeStacks>0){p.freezeTick=(p.freezeTick||2)-dt;if(p.freezeTick<=0){p.freezeStacks=Math.max(0,p.freezeStacks-1);p.freezeTick=2;}}
   if(p.burnStacks>0){
     p.burnTick=(p.burnTick||1)-dt;
     if(p.burnTick<=0){
@@ -1759,7 +1759,7 @@ function update(dt){
       }
     }
 
-    if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||1)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=1;}}
+    if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||2)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=2;}}
     const freezeMoveMult=Math.max(.5,1-(e.freezeStacks||0)*.1);
 
     const enemyBarrel=gunForTurret(e.turretId);
@@ -1899,10 +1899,12 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0,freezeTierVisual=0){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0,freezeTierVisual=0,freezeStacksVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
+  const freezeAmount=enemy?Math.min(1,Math.max(0,freezeStacksVisual||0)/5):0;
+  const frostColor=v=>{if(!freezeAmount)return v;if(!/^#[0-9a-f]{6}$/i.test(v))return v;const n=parseInt(v.slice(1),16),r0=n>>16,g0=(n>>8)&255,b0=n&255;const rr=Math.round(r0*(1-freezeAmount)+45*freezeAmount),gg=Math.round(g0*(1-freezeAmount)+155*freezeAmount),bb=Math.round(b0*(1-freezeAmount)+235*freezeAmount);return '#'+[rr,gg,bb].map(q=>q.toString(16).padStart(2,'0')).join('')};
   const L=r*2.55*(isTitan?1.10:isWasp?.94:1);
   const B=r*1.18*(isTitan?1.08:isWasp?.90:1);
   const trackW=r*(isTitan?.42:isWasp?.25:.34);
@@ -1915,10 +1917,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   x.beginPath();x.ellipse(3,5,r*(isTitan?1.65:1.40),r*(isTitan?1.0:.80),0,0,6.283);x.fill();
   x.restore();
 
-  const trackDark=flash?'#b89d84':(enemy?(heavy?'#292b2c':'#4b3033'):'#202520');
-  const trackEdge=enemy?(heavy?'#5b5954':'#704347'):'#4a5148';
-  const wheelOuter=enemy?(heavy?'#66635d':'#75464a'):'#596158';
-  const wheelInner=enemy?(heavy?'#353735':'#303530'):'#303530';
+  const trackDark=frostColor(flash?'#b89d84':(enemy?(heavy?'#292b2c':'#4b3033'):'#202520'));
+  const trackEdge=frostColor(enemy?(heavy?'#5b5954':'#704347'):'#4a5148');
+  const wheelOuter=frostColor(enemy?(heavy?'#66635d':'#75464a'):'#596158');
+  const wheelInner=frostColor(enemy?(heavy?'#353735':'#303530'):'#303530');
 
   for(const sy of [-1,1]){
     const ty=sy*(hullB/2+trackW/2);
@@ -1935,10 +1937,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     }
   }
 
-  const body=flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):(isTitan?'#4b5747':isWasp?'#506347':'#566b4c'));
-  const bodyDark=enemy?(heavy?'#373532':'#593337'):(isTitan?'#30382f':isWasp?'#354238':'#384337');
-  const bodyLight=enemy?(heavy?'#625a50':'#758267'):(isTitan?'#687563':isWasp?'#758267':'#74836a');
-  const metal=enemy?(heavy?'#756f66':'#9b5559'):'#a3aaa3';
+  const body=frostColor(flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):(isTitan?'#4b5747':isWasp?'#506347':'#566b4c')));
+  const bodyDark=frostColor(enemy?(heavy?'#373532':'#593337'):(isTitan?'#30382f':isWasp?'#354238':'#384337'));
+  const bodyLight=frostColor(enemy?(heavy?'#625a50':'#758267'):(isTitan?'#687563':isWasp?'#758267':'#74836a'));
+  const metal=frostColor(enemy?(heavy?'#756f66':'#9b5559'):'#a3aaa3');
 
   // Distinct chassis identities:
   // Wasp = tiny rear-turret scout with a sharp nose and exposed engine rails.
@@ -2035,10 +2037,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   }
 
   // Hull seams and fasteners.
-  x.strokeStyle=enemy?(heavy?'#81796d':'#9a5559'):'#788478';x.lineWidth=1.1;
+  x.strokeStyle=frostColor(enemy?(heavy?'#81796d':'#9a5559'):'#788478');x.lineWidth=1.1;
   x.beginPath();x.moveTo(-L*.20,-hullB*.38);x.lineTo(-L*.20,hullB*.38);x.stroke();
   x.beginPath();x.moveTo(L*.18,-hullB*.30);x.lineTo(L*.18,hullB*.30);x.stroke();
-  x.fillStyle=enemy?(heavy?'#aaa092':'#ad5d60'):'#aeb7ad';
+  x.fillStyle=frostColor(enemy?(heavy?'#aaa092':'#ad5d60'):'#aeb7ad');
   for(const px of [-L*.25,L*.14])for(const py of [-hullB*.32,hullB*.32]){
     x.beginPath();x.arc(px,py,r*.035,0,6.283);x.fill();
   }
@@ -2102,9 +2104,9 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   }
 
   // One turret ring only. Placement is part of the hull silhouette.
-  x.fillStyle=enemy?(heavy?'#363432':'#513033'):'#343c34';
+  x.fillStyle=frostColor(enemy?(heavy?'#363432':'#513033'):'#343c34');
   x.beginPath();x.arc(turretX,0,r*(isTitan?.62:isWasp?.50:.57),0,6.283);x.fill();
-  x.strokeStyle=enemy?(heavy?'#696258':'#8c4b4f'):'#697760';x.lineWidth=1.4;x.stroke();
+  x.strokeStyle=frostColor(enemy?(heavy?'#696258':'#8c4b4f'):'#697760');x.lineWidth=1.4;x.stroke();
 
   x.save();x.translate(turretX,0);x.rotate(turretAngle-hullAngle);
   const visualBarrel=gunForTurret(turretId);
@@ -2117,7 +2119,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const universalTurretAccent=visualTierIndex>0?visualTier.accent:null;
 
   // Turret silhouette varies with weapon class.
-  x.fillStyle=enemy?(heavy?'#45413b':'#61373a'):'#424d3f';x.beginPath();
+  x.fillStyle=frostColor(enemy?(heavy?'#45413b':'#61373a'):'#424d3f');x.beginPath();
   if(visualTurret.id==='railgun'){
     x.moveTo(-tr*.50,-tr*.30);x.lineTo(tr*.08,-tr*.36);x.quadraticCurveTo(tr*.42,-tr*.27,tr*.48,0);
     x.quadraticCurveTo(tr*.42,tr*.27,tr*.08,tr*.36);x.lineTo(-tr*.50,tr*.30);x.quadraticCurveTo(-tr*.60,0,-tr*.50,-tr*.30);
@@ -2174,7 +2176,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     // angular ice-shell body, split side fins and a faceted front shroud.
     const freezeVisual=freezeTiers[Math.max(0,Math.min(3,freezeTierVisual||0))]||freezeTiers[0];
     const ft=Math.max(0,Math.min(3,freezeTierVisual||0));
-    x.fillStyle=enemy?'#273b43':'#263f4a';
+    x.fillStyle=frostColor(enemy?'#273b43':'#263f4a');
     x.beginPath();
     x.moveTo(-tr*.50,-tr*.25);x.lineTo(-tr*.24,-tr*.43);x.lineTo(tr*.18,-tr*.39);
     x.lineTo(tr*.48,-tr*.18);x.lineTo(tr*.52,0);x.lineTo(tr*.48,tr*.18);
@@ -2219,7 +2221,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     const fireCore=fireAccentTier.tier===0?'rgba(0,0,0,0)':fireAccentTier.core;
 
     // Strong, unmistakable Firebird tier accents.
-    x.fillStyle=enemy?'#352d29':'#343a31';
+    x.fillStyle=frostColor(enemy?'#352d29':'#343a31');
     x.beginPath();
     x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.18,-tr*.31);x.lineTo(tr*.38,-tr*.15);
     x.lineTo(tr*.38,tr*.15);x.lineTo(tr*.18,tr*.31);x.lineTo(-tr*.34,tr*.27);
@@ -2255,14 +2257,14 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.globalAlpha=1;
   }
 
-  x.strokeStyle=universalTurretAccent||(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
+  x.strokeStyle=universalTurretAccent||frostColor(enemy?(heavy?'#746c61':'#925055'):'#7f8b75');x.lineWidth=1.25;
   x.beginPath();x.moveTo(-tr*.28,-tr*.40);x.quadraticCurveTo(-tr*.08,-tr*.29,tr*.04,-tr*.28);x.stroke();
   x.beginPath();x.moveTo(-tr*.28,tr*.40);x.quadraticCurveTo(-tr*.08,tr*.29,tr*.04,tr*.28);x.stroke();
 
   // Hatch and mantlet.
   x.fillStyle='#292e2a';x.beginPath();x.ellipse(-tr*.18,0,tr*.17,tr*.12,0,0,6.283);x.fill();
   x.strokeStyle=universalTurretAccent||'#89967c';x.stroke();
-  x.fillStyle=enemy?'#252729':'#292f2a';
+  x.fillStyle=frostColor(enemy?'#252729':'#292f2a');
   x.beginPath();x.roundRect(tr*.08,-tr*.18,tr*.34,tr*.36,5);x.fill();
 
   const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
@@ -2312,7 +2314,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     }
   }
 
-  x.fillStyle=universalTurretAccent||(enemy?(heavy?'#746a5d':'#9b5458'):'#849176');
+  x.fillStyle=universalTurretAccent||frostColor(enemy?(heavy?'#746a5d':'#9b5458'):'#849176');
   x.beginPath();x.arc(-tr*.36,-tr*.23,tr*.04,0,6.283);x.fill();
   x.beginPath();x.arc(-tr*.36,tr*.23,tr*.04,0,6.283);x.fill();
 
@@ -2385,7 +2387,7 @@ function draw(){
     x.save();
     x.globalAlpha=Math.max(0,Math.min(1,playerDeathTimer/.55));
     x.globalCompositeOperation='multiply';
-    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0,d.freezeTier||0);
+    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0,d.freezeTier||0,d.freezeStacks||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2410,7 +2412,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0,e.freezeStacks||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2452,7 +2454,7 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier);
+  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier,p.freezeStacks||0);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100739';
+const GAME_VERSION='2026100740';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -26,7 +26,8 @@ const turrets=[
   {id:'rapid',name:'Twins',cost:0,turn:1.45,scale:1},
   {id:'fast',name:'Firebird',cost:0,turn:1.8,scale:1},
   {id:'freeze',name:'Freeze',cost:0,turn:1.7,scale:1},
-  {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1}
+  {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1},
+  {id:'thunder',name:'Thunder',cost:0,turn:1.25,scale:1}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
@@ -38,13 +39,15 @@ const barrels=[
   {id:'85mm',name:'Twin 85mm Barrels',cost:0,minDamage:8,maxDamage:10,reloadTime:.3,scale:1,length:1},
   {id:'122mm',name:'Firebird',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmFreeze',name:'Freeze',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,freeze:true,range:230,cone:.42},
-  {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0}
+  {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0},
+  {id:'thunder',name:'Thunder',cost:0,minDamage:20,maxDamage:25,reloadTime:2,scale:.92,length:.90,instant:true,area:true,areaRadius:70}
 ];
 function gunForTurret(turretId){
   if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];
   if(turretId==='fast')return barrels.find(v=>v.id==='122mm')||barrels[2];
   if(turretId==='freeze')return barrels.find(v=>v.id==='122mmFreeze')||barrels[3];
   if(turretId==='railgun')return barrels.find(v=>v.id==='122mmLong')||barrels[4];
+  if(turretId==='thunder')return barrels.find(v=>v.id==='thunder')||barrels[5];
   return barrels.find(v=>v.id==='57mm')||barrels[0];
 }
 function turretForPlayer(){
@@ -69,6 +72,10 @@ function turretForPlayer(){
     const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
     return {...t,turn:t.turn*(tier.turnMult||1)};
   }
+  if(t.id==='thunder'){
+    const tier=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
+    return {...t,turn:t.turn+(tier.turnBonus||0)};
+  }
   return t;
 }
 const tierVisuals=[{tier:0,accent:'#ffffff',glow:'#ffffff',beam:'#ffffff'},{tier:1,accent:'#20c85a',glow:'#66ef8d',beam:'#20c85a'},{tier:2,accent:'#a13cff',glow:'#d58cff',beam:'#a13cff'},{tier:3,accent:'#ffd23f',glow:'#fff0a0',beam:'#ffd23f'}];
@@ -90,6 +97,12 @@ const smokyTiers=[
   {tier:1,name:'Smoky Tier 1',damageBonus:5,reloadTime:1.75,turnBonus:.20,critBonus:.05,accent:tierVisuals[1].accent},
   {tier:2,name:'Smoky Tier 2',damageBonus:10,reloadTime:1.50,turnBonus:.40,critBonus:.10,accent:tierVisuals[2].accent},
   {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.05,critBonus:.15,accent:tierVisuals[3].accent}
+];
+const thunderTiers=[
+  {tier:0,name:'Standard Thunder',damageBonus:0,radius:70,reloadTime:2,turnBonus:0},
+  {tier:1,name:'Thunder Tier 1',damageBonus:5,radius:82,reloadTime:1.75,turnBonus:.20},
+  {tier:2,name:'Thunder Tier 2',damageBonus:10,radius:95,reloadTime:1.50,turnBonus:.40},
+  {tier:3,name:'Thunder Tier 3',damageBonus:15,radius:110,reloadTime:1.25,turnBonus:1.05}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -135,6 +148,8 @@ let twinsTier=Number(safeStorageGet('tankTwinsTier')||0);
 let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier')||0));
 let smokyTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankSmokyTier')||0)));
 let smokyOwnedTier=Math.max(smokyTier,Math.min(3,Number(safeStorageGet('tankSmokyOwnedTier')||0)));
+let thunderTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankThunderTier')||0)));
+let thunderOwnedTier=Math.max(thunderTier,Math.min(3,Number(safeStorageGet('tankThunderOwnedTier')||0)));
 let hullTierById={scout:0,standard:0,heavy:0,mammoth:0};
 let hullOwnedTierById={scout:0,standard:0,heavy:0,mammoth:0};
 try{
@@ -260,7 +275,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -401,7 +416,7 @@ function pickEnemyTurret(){
   if(enemyStageOverride!==null){
     // Difficulty test rounds use the selected tier, while keeping all four weapons equally likely.
     const weaponRoll=Math.random();
-    const id=weaponRoll<.20?'standard':weaponRoll<.40?'rapid':weaponRoll<.60?'fast':weaponRoll<.80?'freeze':'railgun';
+    const id=weaponRoll<1/6?'standard':weaponRoll<2/6?'rapid':weaponRoll<3/6?'fast':weaponRoll<4/6?'freeze':weaponRoll<5/6?'railgun':'thunder';
     return {id,tier:enemyStageOverride};
   }
   // Every 5 waves, one more enemy gets the next tier:
@@ -417,7 +432,7 @@ function pickEnemyTurret(){
   const spawnIndex=5-waveRemaining;
   if(wave<5){
     const weaponRoll=Math.random();
-    const id=weaponRoll<.20?'standard':weaponRoll<.40?'rapid':weaponRoll<.60?'fast':weaponRoll<.80?'freeze':'railgun';
+    const id=weaponRoll<1/6?'standard':weaponRoll<2/6?'rapid':weaponRoll<3/6?'fast':weaponRoll<4/6?'freeze':weaponRoll<5/6?'railgun':'thunder';
     return {id,tier:0};
   }
   const milestone=Math.floor((wave-5)/5);
@@ -426,7 +441,7 @@ function pickEnemyTurret(){
   const lowTier=Math.max(0,highTier-1);
   const tier=spawnIndex<highCount?highTier:lowTier;
   const weaponRoll=Math.random();
-  const id=weaponRoll<.20?'standard':weaponRoll<.40?'rapid':weaponRoll<.60?'fast':weaponRoll<.80?'freeze':'railgun';
+  const id=weaponRoll<1/6?'standard':weaponRoll<2/6?'rapid':weaponRoll<3/6?'fast':weaponRoll<4/6?'freeze':weaponRoll<5/6?'railgun':'thunder';
   return {id,tier};
 }
 function pickEnemyEngine(){
@@ -489,6 +504,7 @@ function makeEnemy(){
   const mass=hullId==='mammoth'?2.5:hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
   const enemyFirebirdTier=turretId==='fast'?turretTier:0;
   const enemyFreezeTier=turretId==='freeze'?turretTier:0;
+  const enemyThunderTier=turretId==='thunder'?turretTier:0;
 
   // Hull tier affects the enemy's actual stats as well as its appearance.
   const hp=Math.round(hull.hp*hullTierData.hpMult);
@@ -505,7 +521,7 @@ function makeEnemy(){
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,hullTier,turretId,turretTier,engineId,
     angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,freezeStacks:0,freezeTick:1,freezeTier:enemyFreezeTier,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,freezeExhausted:false,railCharging:false,railCharge:0,
-     twinsTier:turretId==='rapid'?turretTier:0,
+     twinsTier:turretId==='rapid'?turretTier:0,thunderTier:enemyThunderTier,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3 ,
     idle:Math.random()<.3
   });
@@ -585,7 +601,7 @@ function fireRailgun(){
   burst(muzzleX,muzzleY,'#ffffff',12);
   soundRailFire();
 }
-function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;if(turretId==='freeze')return freezeTier;return smokyTier}
+function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;if(turretId==='freeze')return freezeTier;if(turretId==='thunder')return thunderTier;return smokyTier}
 function shoot(){
   const coarse=window.matchMedia?.('(pointer:coarse)').matches;
   if(coarse&&!mobileFire)return;
@@ -602,6 +618,30 @@ function shoot(){
   const muzzle=playerMuzzlePosition(barrel,fireAngle);
   const twinsTierData=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
   const smokyTierData=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
+  const thunderTierData=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
+
+  // Thunder fires an instant shell and splashes nearby enemies.
+  if(barrel.id==='thunder'&&barrel.instant){
+    let best=null,bestDist=1400;
+    for(const e of en){
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
+      if(along<=0||along>=bestDist||side>e.r)continue;
+      if(wallRayHit(muzzle.x,muzzle.y,fireAngle,along))continue;
+      best=e;bestDist=along;
+    }
+    if(best){
+      const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
+      const dmg=barrel.minDamage+thunderTierData.damageBonus+Math.random()*((barrel.maxDamage+thunderTierData.damageBonus)-(barrel.minDamage+thunderTierData.damageBonus));
+      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13,col:'#ffd24a'});
+      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);impactExplosion(hitX,hitY,'#ffd24a',34);
+      applyThunderBlast(hitX,hitY,dmg,thunderTierData.radius,best);
+    }else{
+      const missX=muzzle.x+ca*34,missY=muzzle.y+sa*34;
+      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:missX,y2:missY,life:.10,maxLife:.10,col:'#ffd24a'});
+      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);impactExplosion(missX,missY,'#ffd24a',20);
+    }
+    soundFire(barrel.id);p.cd=thunderTierData.reloadTime;return;
+  }
 
   // Smoky fires an instant shell: no travel time or projectile velocity.
   // The first enemy in the line of fire is hit immediately, unless a wall blocks it.
@@ -802,6 +842,20 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   soundImpact(true);
   return {profile,ricochet:false,critical};
 }
+function applyThunderBlast(centerX,centerY,baseDamage,radius,primary){
+  for(const target of [...en]){
+    if(!en.includes(target))continue;
+    const dx=target.x-centerX,dy=target.y-centerY,dist=Math.hypot(dx,dy);
+    if(dist>radius+target.r)continue;
+    const rayDist=Math.max(0,dist-target.r);
+    if(dist>target.r&&wallRayHit(centerX,centerY,Math.atan2(dy,dx),rayDist))continue;
+    const falloff=1-Math.min(1,dist/Math.max(1,radius));
+    const damage=target===primary?baseDamage:baseDamage*(.50+.50*falloff);
+    applyBulletHit(target,damage,target.x,target.y,{thunder:true},0);
+    if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);}
+  }
+}
+
 function enemyShoot(e){
   // Enemy weapons fire along the turret's actual current facing.
   // Never snap the turret to the player when a shot is requested.
@@ -813,6 +867,8 @@ function enemyShoot(e){
   const enemySmokyTierData=smokyTiers[enemySmokyTier]||smokyTiers[0];
   const enemyTwinsTierData=twinsTiers[enemyTwinsTier]||twinsTiers[0];
   const enemyRailgunTierData=railgunTiers[enemyRailgunTier]||railgunTiers[0];
+  const enemyThunderTier=Math.max(0,Math.min(3,e.thunderTier||0));
+  const enemyThunderTierData=thunderTiers[enemyThunderTier]||thunderTiers[0];
   const ca=Math.cos(a),sa=Math.sin(a);
   if(barrel.id==='122mmFreeze'&&barrel.freeze){
     const tier=freezeTiers[Math.max(0,Math.min(3,e.freezeTier||0))]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42,muzzle=enemyMuzzlePosition(e,barrel,a);
@@ -869,6 +925,13 @@ function enemyShoot(e){
       smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:hit? p.x:hitX,y2:hit? p.y:hitY,life:.13,maxLife:.13,col:enemySmokyTierData.accent});
       burst(muzzleX,muzzleY,enemySmokyTierData.accent,12);burst(muzzleX,muzzleY,enemySmokyTierData.accent,7);
       if(hit)applyBulletHit(p,smokyDamage,p.x,p.y,{smoky:true},(barrel.critChance||0)+(enemySmokyTierData.critBonus||0));
+    }else if(barrel.id==='thunder'){
+      const hit=along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along);
+      const blastX=hit?p.x:muzzleX+ca*Math.min(range,260),blastY=hit?p.y:muzzleY+sa*Math.min(range,260);
+      const thunderBase=baseDamage+enemyThunderTierData.damageBonus;
+      smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:blastX,y2:blastY,life:.13,maxLife:.13,col:'#ffd24a'});
+      burst(muzzleX,muzzleY,'#ffd24a',12);burst(muzzleX,muzzleY,'#fff1a6',7);impactExplosion(blastX,blastY,'#ffd24a',hit?30:22);
+      if(hit)applyBulletHit(p,thunderBase,p.x,p.y,{thunder:true},0);
     }else if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
       applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
     }
@@ -897,7 +960,7 @@ function enemyShoot(e){
       ebs.push({x:enemyMuzzle.x,y:enemyMuzzle.y,vx:ca*speed,vy:sa*speed,r:2.5,life:2.4,dmg:damage,trail:[]});
     }
   }
-  e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.reloadTime;
+  e.fire=barrel.id==='85mm'?enemyTwinsTierData.reloadTime:barrel.id==='57mm'?enemySmokyTierData.reloadTime:barrel.id==='thunder'?enemyThunderTierData.reloadTime:barrel.reloadTime;
   burst(e.x+ca*e.r,e.y+sa*e.r,tierVisual(e.turretTier||0).beam,barrel.instant?9:4);if(e.turretId!=='rapid')soundFire(barrel.id);
 }
 function killEnemy(e,j){
@@ -941,6 +1004,7 @@ function saveShop(){
   safeStorageSet('tankRailgunOwnedTier',String(railgunOwnedTier));
   safeStorageSet('tankFirebirdTier',String(firebirdTier)); safeStorageSet('tankTwinsTier',String(twinsTier)); safeStorageSet('tankTwinsOwnedTier',String(twinsOwnedTier));
   safeStorageSet('tankSmokyTier',String(smokyTier)); safeStorageSet('tankSmokyOwnedTier',String(smokyOwnedTier));
+  safeStorageSet('tankThunderTier',String(thunderTier)); safeStorageSet('tankThunderOwnedTier',String(thunderOwnedTier));
   safeStorageSet('tankFirebirdOwnedTier',String(firebirdOwnedTier));
   safeStorageSet('tankFreezeTier',String(freezeTier));
   safeStorageSet('tankFreezeOwnedTier',String(freezeOwnedTier));
@@ -1123,6 +1187,7 @@ function renderShop(){
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
       const smokyVisualTier=item.id==='standard'?smokyTiers[Math.max(0,Math.min(3,smokyTier))]:null;
       const smokyPreviewAccent=smokyVisualTier&&smokyVisualTier.tier>0?smokyVisualTier.accent:null;
+      const thunderVisualTier=item.id==='thunder'?thunderTiers[Math.max(0,Math.min(3,thunderTier))]:null;
       const railAccent=railTier&&railTier.tier>0?(railTier.tier===1?railgunTiers[0].beam:railTier.beam):null;
 
       q.fillStyle='#343c34';
@@ -1187,6 +1252,8 @@ function renderShop(){
           q.beginPath();q.moveTo(-r*.50,-r*.15);q.lineTo(-r*.31,-r*.30);q.lineTo(-r*.06,-r*.33);q.stroke();
           q.beginPath();q.moveTo(-r*.50,r*.15);q.lineTo(-r*.31,r*.30);q.lineTo(-r*.06,r*.33);q.stroke();
         }
+      }else if(visualTurret.id==='thunder'){
+        q.moveTo(-r*.50,-r*.31);q.quadraticCurveTo(-r*.18,-r*.47,r*.24,-r*.41);q.lineTo(r*.50,-r*.22);q.quadraticCurveTo(r*.58,0,r*.50,r*.22);q.lineTo(r*.24,r*.41);q.quadraticCurveTo(-r*.18,r*.47,-r*.50,r*.31);q.quadraticCurveTo(-r*.61,0,-r*.50,-r*.31);
       }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
         q.quadraticCurveTo(r*.52,-r*.24,r*.52,0);q.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
@@ -1214,6 +1281,9 @@ function renderShop(){
         q.fillRect(r*.08,-r*.045,r*.30,r*.09);
         q.beginPath();q.arc(-r*.08,0,r*.10,0,6.283);q.fill();
         q.globalAlpha=1;
+      }else if(visualTurret.id==='thunder'){
+        q.fillStyle=thunderVisualTier.tier>0?thunderVisualTier.accent:'rgba(0,0,0,0)';q.fillRect(-r*.30,-r*.29,r*.22,r*.10);q.fillRect(-r*.30,r*.19,r*.22,r*.10);
+        q.strokeStyle=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';q.lineWidth=r*.05;q.beginPath();q.moveTo(-r*.18,-r*.18);q.lineTo(r*.30,-r*.12);q.stroke();q.beginPath();q.moveTo(-r*.18,r*.18);q.lineTo(r*.30,r*.12);q.stroke();
       }else if(visualTurret.id==='fast'){
         const fireAccent=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.accent,fireFlame=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.flame,fireCore=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.core;
         q.fillStyle='#343a31';
@@ -1246,7 +1316,9 @@ function renderShop(){
 
       const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
       const barrelWidth=.15*barrelScale;
-      if(visualTurret.id==='rapid'){
+      if(visualTurret.id==='thunder'){
+        q.fillStyle='#151819';q.beginPath();q.moveTo(r*.28,-r*.15);q.lineTo(r*1.02,-r*.18);q.lineTo(r*1.15,-r*.12);q.lineTo(r*1.15,r*.12);q.lineTo(r*1.02,r*.18);q.lineTo(r*.28,r*.15);q.closePath();q.fill();q.fillStyle='#0b0d0c';q.beginPath();q.arc(r*1.14,0,r*.12,0,6.283);q.fill();q.fillStyle='#ffd24a';q.fillRect(r*.72,-r*.16,r*.08,r*.32);
+      }else if(visualTurret.id==='rapid'){
         q.fillStyle='#151819';
         for(const sy of [-1,1]){
           const yy=sy*r*.115;
@@ -1395,6 +1467,18 @@ function renderShop(){
       });
       info.appendChild(tiers);
     }
+    if(type==='turret'&&item.id==='thunder'&&isSelected){
+      const tiers=document.createElement('div');tiers.className='railgunTierMini';
+      thunderTiers.forEach(t=>{
+        const owned=t.tier<=thunderOwnedTier;const tier=document.createElement('div');tier.className='railgunTierMiniRow'+(t.tier===thunderTier?' current':'');
+        const label=document.createElement('span');label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
+        const b=document.createElement('button');b.className='tierInlineButton';
+        b.textContent=t.tier===thunderTier?'CURRENT':owned?'SELECT':t.tier===thunderOwnedTier+1?'UPGRADE':'LOCKED';
+        b.disabled=t.tier===thunderTier||(!owned&&t.tier!==thunderOwnedTier+1);
+        b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===thunderOwnedTier+1)thunderOwnedTier=t.tier;thunderTier=t.tier;if(p)p.thunderTier=thunderTier;saveShop();renderShop()};
+        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
+      });info.appendChild(tiers);
+    }
     if(type==='turret'&&item.id==='railgun'&&isSelected){
       const tiers=document.createElement('div');tiers.className='railgunTierMini';
       railgunTiers.forEach(t=>{
@@ -1481,6 +1565,9 @@ function renderShop(){
         }else if(item.id==='standard'){
           const t=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
           addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Critical Chance',Math.round(((gun.critChance||0)+(t.critBonus||0))*100)+'%');addStat('Tier','T'+t.tier);
+        }else if(item.id==='thunder'){
+          const t=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
+          addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Blast Radius',t.radius+' px');addStat('Critical Chance','0%');addStat('Tier','T'+t.tier);
         }else if(item.id==='freeze'){
           const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(15+t.directBonus)+'-'+(26+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);
@@ -1876,6 +1963,7 @@ function update(dt){
     if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,1.05][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
     else if(e.turretId==='freeze') turretTurnRate*=([1,1.2,1.44,1.728][Math.max(0,Math.min(3,e.freezeTier||0))]||1);
     else if(e.turretId==='railgun') turretTurnRate*=([1,1.25,1.5625,2.1904761905][Math.max(0,Math.min(3,e.turretTier||0))]||1);
+    else if(e.turretId==='thunder') turretTurnRate+=([0,.20,.40,1.05][Math.max(0,Math.min(3,e.thunderTier||0))]||0);
     // Player Freeze slows the enemy's final turret traverse after all turret-tier bonuses.
     // 18% per stack, up to 90% at 5 stacks, matching the player's turret slowdown.
     turretTurnRate*=Math.max(.1,1-(e.freezeStacks||0)*.18);
@@ -1963,7 +2051,7 @@ function update(dt){
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
 
-function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0,freezeTierVisual=0,freezeStacksVisual=0){
+function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0,freezeTierVisual=0,freezeStacksVisual=0,thunderTierVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
   const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy',isMammoth=hullId==='mammoth';
@@ -2193,7 +2281,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?freezeTierVisual:(enemy?smokyTierVisual:smokyTier)));
+  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?freezeTierVisual:visualTurret.id==='thunder'?(enemy?thunderTierVisual:thunderTier):(enemy?smokyTierVisual:smokyTier)));
   const visualTier=tierVisual(visualTierIndex);
   const railAccent=visualTurret.id==='railgun'&&visualTierIndex>0?visualTier.accent:null;
   const smokyAccent=visualTurret.id==='standard'&&visualTierIndex>0?visualTier.accent:null;
@@ -2217,6 +2305,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.quadraticCurveTo(-tr*.63,0,-tr*.52,-tr*.36);
   }else if(visualTurret.id==='freeze'){
     x.moveTo(-tr*.54,-tr*.34);x.lineTo(tr*.05,-tr*.48);x.lineTo(tr*.43,-tr*.28);x.quadraticCurveTo(tr*.56,0,tr*.43,tr*.28);x.lineTo(tr*.05,tr*.48);x.lineTo(-tr*.54,tr*.34);x.quadraticCurveTo(-tr*.62,0,-tr*.54,-tr*.34);
+  }else if(visualTurret.id==='thunder'){
+    x.moveTo(-tr*.50,-tr*.31);x.quadraticCurveTo(-tr*.18,-tr*.47,tr*.24,-tr*.41);x.lineTo(tr*.50,-tr*.22);x.quadraticCurveTo(tr*.58,0,tr*.50,tr*.22);x.lineTo(tr*.24,tr*.41);x.quadraticCurveTo(-tr*.18,tr*.47,-tr*.50,tr*.31);x.quadraticCurveTo(-tr*.61,0,-tr*.50,-tr*.31);
   }else if(visualTurret.id==='rapid'){
     // Twins: compact rounded turret with a broad front and twin gun mounts.
     x.moveTo(-tr*.50,-tr*.34);x.quadraticCurveTo(-tr*.18,-tr*.45,tr*.24,-tr*.39);
@@ -2468,7 +2558,7 @@ function draw(){
     x.save();
     x.globalAlpha=Math.max(0,Math.min(1,playerDeathTimer/.55));
     x.globalCompositeOperation='multiply';
-    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0,d.freezeTier||0,d.freezeStacks||0);
+    tankBody(d.x,d.y,d.r,d.angle,d.turretAngle,false,false,false,d.turretId,d.hullId,d.firebirdTier,d.twinsTier,d.smokyTier,d.turretId==='railgun'?d.railTier:0,d.hullTier||0,d.freezeTier||0,d.freezeStacks||0,d.thunderTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2493,7 +2583,7 @@ function draw(){
     x.save();
     x.globalAlpha=1;
     x.globalCompositeOperation='multiply';
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0,e.freezeStacks||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,false,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0,e.freezeStacks||0,e.thunderTier||0);
     x.globalCompositeOperation='source-over';
     x.restore();
   }
@@ -2521,7 +2611,7 @@ function draw(){
   }
   // Shell impact flashes/explosions are represented by the particle bursts created on impact.
   for(const e of en){
-    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0,e.freezeStacks||0);
+    tankBody(e.x,e.y,e.r,e.angle,e.turretAngle,true,e.heavy,e.hitFlash>0,e.turretId||'standard',e.hullId||'standard',e.firebirdTier||0,e.twinsTier||0,e.smokyTier||0,e.turretId==='railgun'?e.turretTier||0:0,e.hullTier||0,e.freezeTier||0,e.freezeStacks||0,e.thunderTier||0);
     // Identify the complete enemy loadout directly above the tank.
     const enemyHull=hulls.find(v=>v.id===e.hullId)||hulls[0];
     const enemyTurret=turrets.find(v=>v.id===e.turretId)||turrets[0];
@@ -2535,16 +2625,19 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier,p.freezeStacks||0);
+  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier,p.freezeStacks||0,thunderTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
   const activeSmokyTier=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
+  const actualThunderTier=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
   const actualReloadTime=barrel.id==='122mmLong'
     ? barrel.reloadTime*(activeRailTier?.reloadMult||1)
     : barrel.id==='57mm'
       ? activeSmokyTier.reloadTime
-      : barrel.reloadTime;
+      : barrel.id==='thunder'
+        ? actualThunderTier.reloadTime
+        : barrel.reloadTime;
   // Railgun charge drains the reload bar toward zero before the shot,
   // then the normal reload cycle starts from empty after firing.
   const reloadPct=(barrel.id==='122mm'&&barrel.flame)
@@ -2580,11 +2673,14 @@ function draw(){
     const activeBarrel=gunForTurret(p.turretId);
     const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
     const activeSmokyTier=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
+    const activeThunderTier=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
     const actualReloadTime=activeBarrel.id==='122mmLong'
       ? activeBarrel.reloadTime*(activeRailTier?.reloadMult||1)
       : activeBarrel.id==='57mm'
         ? activeSmokyTier.reloadTime
-        : activeBarrel.reloadTime;
+        : activeBarrel.id==='thunder'
+          ? activeThunderTier.reloadTime
+          : activeBarrel.reloadTime;
     cursorReload.textContent=p.cd>0?Math.max(0,p.cd).toFixed(2):actualReloadTime.toFixed(2);
     cursorReload.hidden=false;
     cursorReload.style.color=p.cd>0?'#ff4b4b':'#39e66b';

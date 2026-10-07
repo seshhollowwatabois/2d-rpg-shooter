@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100749';
+const GAME_VERSION='2026100750';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1191,7 +1191,7 @@ function renderShop(){
     }else if(type==='turret'){
       // Render the exact same turret geometry used by tankBody(), just on the
       // shop canvas. This keeps the shop preview visually identical to gameplay.
-      const r=item.id==='thunder'?20*(item.scale||1):20;
+      const r=20; // Keep the shop preview's base radius identical to gameplay; Thunder's 1.12x scale is applied once via tr below.
       const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
       const smokyVisualTier=item.id==='standard'?smokyTiers[Math.max(0,Math.min(3,smokyTier))]:null;
@@ -1327,24 +1327,12 @@ function renderShop(){
         q.beginPath();q.moveTo(-r*.08,0);q.lineTo(r*.36,0);q.stroke();q.globalAlpha=1;
       }
 
-      // Final tier edge pass: the colored silhouette remains visible even at the small mobile shop preview size.
-      if(visualTurret.id==='thunder'&&thunderVisualTier.tier>0){
-        const ta=thunderVisualTier.accent,tg=thunderVisualTier.glow;
-        q.save();q.globalCompositeOperation='lighter';q.shadowColor=ta;q.shadowBlur=7;
-        q.globalAlpha=.98;q.strokeStyle=tg;q.lineWidth=2.2;
-        q.beginPath();q.moveTo(-r*.57,-r*.39);q.lineTo(-r*.17,-r*.54);q.lineTo(r*.31,-r*.49);q.lineTo(r*.56,-r*.29);
-        q.quadraticCurveTo(r*.66,0,r*.56,r*.29);q.lineTo(r*.31,r*.49);q.lineTo(-r*.17,r*.54);q.lineTo(-r*.57,r*.39);
-        q.quadraticCurveTo(-r*.69,0,-r*.57,-r*.39);q.stroke();
-        q.globalAlpha=.9;q.fillStyle=ta;q.beginPath();q.arc(-r*.32,-r*.31,r*.07,0,6.283);q.fill();q.beginPath();q.arc(-r*.32,r*.31,r*.07,0,6.283);q.fill();
-        q.restore();
-      }
-      
       const twinsNeutral=visualTurret.id==='rapid'&&Math.max(0,Math.min(3,twinsTier))===0; const freezePreview=visualTurret.id==='freeze'?(freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0]):null; q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(railAccent||smokyPreviewAccent||'#7f8b75'));q.lineWidth=1.25;
       q.beginPath();q.moveTo(-r*.28,-r*.40);q.quadraticCurveTo(-r*.08,-r*.29,r*.04,-r*.28);q.stroke();
       q.beginPath();q.moveTo(-r*.28,r*.40);q.quadraticCurveTo(-r*.08,r*.29,r*.04,r*.28);q.stroke();
 
       q.fillStyle='#292e2a';q.beginPath();q.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);q.fill();
-      q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(smokyPreviewAccent||'#89967c'));q.stroke();
+      q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(visualTurret.id==='thunder'&&thunderVisualTier.tier>0?thunderVisualTier.accent:(smokyPreviewAccent||'#89967c')));q.stroke();
       q.fillStyle='#292f2a';
       q.beginPath();q.roundRect(r*.08,-r*.18,r*.34,r*.36,5);q.fill();
 
@@ -1360,6 +1348,9 @@ function renderShop(){
           q.fillRect(r*.82,-barrelHalf*1.10,r*.09,barrelHalf*2.20);
           q.globalAlpha=1;
         }
+        q.strokeStyle=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';q.lineWidth=1.9;
+        q.beginPath();q.moveTo(r*.48,-barrelHalf*1.22);q.lineTo(barrelEnd-r*.09,-barrelHalf*.99);q.stroke();
+        q.beginPath();q.moveTo(r*.48,barrelHalf*1.22);q.lineTo(barrelEnd-r*.09,barrelHalf*.99);q.stroke();
         q.fillStyle='#080a09';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.78,0,6.283);q.fill();
         q.fillStyle='#454b45';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.49,0,6.283);q.fill();
       }else if(visualTurret.id==='rapid'){
@@ -1405,7 +1396,7 @@ function renderShop(){
         }
       }
 
-      q.fillStyle=railAccent||'#849176';
+      q.fillStyle=(visualTurret.id==='thunder'&&thunderVisualTier.tier>0?thunderVisualTier.accent:railAccent||'#849176');
       q.beginPath();q.arc(-r*.36,-r*.23,r*.04,0,6.283);q.fill();
       q.beginPath();q.arc(-r*.36,r*.23,r*.04,0,6.283);q.fill();
       q.restore();

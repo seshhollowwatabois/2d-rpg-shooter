@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100736';
+const GAME_VERSION='2026100737';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1885,7 +1885,15 @@ function update(dt){
         const moveVx=Math.cos(e.angle)*e.speed*freezeMoveMult,moveVy=Math.sin(e.angle)*e.speed*freezeMoveMult;
         const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);if(moved){e.vx=moveVx;e.vy=moveVy;}
       }
-      if(d<=freezeEngageRange&&e.freezeFuel>0&&Math.abs(tda)<.10){enemyShoot(e);e.freezeFuel=Math.max(0,e.freezeFuel-dt);}else{e.freezeFuel=Math.min(e.freezeMaxFuel||5,e.freezeFuel+dt*.5);}
+      // Enemy Freeze has a real finite fuel pool. Once empty it must recharge instead
+      // of immediately firing again from a tiny regenerated amount.
+      const freezeCanFire=d<=freezeEngageRange&&Math.abs(tda)<.10&&e.freezeFuel>0.001;
+      if(freezeCanFire){
+        enemyShoot(e);
+        e.freezeFuel=Math.max(0,e.freezeFuel-dt);
+      }else if(e.freezeFuel<=0.001){
+        e.freezeFuel=Math.min(e.freezeMaxFuel||5,e.freezeFuel+dt*.5);
+      }
     }else if(isEnemyFirebird){
       if(d<=firebirdEngageRange && e.firebirdFuel>0 && Math.abs(tda)<0.10){
         enemyShoot(e);

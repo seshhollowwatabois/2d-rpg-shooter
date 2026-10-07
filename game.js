@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100735';
+const GAME_VERSION='2026100736';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -10,7 +10,8 @@ let mobileFire=false;
 const hulls=[
   {id:'scout',name:'Wasp',cost:50,hp:90,speed:155,reverse:95,turn:2.1,scale:1},
   {id:'standard',name:'Hornet',cost:0,hp:120,speed:120,reverse:75,turn:1.65,scale:1},
-  {id:'heavy',name:'Titan',cost:80,hp:180,speed:90,reverse:60,turn:1.15,scale:1}
+  {id:'heavy',name:'Titan',cost:80,hp:180,speed:90,reverse:60,turn:1.15,scale:1},
+  {id:'mammoth',name:'Mammoth',cost:140,hp:280,speed:65,reverse:42,turn:.85,scale:1.18}
 ];
 // Hull tiers work like turret tiers, but each hull has its own upgrade track.
 // T0 is the stock chassis; later tiers improve survivability and mobility.
@@ -134,8 +135,8 @@ let twinsTier=Number(safeStorageGet('tankTwinsTier')||0);
 let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier')||0));
 let smokyTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankSmokyTier')||0)));
 let smokyOwnedTier=Math.max(smokyTier,Math.min(3,Number(safeStorageGet('tankSmokyOwnedTier')||0)));
-let hullTierById={scout:0,standard:0,heavy:0};
-let hullOwnedTierById={scout:0,standard:0,heavy:0};
+let hullTierById={scout:0,standard:0,heavy:0,mammoth:0};
+let hullOwnedTierById={scout:0,standard:0,heavy:0,mammoth:0};
 try{
   const savedHullTiers=JSON.parse(safeStorageGet('tankHullTiers','{}'));
   const savedOwnedHullTiers=JSON.parse(safeStorageGet('tankHullOwnedTiers','{}'));
@@ -438,8 +439,10 @@ function pickEnemyHull(){
   const r=Math.random();
   if(wave<=2)return r<.65?'scout':(r<.95?'standard':'heavy');
   if(wave<=5)return r<.25?'scout':(r<.85?'standard':'heavy');
+  const mammothChance=Math.min(.16,.04+(wave-6)*.02);
+  if(r<mammothChance)return 'mammoth';
   const kvChance=Math.min(.85,.45+(wave-6)*.08);
-  return r<kvChance?'heavy':(r<.5?'scout':'standard');
+  return r<mammothChance+kvChance?'heavy':(r<.5?'scout':'standard');
 }
 function pickEnemyHullTier(turretTier){
   // Higher turret tiers strongly increase the chance of a higher-tier hull.
@@ -476,8 +479,8 @@ function makeEnemy(){
   const turret=turrets.find(v=>v.id===turretId)||turrets[0];
   const engine=engines.find(v=>v.id===engineId)||engines[0];
   const hullTierData=hullTiers[Math.max(0,Math.min(3,hullTier))]||hullTiers[0];
-  const heavy=hullId==='heavy';
-  const mass=hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
+  const heavy=hullId==='heavy'||hullId==='mammoth';
+  const mass=hullId==='mammoth'?2.5:hullId==='heavy'?1.8:hullId==='scout'?0.65:1;
   const enemyFirebirdTier=turretId==='fast'?turretTier:0;
   const enemyFreezeTier=turretId==='freeze'?turretTier:0;
 
@@ -897,7 +900,8 @@ function killEnemy(e,j){
   e.deathDrift=1;
   e.deathVx=Number.isFinite(e.vx)?e.vx:0;
   e.deathVy=Number.isFinite(e.vy)?e.vy:0;
-  p.kills++;p.coins+=e.heavy?15:7;addXp(e.heavy?70:35);
+  const mammothReward=e.hullId==='mammoth';
+  p.kills++;p.coins+=mammothReward?25:e.heavy?15:7;addXp(mammothReward?100:e.heavy?70:35);
   burst(e.x,e.y,e.heavy?'#c77d52':'#d85b68',28);soundExplosion();
   e.dead=true;e.corpseTime=5;e.hitFlash=0;e.fire=0;
   deadTanks.push(e);en.splice(j,1);
@@ -955,7 +959,7 @@ function renderShop(){
       // Shop hull preview mirrors the same chassis proportions and geometry
       // used by tankBody(), including tracks, wheel count and turret placement.
       const sc=item.scale*.78;
-      const isWasp=item.id==='scout',isHornet=item.id==='standard',isTitan=item.id==='heavy';
+      const isWasp=item.id==='scout',isHornet=item.id==='standard',isTitan=item.id==='heavy',isMammoth=item.id==='mammoth';
       const rr=22*sc;
       const L=rr*2.55*(isTitan?1.10:isWasp?.94:1);
       const B=rr*1.18*(isTitan?1.08:isWasp?.90:1);
@@ -967,7 +971,7 @@ function renderShop(){
       q.save();
       q.rotate(0);
       q.fillStyle='rgba(0,0,0,.24)';
-      q.beginPath();q.ellipse(3,5,rr*(isTitan?1.65:1.40),rr*(isTitan?1.0:.80),0,0,6.283);q.fill();
+      q.beginPath();q.ellipse(3,5,rr*(isMammoth?1.82:isTitan?1.65:1.40),rr*(isMammoth?1.10:isTitan?1.0:.80),0,0,6.283);q.fill();
 
       const trackDark='#202520',trackEdge='#4a5148',wheelOuter='#596158',wheelInner='#303530';
       for(const sy of [-1,1]){
@@ -975,10 +979,10 @@ function renderShop(){
         q.fillStyle=trackDark;
         q.beginPath();q.roundRect(-trackL/2,ty-trackW/2,trackL,trackW,7);q.fill();
         q.strokeStyle=trackEdge;q.lineWidth=1.5;q.stroke();
-        const wheels=isWasp?4:isTitan?6:5;
+        const wheels=isWasp?4:isMammoth?8:isTitan?6:5;
         for(let i=0;i<wheels;i++){
           const wx=-trackL*.38+i*(trackL*.76/Math.max(1,wheels-1));
-          const wr=rr*(isTitan?.18:isWasp?.13:.16);
+          const wr=rr*(isMammoth?.19:isTitan?.18:isWasp?.13:.16);
           q.fillStyle=wheelOuter;q.beginPath();q.arc(wx,ty,wr,0,6.283);q.fill();
           q.strokeStyle='#202320';q.lineWidth=1;q.stroke();
           q.fillStyle=wheelInner;q.beginPath();q.arc(wx,ty,wr*.34,0,6.283);q.fill();
@@ -1097,7 +1101,7 @@ function renderShop(){
       }
 
       // Match the actual hull's turret ring and placement.
-      q.fillStyle='#343c34';q.beginPath();q.arc(turretX,0,rr*(isTitan?.62:isWasp?.50:.57),0,6.283);q.fill();
+      q.fillStyle='#343c34';q.beginPath();q.arc(turretX,0,rr*(isMammoth?.68:isTitan?.62:isWasp?.50:.57),0,6.283);q.fill();
       q.strokeStyle='#697760';q.lineWidth=1.2;q.stroke();
 
       q.fillStyle='#424d3f';q.beginPath();
@@ -1934,20 +1938,20 @@ function update(dt){
 function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=false,turretId='standard',hullId='standard',firebirdTierVisual=0,twinsTierVisual=0,smokyTierVisual=0,railgunTierVisual=0,hullTierVisual=0,freezeTierVisual=0,freezeStacksVisual=0){
   x.save();x.translate(cx,cy);x.rotate(hullAngle);
 
-  const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy';
+  const isWasp=hullId==='scout',isHornet=hullId==='standard',isTitan=hullId==='heavy',isMammoth=hullId==='mammoth';
   const freezeStacks=Math.max(0,Math.min(5,freezeStacksVisual||0));
   const freezeAmount=Math.min(1,Math.pow(freezeStacks/5,0.72));
   const frostColor=v=>{if(!freezeAmount)return v;if(!/^#[0-9a-f]{6}$/i.test(v))return v;const n=parseInt(v.slice(1),16),r0=n>>16,g0=(n>>8)&255,b0=n&255;const rr=Math.round(r0*(1-freezeAmount)+45*freezeAmount),gg=Math.round(g0*(1-freezeAmount)+155*freezeAmount),bb=Math.round(b0*(1-freezeAmount)+235*freezeAmount);return '#'+[rr,gg,bb].map(q=>q.toString(16).padStart(2,'0')).join('')};
-  const L=r*2.55*(isTitan?1.10:isWasp?.94:1);
-  const B=r*1.18*(isTitan?1.08:isWasp?.90:1);
-  const trackW=r*(isTitan?.42:isWasp?.25:.34);
-  const trackL=L*(isTitan?1.02:isWasp?.82:.94);
-  const hullB=B*(isTitan?1.02:isWasp?.84:1);
-  const turretX=isWasp?-L*.22:isTitan?L*.18:0;
+  const L=r*2.55*(isMammoth?1.22:isTitan?1.10:isWasp?.94:1);
+  const B=r*1.18*(isMammoth?1.16:isTitan?1.08:isWasp?.90:1);
+  const trackW=r*(isMammoth?.48:isTitan?.42:isWasp?.25:.34);
+  const trackL=L*(isMammoth?1.08:isTitan?1.02:isWasp?.82:.94);
+  const hullB=B*(isMammoth?1.08:isTitan?1.02:isWasp?.84:1);
+  const turretX=isWasp?-L*.22:isMammoth?-L*.04:isTitan?L*.18:0;
 
   x.save();x.rotate(-hullAngle);
   x.fillStyle='rgba(0,0,0,.30)';
-  x.beginPath();x.ellipse(3,5,r*(isTitan?1.65:1.40),r*(isTitan?1.0:.80),0,0,6.283);x.fill();
+  x.beginPath();x.ellipse(3,5,r*(isMammoth?1.82:isTitan?1.65:1.40),r*(isMammoth?1.10:isTitan?1.0:.80),0,0,6.283);x.fill();
   x.restore();
 
   const trackDark=frostColor(flash?'#b89d84':(enemy?(heavy?'#292b2c':'#4b3033'):'#202520'));
@@ -1960,19 +1964,19 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.fillStyle=trackDark;
     x.beginPath();x.roundRect(-trackL/2,ty-trackW/2,trackL,trackW,7);x.fill();
     x.strokeStyle=trackEdge;x.lineWidth=2;x.stroke();
-    const wheels=isWasp?4:isTitan?6:5;
+    const wheels=isWasp?4:isMammoth?8:isTitan?6:5;
     for(let i=0;i<wheels;i++){
       const wx=-trackL*.38+i*(trackL*.76/Math.max(1,wheels-1));
-      const wr=r*(isTitan?.18:isWasp?.13:.16);
+      const wr=r*(isMammoth?.19:isTitan?.18:isWasp?.13:.16);
       x.fillStyle=wheelOuter;x.beginPath();x.arc(wx,ty,wr,0,6.283);x.fill();
       x.strokeStyle='#202320';x.lineWidth=1.5;x.stroke();
       x.fillStyle=wheelInner;x.beginPath();x.arc(wx,ty,wr*.34,0,6.283);x.fill();
     }
   }
 
-  const body=frostColor(flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):(isTitan?'#4b5747':isWasp?'#506347':'#566b4c')));
-  const bodyDark=frostColor(enemy?(heavy?'#373532':'#593337'):(isTitan?'#30382f':isWasp?'#354238':'#384337'));
-  const bodyLight=frostColor(enemy?(heavy?'#625a50':'#758267'):(isTitan?'#687563':isWasp?'#758267':'#74836a'));
+  const body=frostColor(flash?'#e5c6a8':(enemy?(heavy?'#4e4942':'#713d41'):(isMammoth?'#424d43':isTitan?'#4b5747':isWasp?'#506347':'#566b4c')));
+  const bodyDark=frostColor(enemy?(heavy?'#373532':'#593337'):(isMammoth?'#2b332e':isTitan?'#30382f':isWasp?'#354238':'#384337'));
+  const bodyLight=frostColor(enemy?(heavy?'#625a50':'#758267'):(isMammoth?'#66736a':isTitan?'#687563':isWasp?'#758267':'#74836a'));
   const metal=frostColor(enemy?(heavy?'#756f66':'#9b5559'):'#a3aaa3');
 
   // Distinct chassis identities:
@@ -1988,6 +1992,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.lineTo(-L*.49,hullB*.20);
     x.lineTo(-L*.30,hullB*.34);
     x.lineTo(L*.27,hullB*.38);
+  }else if(isMammoth){
+    x.moveTo(L*.48,-hullB*.40);x.lineTo(L*.28,-hullB*.58);x.lineTo(-L*.36,-hullB*.60);
+    x.lineTo(-L*.58,-hullB*.42);x.lineTo(-L*.62,-hullB*.18);x.lineTo(-L*.62,hullB*.18);
+    x.lineTo(-L*.58,hullB*.42);x.lineTo(-L*.36,hullB*.60);x.lineTo(L*.28,hullB*.58);x.lineTo(L*.48,hullB*.40);
   }else if(isTitan){
     x.moveTo(L*.43,-hullB*.30);
     x.lineTo(L*.22,-hullB*.52);
@@ -2014,6 +2022,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   if(isWasp){
     x.moveTo(L*.38,0);x.lineTo(L*.18,-hullB*.28);x.lineTo(-L*.27,-hullB*.25);
     x.lineTo(-L*.34,0);x.lineTo(-L*.27,hullB*.25);x.lineTo(L*.18,hullB*.28);
+  }else if(isMammoth){
+    x.moveTo(L*.32,-hullB*.42);x.lineTo(-L*.28,-hullB*.46);x.lineTo(-L*.48,-hullB*.25);
+    x.lineTo(-L*.48,hullB*.25);x.lineTo(-L*.28,hullB*.46);x.lineTo(L*.32,hullB*.42);
+    x.lineTo(L*.40,hullB*.18);x.lineTo(L*.40,-hullB*.18);
   }else if(isTitan){
     x.moveTo(L*.28,-hullB*.32);x.lineTo(-L*.30,-hullB*.38);x.lineTo(-L*.43,-hullB*.24);
     x.lineTo(-L*.43,hullB*.24);x.lineTo(-L*.30,hullB*.38);x.lineTo(L*.28,hullB*.32);
@@ -2033,6 +2045,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.fillRect(-L*.34,-hullB*.42,L*.58,hullB*.07);
     x.fillRect(-L*.34,hullB*.35,L*.58,hullB*.07);
     x.fillStyle=metal;x.fillRect(-L*.40,-hullB*.29,L*.16,hullB*.58);
+  }else if(isMammoth){
+    x.fillStyle=metal;
+    x.fillRect(L*.18,-hullB*.46,L*.25,hullB*.92);
+    x.fillStyle=bodyDark;x.fillRect(-L*.48,-hullB*.50,L*.34,hullB*.14);x.fillRect(-L*.48,hullB*.36,L*.34,hullB*.14);
+    x.fillStyle=metal;x.fillRect(-L*.54,-hullB*.32,L*.13,hullB*.64);
   }else if(isHornet){
     x.fillStyle=metal;
     x.beginPath();x.moveTo(L*.27,-hullB*.47);x.lineTo(L*.02,-hullB*.36);x.lineTo(-L*.12,-hullB*.22);x.lineTo(L*.28,-hullB*.29);x.closePath();x.fill();
@@ -2054,7 +2071,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // Rear engine / vents: Wasp compact, Hornet split vents, Titan oversized.
   x.fillStyle=bodyDark;
-  if(isTitan){
+  if(isMammoth){
+    x.fillRect(-L*.50,-hullB*.39,L*.36,hullB*.78);x.fillStyle=metal;
+    for(let i=0;i<7;i++)x.fillRect(-L*.45+i*L*.052,-hullB*.28,L*.022,hullB*.56);
+  }else if(isTitan){
     x.fillRect(-L*.46,-hullB*.34,L*.30,hullB*.68);
     x.fillStyle=metal;
     for(let i=0;i<5;i++)x.fillRect(-L*.42+i*L*.045,-hullB*.23,L*.018,hullB*.46);
@@ -2138,7 +2158,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // One turret ring only. Placement is part of the hull silhouette.
   x.fillStyle=frostColor(enemy?(heavy?'#363432':'#513033'):'#343c34');
-  x.beginPath();x.arc(turretX,0,r*(isTitan?.62:isWasp?.50:.57),0,6.283);x.fill();
+  x.beginPath();x.arc(turretX,0,r*(isMammoth?.68:isTitan?.62:isWasp?.50:.57),0,6.283);x.fill();
   x.strokeStyle=frostColor(enemy?(heavy?'#696258':'#8c4b4f'):'#697760');x.lineWidth=1.4;x.stroke();
 
   x.save();x.translate(turretX,0);x.rotate(turretAngle-hullAngle);

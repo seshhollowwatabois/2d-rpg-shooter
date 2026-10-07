@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100727';
+const GAME_VERSION='2026100728';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -634,17 +634,12 @@ function shoot(){
     const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
     const range=tier.range||barrel.range||230;
     const cone=barrel.cone||.42;
+    // Match Firebird timing: the visible Freeze particles are the hitbox,
+    // so damage is applied when the stream reaches the target rather than on fire.
     spawnFreezeParticles(p,muzzle,fireAngle,tier,cone,range,18);
-    const ca=Math.cos(fireAngle),sa=Math.sin(fireAngle);
     for(const e of [...en]){
-      const dx=e.x-muzzle.x,dy=e.y-muzzle.y;
-      const dist=Math.hypot(dx,dy);
-      if(dist>range+e.r||dist<1)continue;
-      const along=dx*ca+dy*sa;
-      const side=Math.abs(dx*sa-dy*ca);
-      const allowedSide=Math.tan(cone*.5)*Math.max(0,along)+e.r;
-      if(along<=0||side>allowedSide)continue;
-      if(wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,dist-e.r)))continue;
+      if(!freezeParticleHit(e,p))continue;
+      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
       const falloff=1-Math.min(1,dist/range);
       const dmg=(15+tier.directBonus)+(11*falloff);
       applyBulletHit(e,dmg,e.x,e.y,null,0);
@@ -804,7 +799,8 @@ function enemyShoot(e){
   if(barrel.id==='122mmFreeze'&&barrel.freeze){
     const tier=freezeTiers[Math.max(0,Math.min(3,e.freezeTier||0))]||freezeTiers[0],range=tier.range||barrel.range||230,cone=barrel.cone||.42,muzzle=enemyMuzzlePosition(e,barrel,a);
     spawnFreezeParticles(e,muzzle,a,tier,cone,range,18);
-    if(freezeParticleHit(p,e,muzzle,a,range,cone)&&e.fire<=0){
+    if(freezeParticleHit(p,e,null,a,range,cone)&&e.fire<=0){
+      // Match Firebird timing: only a rendered Freeze particle can trigger damage.
       const dist=Math.hypot(p.x-muzzle.x,p.y-muzzle.y),falloff=1-Math.min(1,dist/range);
       applyBulletHit(p,(15+tier.directBonus)+(11*falloff),p.x,p.y,null,0);applyFreeze(p);e.fire=barrel.reloadTime;
       if(p.hp<=0){p.hp=0;die();return;}

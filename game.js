@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100745';
+const GAME_VERSION='2026100746';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -99,12 +99,11 @@ const smokyTiers=[
   {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.05,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const thunderTiers=[
-  // Thunder keeps the same upgrade progression as Smoky, but doubles its
-  // damage and takes twice as long to reload at every tier.
-  {tier:0,name:'Standard Thunder',damageBonus:0,radius:70,reloadTime:4,turnBonus:0},
-  {tier:1,name:'Thunder Tier 1',damageBonus:10,radius:82,reloadTime:3.50,turnBonus:.20},
-  {tier:2,name:'Thunder Tier 2',damageBonus:20,radius:95,reloadTime:3.00,turnBonus:.40},
-  {tier:3,name:'Thunder Tier 3',damageBonus:50,radius:110,reloadTime:2.50,turnBonus:1.05}
+  // Thunder is exactly 2x Smoky's damage, with reload reduced by 0.25s at each tier.
+  {tier:0,name:'Standard Thunder',damageBonus:0,radius:70,reloadTime:3.75,turnBonus:0},
+  {tier:1,name:'Thunder Tier 1',damageBonus:10,radius:82,reloadTime:3.25,turnBonus:.20},
+  {tier:2,name:'Thunder Tier 2',damageBonus:20,radius:95,reloadTime:2.75,turnBonus:.40},
+  {tier:3,name:'Thunder Tier 3',damageBonus:50,radius:110,reloadTime:2.25,turnBonus:1.05}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -1295,9 +1294,22 @@ function renderShop(){
         q.globalAlpha=1;
       }else if(visualTurret.id==='thunder'){
         const thunderAccent=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';
-        q.fillStyle='#303831';q.beginPath();q.roundRect(-r*.46,-r*.37,r*.31,r*.18,r*.05);q.fill();q.beginPath();q.roundRect(-r*.46,r*.19,r*.31,r*.18,r*.05);q.fill();
-        q.fillStyle=thunderAccent;q.globalAlpha=.95;q.fillRect(-r*.41,-r*.33,r*.22,r*.07);q.fillRect(-r*.41,r*.26,r*.22,r*.07);q.globalAlpha=1;
-        q.strokeStyle=thunderAccent;q.lineWidth=r*.05;q.beginPath();q.moveTo(-r*.25,-r*.24);q.lineTo(r*.38,-r*.13);q.stroke();q.beginPath();q.moveTo(-r*.25,r*.24);q.lineTo(r*.38,r*.13);q.stroke();
+        const thunderGlow=thunderVisualTier.tier>0?thunderVisualTier.glow:'#b5c0aa';
+        const thunderDark=thunderVisualTier.tier===1?'#123c25':thunderVisualTier.tier===2?'#35104f':thunderVisualTier.tier===3?'#5c4300':'#303831';
+        q.fillStyle=thunderDark;
+        q.beginPath();q.roundRect(-r*.46,-r*.37,r*.31,r*.18,r*.05);q.fill();
+        q.beginPath();q.roundRect(-r*.46,r*.19,r*.31,r*.18,r*.05);q.fill();
+        // Strong tier-colored armor panels and glowing trim make the shop preview
+        // match the selected Thunder tier at a glance.
+        q.save();q.shadowColor=thunderAccent;q.shadowBlur=thunderVisualTier.tier>0?8:0;
+        q.fillStyle=thunderAccent;q.globalAlpha=.94;
+        q.fillRect(-r*.41,-r*.33,r*.22,r*.07);q.fillRect(-r*.41,r*.26,r*.22,r*.07);
+        q.globalAlpha=.72;q.fillRect(-r*.04,-r*.43,r*.28,r*.055);q.fillRect(-r*.04,r*.375,r*.28,r*.055);
+        q.globalAlpha=.90;
+        q.strokeStyle=thunderGlow;q.lineWidth=r*.055;
+        q.beginPath();q.moveTo(-r*.25,-r*.24);q.lineTo(r*.38,-r*.13);q.stroke();
+        q.beginPath();q.moveTo(-r*.25,r*.24);q.lineTo(r*.38,r*.13);q.stroke();
+        q.restore();
       }else if(visualTurret.id==='fast'){
         const fireAccent=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.accent,fireFlame=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.flame,fireCore=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.core;
         q.fillStyle='#343a31';

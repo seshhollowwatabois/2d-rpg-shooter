@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100730';
+const GAME_VERSION='2026100731';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -416,7 +416,7 @@ function pickEnemyTurret(){
   const spawnIndex=5-waveRemaining;
   if(wave<5){
     const weaponRoll=Math.random();
-    const id=weaponRoll<.25?'standard':weaponRoll<.50?'rapid':weaponRoll<.75?'fast':'railgun';
+    const id=weaponRoll<.20?'standard':weaponRoll<.40?'rapid':weaponRoll<.60?'fast':weaponRoll<.80?'freeze':'railgun';
     return {id,tier:0};
   }
   const milestone=Math.floor((wave-5)/5);
@@ -425,7 +425,7 @@ function pickEnemyTurret(){
   const lowTier=Math.max(0,highTier-1);
   const tier=spawnIndex<highCount?highTier:lowTier;
   const weaponRoll=Math.random();
-  const id=weaponRoll<.25?'standard':weaponRoll<.50?'rapid':weaponRoll<.75?'fast':'railgun';
+  const id=weaponRoll<.20?'standard':weaponRoll<.40?'rapid':weaponRoll<.60?'fast':weaponRoll<.80?'freeze':'railgun';
   return {id,tier};
 }
 function pickEnemyEngine(){

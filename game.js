@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100747';
+const GAME_VERSION='2026100748';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1191,7 +1191,7 @@ function renderShop(){
     }else if(type==='turret'){
       // Render the exact same turret geometry used by tankBody(), just on the
       // shop canvas. This keeps the shop preview visually identical to gameplay.
-      const r=20;
+      const r=item.id==='thunder'?20*(item.scale||1):20;
       const fireTier=item.id==='fast'?firebirdTiers[Math.max(0,Math.min(3,firebirdTier))]:null;
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
       const smokyVisualTier=item.id==='standard'?smokyTiers[Math.max(0,Math.min(3,smokyTier))]:null;
@@ -1206,9 +1206,12 @@ function renderShop(){
       q.save();q.translate(0,0);q.rotate(0);
       const visualBarrel=gunForTurret(item.id);
       const visualTurret=item;
-      q.fillStyle=item.id==='thunder'
-        ? (thunderVisualTier.tier===1?'#24583b':thunderVisualTier.tier===2?'#472258':thunderVisualTier.tier===3?'#665317':'#424d3f')
-        : item.id==='railgun'?'#202725':item.id==='fast'?'#424d3f':'#424d3f';
+      const thunderFullBodyPreview=item.id==='thunder'&&thunderVisualTier.tier>0;
+      q.fillStyle=item.id==='thunder'&&thunderFullBodyPreview
+        ? thunderVisualTier.accent
+        : item.id==='thunder'
+          ? '#424d3f'
+          : item.id==='railgun'?'#202725':item.id==='fast'?'#424d3f':'#424d3f';
       q.beginPath();
       if(visualTurret.id==='railgun'){
         q.moveTo(-r*.50,-r*.30);q.lineTo(r*.08,-r*.36);q.quadraticCurveTo(r*.42,-r*.27,r*.48,0);
@@ -1297,21 +1300,15 @@ function renderShop(){
       }else if(visualTurret.id==='thunder'){
         const thunderAccent=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';
         const thunderGlow=thunderVisualTier.tier>0?thunderVisualTier.glow:'#b5c0aa';
-        const thunderDark=thunderVisualTier.tier===1?'#123c25':thunderVisualTier.tier===2?'#35104f':thunderVisualTier.tier===3?'#5c4300':'#303831';
+        const thunderDark=thunderVisualTier.tier===1?'#0f5a31':thunderVisualTier.tier===2?'#42146a':thunderVisualTier.tier===3?'#705500':'#303831';
         q.fillStyle=thunderDark;
         q.beginPath();q.roundRect(-r*.46,-r*.37,r*.31,r*.18,r*.05);q.fill();
         q.beginPath();q.roundRect(-r*.46,r*.19,r*.31,r*.18,r*.05);q.fill();
-        // Strong tier-colored armor panels and glowing trim make the shop preview
-        // match the selected Thunder tier at a glance.
         q.save();q.shadowColor=thunderAccent;q.shadowBlur=thunderVisualTier.tier>0?8:0;
-        q.fillStyle=thunderAccent;q.globalAlpha=.94;
+        q.fillStyle=thunderAccent;q.globalAlpha=.98;
         q.fillRect(-r*.41,-r*.33,r*.22,r*.07);q.fillRect(-r*.41,r*.26,r*.22,r*.07);
         q.globalAlpha=.72;q.fillRect(-r*.04,-r*.43,r*.28,r*.055);q.fillRect(-r*.04,r*.375,r*.28,r*.055);
-        q.globalAlpha=.90;
-        q.strokeStyle=thunderGlow;q.lineWidth=r*.055;
-        q.beginPath();q.moveTo(-r*.25,-r*.24);q.lineTo(r*.38,-r*.13);q.stroke();
-        q.beginPath();q.moveTo(-r*.25,r*.24);q.lineTo(r*.38,r*.13);q.stroke();
-        q.restore();
+        q.globalAlpha=1;q.restore();
       }else if(visualTurret.id==='fast'){
         const fireAccent=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.accent,fireFlame=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.flame,fireCore=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.core;
         q.fillStyle='#343a31';
@@ -2340,7 +2337,8 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const universalTurretAccent=visualTierIndex>0?visualTier.accent:null;
 
   // Turret silhouette varies with weapon class.
-  x.fillStyle=frostColor(enemy?(heavy?'#45413b':'#61373a'):'#424d3f');x.beginPath();
+  const thunderFullBody=visualTurret.id==='thunder'&&visualTierIndex>0;
+  x.fillStyle=thunderFullBody?visualTier.accent:frostColor(enemy?(heavy?'#45413b':'#61373a'):'#424d3f');x.beginPath();
   if(visualTurret.id==='railgun'){
     x.moveTo(-tr*.50,-tr*.30);x.lineTo(tr*.08,-tr*.36);x.quadraticCurveTo(tr*.42,-tr*.27,tr*.48,0);
     x.quadraticCurveTo(tr*.42,tr*.27,tr*.08,tr*.36);x.lineTo(-tr*.50,tr*.30);x.quadraticCurveTo(-tr*.60,0,-tr*.50,-tr*.30);
@@ -2383,12 +2381,25 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
   }else if(visualTurret.id==='thunder'){
     const thunderAccent=visualTier.tier>0?visualTier.accent:'#89967c';
-    x.fillStyle='#303831';
-    x.beginPath();x.roundRect(-tr*.46,-tr*.37,tr*.31,tr*.18,tr*.05);x.fill();
-    x.beginPath();x.roundRect(-tr*.46,tr*.19,tr*.31,tr*.18,tr*.05);x.fill();
-    x.fillStyle=thunderAccent;x.globalAlpha=.95;
+    const thunderDark=visualTier.tier===1?'#0f5a31':visualTier.tier===2?'#42146a':visualTier.tier===3?'#705500':'#303831';
+    // Full-body tier color: Thunder's armor changes material color, not just trim.
+    if(thunderFullBody){
+      x.fillStyle=visualTier.accent;x.globalAlpha=.96;
+      x.beginPath();x.roundRect(-tr*.46,-tr*.37,tr*.31,tr*.18,tr*.05);x.fill();
+      x.beginPath();x.roundRect(-tr*.46,tr*.19,tr*.31,tr*.18,tr*.05);x.fill();
+      x.globalAlpha=1;
+    }else{
+      x.fillStyle=thunderDark;
+      x.beginPath();x.roundRect(-tr*.46,-tr*.37,tr*.31,tr*.18,tr*.05);x.fill();
+      x.beginPath();x.roundRect(-tr*.46,tr*.19,tr*.31,tr*.18,tr*.05);x.fill();
+    }
+    x.fillStyle=thunderDark;x.globalAlpha=.96;
+    x.beginPath();x.roundRect(-tr*.44,-tr*.30,tr*.26,tr*.11,tr*.03);x.fill();
+    x.beginPath();x.roundRect(-tr*.44,tr*.19,tr*.26,tr*.11,tr*.03);x.fill();
+    x.globalAlpha=1;
+    x.fillStyle=thunderAccent;x.globalAlpha=.98;
     x.fillRect(-tr*.41,-tr*.33,tr*.22,tr*.07);x.fillRect(-tr*.41,tr*.26,tr*.22,tr*.07);
-    x.strokeStyle=thunderAccent;x.lineWidth=tr*.05;
+    x.strokeStyle=visualTier.tier>0?visualTier.glow:thunderAccent;x.lineWidth=tr*.05;
     x.beginPath();x.moveTo(-tr*.25,-tr*.24);x.lineTo(tr*.38,-tr*.13);x.stroke();
     x.beginPath();x.moveTo(-tr*.25,tr*.24);x.lineTo(tr*.38,tr*.13);x.stroke();
     x.globalAlpha=1;
@@ -2518,8 +2529,10 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.moveTo(barrelStart,-barrelHalf);x.lineTo(barrelEnd,-barrelHalf*.96);
     x.lineTo(barrelEnd+tr*.07,-barrelHalf*.66);x.lineTo(barrelEnd+tr*.07,barrelHalf*.66);
     x.lineTo(barrelEnd,barrelHalf*.96);x.lineTo(barrelStart,barrelHalf);x.closePath();x.fill();
-    x.fillStyle='#2b302c';x.fillRect(tr*.40,-barrelHalf*1.16,tr*.23,barrelHalf*2.32);
-    x.fillStyle='#ffd24a';x.globalAlpha=.9;x.fillRect(tr*.82,-barrelHalf*1.10,tr*.09,barrelHalf*2.20);x.globalAlpha=1;
+    const thunderBarrelAccent=thunderVisual.tier>0?thunderVisual.accent:'#89967c';
+    const thunderBarrelDark=thunderVisual.tier===1?'#0b4023':thunderVisual.tier===2?'#30104b':thunderVisual.tier===3?'#514000':'#2b302c';
+    x.fillStyle=thunderBarrelDark;x.fillRect(tr*.40,-barrelHalf*1.16,tr*.23,barrelHalf*2.32);
+    x.fillStyle=thunderBarrelAccent;x.globalAlpha=.96;x.fillRect(tr*.82,-barrelHalf*1.10,tr*.09,barrelHalf*2.20);x.globalAlpha=1;
     x.strokeStyle=thunderVisual.tier>0?thunderVisual.accent:'#89967c';x.lineWidth=1.9;
     x.beginPath();x.moveTo(tr*.48,-barrelHalf*1.22);x.lineTo(barrelEnd-tr*.09,-barrelHalf*.99);x.stroke();
     x.beginPath();x.moveTo(tr*.48,barrelHalf*1.22);x.lineTo(barrelEnd-tr*.09,barrelHalf*.99);x.stroke();

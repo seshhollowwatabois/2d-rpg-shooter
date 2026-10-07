@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100729';
+const GAME_VERSION='2026100730';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -259,7 +259,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -631,6 +631,9 @@ function shoot(){
   // instead of relying on rendered particles, so damage cannot disappear when a
   // particle misses between frames.
   if(barrel.id==='122mmFreeze'&&barrel.freeze){
+    // Freeze has a deliberate 0.5s warm-up while the fire button is held.
+    // Keep the stream visible during warm-up, but do not apply damage yet.
+    if((p.freezeFireDelay||0)<.5){p.cd=.05;return;}
     const tier=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
     const range=tier.range||barrel.range||230;
     const cone=barrel.cone||.42;
@@ -1699,12 +1702,14 @@ function update(dt){
   }
   if(firebird.id==='122mmFreeze'&&firebird.freeze){
     if(fireHeld&&p.freezeFuel>0){
+      p.freezeFireDelay=Math.min(.5,(p.freezeFireDelay||0)+dt);
       const freezeAngle=p.turretAngle,muzzle=playerMuzzlePosition(firebird,freezeAngle);
       const freezeTierData=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
       spawnFreezeParticles(p,muzzle,freezeAngle,freezeTierData,firebird.cone||.42,freezeTierData.range||firebird.range||230,18);
       p.freezeActive=true;
     }else{
       p.freezeActive=false;
+      p.freezeFireDelay=0;
     }
   }
   if(firebird.id==='122mm'&&firebird.flame&&fireHeld&&p.firebirdFuel>0)p.firebirdFuel=Math.max(0,p.firebirdFuel-dt);

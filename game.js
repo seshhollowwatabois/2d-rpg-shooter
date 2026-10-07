@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100728';
+const GAME_VERSION='2026100729';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -638,8 +638,11 @@ function shoot(){
     // so damage is applied when the stream reaches the target rather than on fire.
     spawnFreezeParticles(p,muzzle,fireAngle,tier,cone,range,18);
     for(const e of [...en]){
-      if(!freezeParticleHit(e,p))continue;
-      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y,d=Math.hypot(dx,dy);
+      const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
+      const inStream=d<=range+e.r&&da<=cone*.5+Math.asin(Math.min(1,e.r/Math.max(d,1)))&&!wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-e.r));
+      if(!freezeParticleHit(e,p)&&!inStream)continue;
+      const dist=d;
       const falloff=1-Math.min(1,dist/range);
       const dmg=(15+tier.directBonus)+(11*falloff);
       applyBulletHit(e,dmg,e.x,e.y,null,0);
@@ -655,8 +658,11 @@ function shoot(){
     const range=tier.range||barrel.range||230;
     for(const e of [...en]){
       // The rendered Firebird particles are the hitbox.
-      if(!flameParticleHit(e,p))continue;
-      const dist=Math.hypot(e.x-muzzle.x,e.y-muzzle.y);
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y,d=Math.hypot(dx,dy);
+      const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
+      const inStream=d<=range+e.r&&da<=(barrel.cone||.42)*.5+Math.asin(Math.min(1,e.r/Math.max(d,1)))&&!wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-e.r));
+      if(!flameParticleHit(e,p)&&!inStream)continue;
+      const dist=d;
       const damageFalloff=1-Math.min(1,dist/range);
       const minDamage=10+tier.directBonus,maxDamage=21+tier.directBonus;
       const dmg=minDamage+(maxDamage-minDamage)*damageFalloff;
@@ -1686,7 +1692,6 @@ function update(dt){
       spawnFlameParticles(p,muzzle,fireAngle,fireTier,cone,range,18);
       if(!p.firebirdActive){
         p.firebirdActive=true;
-        p.cd=.5;
     }
     }else{
       p.firebirdActive=false;

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100741';
+const GAME_VERSION='2026100742';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -27,7 +27,7 @@ const turrets=[
   {id:'fast',name:'Firebird',cost:0,turn:1.8,scale:1},
   {id:'freeze',name:'Freeze',cost:0,turn:1.7,scale:1},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1},
-  {id:'thunder',name:'Thunder',cost:0,turn:1.25,scale:1}
+  {id:'thunder',name:'Thunder',cost:0,turn:1.25,scale:1.12}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
@@ -40,7 +40,7 @@ const barrels=[
   {id:'122mm',name:'Firebird',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmFreeze',name:'Freeze',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,freeze:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0},
-  {id:'thunder',name:'Thunder',cost:0,minDamage:20,maxDamage:25,reloadTime:2,scale:.92,length:.90,instant:true,area:true,areaRadius:70}
+  {id:'thunder',name:'Thunder',cost:0,minDamage:20,maxDamage:25,reloadTime:2,scale:1.22,length:1.45,instant:true,area:true,areaRadius:70}
 ];
 function gunForTurret(turretId){
   if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];
@@ -1255,7 +1255,9 @@ function renderShop(){
           q.beginPath();q.moveTo(-r*.50,r*.15);q.lineTo(-r*.31,r*.30);q.lineTo(-r*.06,r*.33);q.stroke();
         }
       }else if(visualTurret.id==='thunder'){
-        q.moveTo(-r*.50,-r*.31);q.quadraticCurveTo(-r*.18,-r*.47,r*.24,-r*.41);q.lineTo(r*.50,-r*.22);q.quadraticCurveTo(r*.58,0,r*.50,r*.22);q.lineTo(r*.24,r*.41);q.quadraticCurveTo(-r*.18,r*.47,-r*.50,r*.31);q.quadraticCurveTo(-r*.61,0,-r*.50,-r*.31);
+        q.moveTo(-r*.57,-r*.39);q.lineTo(-r*.17,-r*.54);q.lineTo(r*.31,-r*.49);q.lineTo(r*.56,-r*.29);
+        q.quadraticCurveTo(r*.66,0,r*.56,r*.29);q.lineTo(r*.31,r*.49);q.lineTo(-r*.17,r*.54);q.lineTo(-r*.57,r*.39);
+        q.quadraticCurveTo(-r*.69,0,-r*.57,-r*.39);
       }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
         q.quadraticCurveTo(r*.52,-r*.24,r*.52,0);q.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
@@ -1284,8 +1286,10 @@ function renderShop(){
         q.beginPath();q.arc(-r*.08,0,r*.10,0,6.283);q.fill();
         q.globalAlpha=1;
       }else if(visualTurret.id==='thunder'){
-        q.fillStyle=thunderVisualTier.tier>0?thunderVisualTier.accent:'rgba(0,0,0,0)';q.fillRect(-r*.30,-r*.29,r*.22,r*.10);q.fillRect(-r*.30,r*.19,r*.22,r*.10);
-        q.strokeStyle=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';q.lineWidth=r*.05;q.beginPath();q.moveTo(-r*.18,-r*.18);q.lineTo(r*.30,-r*.12);q.stroke();q.beginPath();q.moveTo(-r*.18,r*.18);q.lineTo(r*.30,r*.12);q.stroke();
+        const thunderAccent=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';
+        q.fillStyle='#303831';q.beginPath();q.roundRect(-r*.46,-r*.37,r*.31,r*.18,r*.05);q.fill();q.beginPath();q.roundRect(-r*.46,r*.19,r*.31,r*.18,r*.05);q.fill();
+        q.fillStyle=thunderAccent;q.globalAlpha=.95;q.fillRect(-r*.41,-r*.33,r*.22,r*.07);q.fillRect(-r*.41,r*.26,r*.22,r*.07);q.globalAlpha=1;
+        q.strokeStyle=thunderAccent;q.lineWidth=r*.05;q.beginPath();q.moveTo(-r*.25,-r*.24);q.lineTo(r*.38,-r*.13);q.stroke();q.beginPath();q.moveTo(-r*.25,r*.24);q.lineTo(r*.38,r*.13);q.stroke();
       }else if(visualTurret.id==='fast'){
         const fireAccent=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.accent,fireFlame=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.flame,fireCore=fireTier.tier===0?'rgba(0,0,0,0)':fireTier.core;
         q.fillStyle='#343a31';
@@ -1319,7 +1323,10 @@ function renderShop(){
       const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
       const barrelWidth=.15*barrelScale;
       if(visualTurret.id==='thunder'){
-        q.fillStyle='#151819';q.beginPath();q.moveTo(r*.28,-r*.15);q.lineTo(r*1.02,-r*.18);q.lineTo(r*1.15,-r*.12);q.lineTo(r*1.15,r*.12);q.lineTo(r*1.02,r*.18);q.lineTo(r*.28,r*.15);q.closePath();q.fill();q.fillStyle='#0b0d0c';q.beginPath();q.arc(r*1.14,0,r*.12,0,6.283);q.fill();q.fillStyle='#ffd24a';q.fillRect(r*.72,-r*.16,r*.08,r*.32);
+        const barrelHalf=r*.20*visualBarrel.scale,barrelStart=r*.27,barrelEnd=r*(1.55*visualBarrel.length);
+        q.fillStyle='#121515';q.beginPath();q.moveTo(barrelStart,-barrelHalf);q.lineTo(barrelEnd,-barrelHalf*.96);q.lineTo(barrelEnd+r*.07,-barrelHalf*.66);q.lineTo(barrelEnd+r*.07,barrelHalf*.66);q.lineTo(barrelEnd,barrelHalf*.96);q.lineTo(barrelStart,barrelHalf);q.closePath();q.fill();
+        q.fillStyle='#2b302c';q.fillRect(r*.40,-barrelHalf*1.16,r*.23,barrelHalf*2.32);q.fillStyle='#ffd24a';q.globalAlpha=.9;q.fillRect(r*.82,-barrelHalf*1.10,r*.09,barrelHalf*2.20);q.globalAlpha=1;
+        q.fillStyle='#080a09';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.78,0,6.283);q.fill();q.fillStyle='#454b45';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.49,0,6.283);q.fill();
       }else if(visualTurret.id==='rapid'){
         q.fillStyle='#151819';
         for(const sy of [-1,1]){
@@ -2308,7 +2315,11 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   }else if(visualTurret.id==='freeze'){
     x.moveTo(-tr*.54,-tr*.34);x.lineTo(tr*.05,-tr*.48);x.lineTo(tr*.43,-tr*.28);x.quadraticCurveTo(tr*.56,0,tr*.43,tr*.28);x.lineTo(tr*.05,tr*.48);x.lineTo(-tr*.54,tr*.34);x.quadraticCurveTo(-tr*.62,0,-tr*.54,-tr*.34);
   }else if(visualTurret.id==='thunder'){
-    x.moveTo(-tr*.50,-tr*.31);x.quadraticCurveTo(-tr*.18,-tr*.47,tr*.24,-tr*.41);x.lineTo(tr*.50,-tr*.22);x.quadraticCurveTo(tr*.58,0,tr*.50,tr*.22);x.lineTo(tr*.24,tr*.41);x.quadraticCurveTo(-tr*.18,tr*.47,-tr*.50,tr*.31);x.quadraticCurveTo(-tr*.61,0,-tr*.50,-tr*.31);
+    // Heavy artillery silhouette: wide shoulders, deep armor and a larger turret ring.
+    x.moveTo(-tr*.57,-tr*.39);x.lineTo(-tr*.17,-tr*.54);x.lineTo(tr*.31,-tr*.49);
+    x.lineTo(tr*.56,-tr*.29);x.quadraticCurveTo(tr*.66,0,tr*.56,tr*.29);
+    x.lineTo(tr*.31,tr*.49);x.lineTo(-tr*.17,tr*.54);x.lineTo(-tr*.57,tr*.39);
+    x.quadraticCurveTo(-tr*.69,0,-tr*.57,-tr*.39);
   }else if(visualTurret.id==='rapid'){
     // Twins: compact rounded turret with a broad front and twin gun mounts.
     x.moveTo(-tr*.50,-tr*.34);x.quadraticCurveTo(-tr*.18,-tr*.45,tr*.24,-tr*.39);
@@ -2327,6 +2338,17 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
     x.strokeStyle=railAccent;x.lineWidth=1.7;
     x.beginPath();x.moveTo(-tr*.34,-tr*.27);x.lineTo(tr*.20,-tr*.23);x.lineTo(tr*.35,-tr*.10);x.stroke();
     x.beginPath();x.moveTo(-tr*.34,tr*.27);x.lineTo(tr*.20,tr*.23);x.lineTo(tr*.35,tr*.10);x.stroke();
+  }else if(visualTurret.id==='thunder'){
+    const thunderAccent=visualTier.tier>0?visualTier.accent:'#89967c';
+    x.fillStyle='#303831';
+    x.beginPath();x.roundRect(-tr*.46,-tr*.37,tr*.31,tr*.18,tr*.05);x.fill();
+    x.beginPath();x.roundRect(-tr*.46,tr*.19,tr*.31,tr*.18,tr*.05);x.fill();
+    x.fillStyle=thunderAccent;x.globalAlpha=.95;
+    x.fillRect(-tr*.41,-tr*.33,tr*.22,tr*.07);x.fillRect(-tr*.41,tr*.26,tr*.22,tr*.07);
+    x.strokeStyle=thunderAccent;x.lineWidth=tr*.05;
+    x.beginPath();x.moveTo(-tr*.25,-tr*.24);x.lineTo(tr*.38,-tr*.13);x.stroke();
+    x.beginPath();x.moveTo(-tr*.25,tr*.24);x.lineTo(tr*.38,tr*.13);x.stroke();
+    x.globalAlpha=1;
   }else if(visualTurret.id==='rapid'){
     const activeTwinsVisualTier=Math.max(0,Math.min(3,enemy?twinsTierVisual:twinsTier)); const twinsAccent=(twinsTiers[activeTwinsVisualTier]||twinsTiers[0]).tier===0?'rgba(0,0,0,0)':(twinsTiers[activeTwinsVisualTier]||twinsTiers[0]).col;
     x.fillStyle=twinsAccent;x.globalAlpha=.9;
@@ -2442,7 +2464,25 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
   const barrelWidth=.15*barrelScale;
-  if(visualTurret.id==='rapid'){
+  if(visualTurret.id==='thunder'){
+    const thunderVisual=thunderTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):thunderTier))]||thunderTiers[0];
+    const barrelHalf=tr*.20*barrelScale;
+    const barrelStart=tr*.27;
+    const barrelEnd=tr*(1.55*barrelLength);
+    // Oversized cannon with a thick reinforced sleeve and broad muzzle brake.
+    x.fillStyle='#121515';
+    x.beginPath();
+    x.moveTo(barrelStart,-barrelHalf);x.lineTo(barrelEnd,-barrelHalf*.96);
+    x.lineTo(barrelEnd+tr*.07,-barrelHalf*.66);x.lineTo(barrelEnd+tr*.07,barrelHalf*.66);
+    x.lineTo(barrelEnd,barrelHalf*.96);x.lineTo(barrelStart,barrelHalf);x.closePath();x.fill();
+    x.fillStyle='#2b302c';x.fillRect(tr*.40,-barrelHalf*1.16,tr*.23,barrelHalf*2.32);
+    x.fillStyle='#ffd24a';x.globalAlpha=.9;x.fillRect(tr*.82,-barrelHalf*1.10,tr*.09,barrelHalf*2.20);x.globalAlpha=1;
+    x.strokeStyle=thunderVisual.tier>0?thunderVisual.accent:'#89967c';x.lineWidth=1.9;
+    x.beginPath();x.moveTo(tr*.48,-barrelHalf*1.22);x.lineTo(barrelEnd-tr*.09,-barrelHalf*.99);x.stroke();
+    x.beginPath();x.moveTo(tr*.48,barrelHalf*1.22);x.lineTo(barrelEnd-tr*.09,barrelHalf*.99);x.stroke();
+    x.fillStyle='#080a09';x.beginPath();x.arc(barrelEnd+tr*.07,0,barrelHalf*.78,0,6.283);x.fill();
+    x.fillStyle='#454b45';x.beginPath();x.arc(barrelEnd+tr*.07,0,barrelHalf*.49,0,6.283);x.fill();
+  }else if(visualTurret.id==='rapid'){
     // Two parallel cannons, mounted high/low like the classic Twins turret.
     x.fillStyle='#151819';
     for(const sy of [-1,1]){

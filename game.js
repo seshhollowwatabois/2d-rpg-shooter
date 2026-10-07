@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100750';
+const GAME_VERSION='2026100751';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1196,7 +1196,7 @@ function renderShop(){
       const railTier=item.id==='railgun'?railgunTiers[Math.max(0,Math.min(3,railgunTier))]:null;
       const smokyVisualTier=item.id==='standard'?smokyTiers[Math.max(0,Math.min(3,smokyTier))]:null;
       const smokyPreviewAccent=smokyVisualTier&&smokyVisualTier.tier>0?smokyVisualTier.accent:null;
-      const thunderVisualTier=item.id==='thunder'?thunderTiers[Math.max(0,Math.min(3,thunderTier))]:null;
+      const thunderVisualTier=item.id==='thunder'?thunderTiers[Math.max(0,Math.min(3,thunderTier))]:null; const thunderTierVisual=tierVisual(thunderVisualTier?.tier||0);
       const railAccent=railTier&&railTier.tier>0?(railTier.tier===1?railgunTiers[0].beam:railTier.beam):null;
 
       q.fillStyle='#343c34';
@@ -1294,7 +1294,7 @@ function renderShop(){
         q.globalAlpha=1;
       }else if(visualTurret.id==='thunder'&&thunderVisualTier.tier>0){
         // Match gameplay: T0 stays neutral, while T1/T2/T3 use the same tier accents.
-        const thunderAccent=thunderVisualTier.accent;
+        const thunderAccent=thunderTierVisual.accent;
         q.fillStyle=thunderAccent;q.globalAlpha=.92;
         q.beginPath();
         q.moveTo(-r*.46,-r*.32);q.lineTo(-r*.12,-r*.44);q.lineTo(r*.28,-r*.39);
@@ -1303,7 +1303,7 @@ function renderShop(){
         q.moveTo(-r*.46,r*.32);q.lineTo(-r*.12,r*.44);q.lineTo(r*.28,r*.39);
         q.lineTo(r*.47,r*.24);q.lineTo(r*.47,r*.14);q.lineTo(-r*.16,r*.20);q.closePath();q.fill();
         q.globalAlpha=1;
-        q.strokeStyle=thunderVisualTier.glow;q.lineWidth=r*.055;
+        q.strokeStyle=thunderTierVisual.glow;q.lineWidth=r*.055;
         q.beginPath();q.moveTo(-r*.30,-r*.25);q.lineTo(r*.36,-r*.13);q.stroke();
         q.beginPath();q.moveTo(-r*.30,r*.25);q.lineTo(r*.36,r*.13);q.stroke();
       }else if(visualTurret.id==='fast'){
@@ -1332,7 +1332,7 @@ function renderShop(){
       q.beginPath();q.moveTo(-r*.28,r*.40);q.quadraticCurveTo(-r*.08,r*.29,r*.04,r*.28);q.stroke();
 
       q.fillStyle='#292e2a';q.beginPath();q.ellipse(-r*.18,0,r*.17,r*.12,0,0,6.283);q.fill();
-      q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(visualTurret.id==='thunder'&&thunderVisualTier.tier>0?thunderVisualTier.accent:(smokyPreviewAccent||'#89967c')));q.stroke();
+      q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(visualTurret.id==='thunder'&&thunderVisualTier.tier>0?thunderTierVisual.accent:(smokyPreviewAccent||'#89967c')));q.stroke();
       q.fillStyle='#292f2a';
       q.beginPath();q.roundRect(r*.08,-r*.18,r*.34,r*.36,5);q.fill();
 
@@ -1344,11 +1344,11 @@ function renderShop(){
         q.beginPath();q.moveTo(barrelStart,-barrelHalf);q.lineTo(barrelEnd,-barrelHalf*.96);q.lineTo(barrelEnd+r*.07,-barrelHalf*.66);q.lineTo(barrelEnd+r*.07,barrelHalf*.66);q.lineTo(barrelEnd,barrelHalf*.96);q.lineTo(barrelStart,barrelHalf);q.closePath();q.fill();
         q.fillStyle='#2b302c';q.fillRect(r*.40,-barrelHalf*1.16,r*.23,barrelHalf*2.32);
         if(thunderVisualTier.tier>0){
-          q.fillStyle=thunderVisualTier.accent;q.globalAlpha=.96;
+          q.fillStyle=thunderTierVisual.accent;q.globalAlpha=.96;
           q.fillRect(r*.82,-barrelHalf*1.10,r*.09,barrelHalf*2.20);
           q.globalAlpha=1;
         }
-        q.strokeStyle=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';q.lineWidth=1.9;
+        q.strokeStyle=thunderVisualTier.tier>0?thunderTierVisual.accent:'#89967c';q.lineWidth=1.9;
         q.beginPath();q.moveTo(r*.48,-barrelHalf*1.22);q.lineTo(barrelEnd-r*.09,-barrelHalf*.99);q.stroke();
         q.beginPath();q.moveTo(r*.48,barrelHalf*1.22);q.lineTo(barrelEnd-r*.09,barrelHalf*.99);q.stroke();
         q.fillStyle='#080a09';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.78,0,6.283);q.fill();
@@ -1396,7 +1396,7 @@ function renderShop(){
         }
       }
 
-      q.fillStyle=(visualTurret.id==='thunder'&&thunderVisualTier.tier>0?thunderVisualTier.accent:railAccent||'#849176');
+      q.fillStyle=(visualTurret.id==='thunder'&&thunderVisualTier.tier>0?thunderTierVisual.accent:railAccent||'#849176');
       q.beginPath();q.arc(-r*.36,-r*.23,r*.04,0,6.283);q.fill();
       q.beginPath();q.arc(-r*.36,r*.23,r*.04,0,6.283);q.fill();
       q.restore();

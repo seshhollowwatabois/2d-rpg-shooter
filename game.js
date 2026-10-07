@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100738';
+const GAME_VERSION='2026100739';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -437,12 +437,18 @@ function pickEnemyEngine(){
 }
 function pickEnemyHull(){
   const r=Math.random();
+  // Mammoth is a normal-weight hull, but it is only eligible every 5th wave.
+  // On eligible waves it gets the same 25% base roll as each of the four hulls.
+  if(wave%5===0){
+    if(r<.25)return 'mammoth';
+    if(r<.50)return 'scout';
+    if(r<.75)return 'standard';
+    return 'heavy';
+  }
   if(wave<=2)return r<.65?'scout':(r<.95?'standard':'heavy');
   if(wave<=5)return r<.25?'scout':(r<.85?'standard':'heavy');
-  const mammothChance=Math.min(.16,.04+(wave-6)*.02);
-  if(r<mammothChance)return 'mammoth';
   const kvChance=Math.min(.85,.45+(wave-6)*.08);
-  return r<mammothChance+kvChance?'heavy':(r<.5?'scout':'standard');
+  return r<kvChance?'heavy':(r<.5?'scout':'standard');
 }
 function pickEnemyHullTier(turretTier){
   // Higher turret tiers strongly increase the chance of a higher-tier hull.

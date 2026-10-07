@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100731';
+const GAME_VERSION='2026100732';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -2311,7 +2311,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
       x.fillStyle='#151819';
     }
   }else if(visualTurret.id==='freeze'){
-    const freezeVisual=freezeTiers[Math.max(0,Math.min(3,enemy?(e?.freezeTier||0):freezeTier))]||freezeTiers[0];
+    const freezeVisual=freezeTiers[Math.max(0,Math.min(3,enemy?(freezeTierVisual||0):freezeTier))]||freezeTiers[0];
     x.fillStyle='#171a18';x.beginPath();x.moveTo(tr*.30,-tr*.12);x.lineTo(tr*.84,-tr*.14);x.lineTo(tr*1.22,-tr*.12);x.lineTo(tr*1.30,0);x.lineTo(tr*1.22,tr*.12);x.lineTo(tr*.84,tr*.14);x.lineTo(tr*.30,tr*.12);x.closePath();x.fill();
     x.fillStyle='#0b0d0c';x.beginPath();x.arc(tr*1.27,0,tr*.11,0,6.283);x.fill();x.fillStyle=freezeVisual.flame;x.globalAlpha=.9;x.fillRect(tr*.76,-tr*.13,tr*.08,tr*.26);x.globalAlpha=1;x.strokeStyle=freezeVisual.accent;x.lineWidth=1.7;x.beginPath();x.moveTo(tr*.55,-tr*.13);x.lineTo(tr*1.02,-tr*.18);x.stroke();x.beginPath();x.moveTo(tr*.55,tr*.13);x.lineTo(tr*1.02,tr*.18);x.stroke();
   }else if(visualTurret.id==='fast'){

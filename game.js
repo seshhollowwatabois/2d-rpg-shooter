@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100740';
+const GAME_VERSION='2026100741';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -99,10 +99,12 @@ const smokyTiers=[
   {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.05,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const thunderTiers=[
-  {tier:0,name:'Standard Thunder',damageBonus:0,radius:70,reloadTime:2,turnBonus:0},
-  {tier:1,name:'Thunder Tier 1',damageBonus:5,radius:82,reloadTime:1.75,turnBonus:.20},
-  {tier:2,name:'Thunder Tier 2',damageBonus:10,radius:95,reloadTime:1.50,turnBonus:.40},
-  {tier:3,name:'Thunder Tier 3',damageBonus:15,radius:110,reloadTime:1.25,turnBonus:1.05}
+  // Thunder keeps the same upgrade progression as Smoky, but doubles its
+  // damage and takes twice as long to reload at every tier.
+  {tier:0,name:'Standard Thunder',damageBonus:0,radius:70,reloadTime:4,turnBonus:0},
+  {tier:1,name:'Thunder Tier 1',damageBonus:10,radius:82,reloadTime:3.50,turnBonus:.20},
+  {tier:2,name:'Thunder Tier 2',damageBonus:20,radius:95,reloadTime:3.00,turnBonus:.40},
+  {tier:3,name:'Thunder Tier 3',damageBonus:50,radius:110,reloadTime:2.50,turnBonus:1.05}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100726';
+const GAME_VERSION='2026100727';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -97,12 +97,12 @@ const firebirdTiers=[
   {tier:3,name:'Firebird Tier 3',directBonus:15,burnBonus:3,range:380,turnMult:1.728,flame:tierVisuals[3].beam,core:tierVisuals[3].glow,accent:tierVisuals[3].accent}
 ];
 const freezeTiers=[
-  // Freeze keeps the same cyan/ice visual palette at every tier; only stats and
-  // the tier geometry change. This matches the T0 projectile/beam color.
-  {tier:0,name:'Standard Freeze',directBonus:0,range:230,turnMult:1,flame:'#59d9ff',core:'#e7fbff',accent:'#35aeea'},
-  {tier:1,name:'Freeze Tier 1',directBonus:5,range:280,turnMult:1.2,flame:'#59d9ff',core:'#e7fbff',accent:'#35aeea'},
-  {tier:2,name:'Freeze Tier 2',directBonus:10,range:330,turnMult:1.44,flame:'#59d9ff',core:'#e7fbff',accent:'#35aeea'},
-  {tier:3,name:'Freeze Tier 3',directBonus:15,range:380,turnMult:1.728,flame:'#59d9ff',core:'#e7fbff',accent:'#35aeea'}
+  // Freeze projectiles stay blue, while the turret's upgrade accents use the
+  // shared tier colors so each tier is immediately distinguishable.
+  {tier:0,name:'Standard Freeze',directBonus:0,range:230,turnMult:1,flame:'#59d9ff',core:'#e7fbff',accent:'#7f8b75'},
+  {tier:1,name:'Freeze Tier 1',directBonus:5,range:280,turnMult:1.2,flame:'#59d9ff',core:'#e7fbff',accent:tierVisuals[1].accent},
+  {tier:2,name:'Freeze Tier 2',directBonus:10,range:330,turnMult:1.44,flame:'#59d9ff',core:'#e7fbff',accent:tierVisuals[2].accent},
+  {tier:3,name:'Freeze Tier 3',directBonus:15,range:380,turnMult:1.728,flame:'#59d9ff',core:'#e7fbff',accent:tierVisuals[3].accent}
 ];
 // Storage is optional: blocked/private/corrupted storage must never stop boot.
 function safeStorageGet(key,fallback=''){

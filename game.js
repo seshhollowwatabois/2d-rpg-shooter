@@ -1,6 +1,6 @@
-const GAME_VERSION='2026100742';
+const GAME_VERSION='2026100743';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
-let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
+let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
 let gameScreen='menu',autoSaveTimer=0,menuPausedGame=false;
 let enemyStageOverride=null,enemyDifficultyOpen=false;
@@ -234,6 +234,14 @@ function impactExplosion(a,b,col='#ffd27a',n=20){
 }
 function soundHit(){tone(95,.12,'square',.10,55);noise(.08,.05,1500)}
 function soundReloadReady(){tone(720,.07,'sine',.045,980);tone(980,.10,'sine',.035,1240)}
+function spawnThunderExplosion(cx,cy,radius=70){
+  thunderExplosions.push({x:cx,y:cy,r:radius,life:.50,maxLife:.50});
+  for(let i=0;i<42;i++){
+    const a=Math.random()*6.283,s=100+Math.random()*290;
+    ps.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.30+Math.random()*.30,col:i%3===0?'#fff8c7':i%2===0?'#ffd24a':'#ff8b24',size:3+Math.random()*7});
+  }
+}
+
 function soundWave(){tone(220,.14,'sine',.07,330);setTimeout(()=>tone(330,.16,'sine',.07,520),110)}
 function soundWaveClear(){tone(520,.12,'sine',.06,660);setTimeout(()=>tone(780,.18,'sine',.06,1040),120)}
 function soundUi(){tone(500,.05,'sine',.035,620)}
@@ -635,12 +643,12 @@ function shoot(){
       const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
       const dmg=barrel.minDamage+thunderTierData.damageBonus+Math.random()*((barrel.maxDamage+thunderTierData.damageBonus)-(barrel.minDamage+thunderTierData.damageBonus));
       smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13,col:'#ffd24a'});
-      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);impactExplosion(hitX,hitY,'#ffd24a',34);
+      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);spawnThunderExplosion(hitX,hitY,thunderTierData.radius);impactExplosion(hitX,hitY,'#ffd24a',46);
       applyThunderBlast(hitX,hitY,dmg,thunderTierData.radius,best);
     }else{
       const missX=muzzle.x+ca*34,missY=muzzle.y+sa*34;
       smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:missX,y2:missY,life:.10,maxLife:.10,col:'#ffd24a'});
-      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);impactExplosion(missX,missY,'#ffd24a',20);
+      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);spawnThunderExplosion(missX,missY,thunderTierData.radius*.72);impactExplosion(missX,missY,'#ffd24a',30);
     }
     soundFire(barrel.id);p.cd=thunderTierData.reloadTime;return;
   }
@@ -932,7 +940,7 @@ function enemyShoot(e){
       const blastX=hit?p.x:muzzleX+ca*Math.min(range,260),blastY=hit?p.y:muzzleY+sa*Math.min(range,260);
       const thunderBase=baseDamage+enemyThunderTierData.damageBonus;
       smokyTracers.push({x1:muzzleX,y1:muzzleY,x2:blastX,y2:blastY,life:.13,maxLife:.13,col:'#ffd24a'});
-      burst(muzzleX,muzzleY,'#ffd24a',12);burst(muzzleX,muzzleY,'#fff1a6',7);impactExplosion(blastX,blastY,'#ffd24a',hit?30:22);
+      burst(muzzleX,muzzleY,'#ffd24a',12);burst(muzzleX,muzzleY,'#fff1a6',7);spawnThunderExplosion(blastX,blastY,hit?enemyThunderTierData.radius:enemyThunderTierData.radius*.72);impactExplosion(blastX,blastY,'#ffd24a',hit?46:30);
       if(hit)applyBulletHit(p,thunderBase,p.x,p.y,{thunder:true},0);
     }else if(along>0&&along<range&&side<=p.r&&!wallRayHit(e.x,e.y,a,along)){
       applyBulletHit(p,damage,p.x,p.y,null,barrel.critChance||0);
@@ -2056,6 +2064,7 @@ function update(dt){
     }
   }
   // Tank collisions are purely physical. They never deal collision/ram damage.\n  for(const e of [...en]){\n    if(!en.includes(e))continue;\n    const d=Math.hypot(p.x-e.x,p.y-e.y),min=p.r+e.r;\n    if(d<min)safeSeparateTanks(p,e);\n  }
+  for(let i=thunderExplosions.length-1;i>=0;i--){const fx=thunderExplosions[i];fx.life-=dt;if(fx.life<=0)thunderExplosions.splice(i,1)}
   for(let i=ps.length-1;i>=0;i--){const q=ps[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.94;q.vy*=.94;q.life-=dt;if(q.life<=0)ps.splice(i,1)}
   for(let i=dmgTexts.length-1;i>=0;i--){const q=dmgTexts[i];q.y-=24*dt;q.life-=dt;if(q.life<=0)dmgTexts.splice(i,1)}
 }
@@ -2638,6 +2647,29 @@ function draw(){
     x.fillStyle=t.col||'#fff6d2';x.beginPath();x.arc(t.x1,t.y1,6*a,0,6.283);x.fill();
     x.restore();
     t.life-=1/60;if(t.life<=0)smokyTracers.splice(i,1);
+  }
+  // Large Thunder blast visuals: bright flash, expanding shockwave, radial streaks and glow.
+  for(const fx of thunderExplosions){
+    const progress=1-Math.max(0,fx.life/fx.maxLife),fade=Math.max(0,fx.life/fx.maxLife);
+    const waveRadius=Math.max(10,fx.r*(.28+1.02*progress));
+    x.save();x.globalCompositeOperation='lighter';
+    const glow=x.createRadialGradient(fx.x,fx.y,0,fx.x,fx.y,Math.max(30,fx.r));
+    glow.addColorStop(0,'rgba(255,255,240,'+(0.98*fade)+')');
+    glow.addColorStop(.16,'rgba(255,224,80,'+(0.90*fade)+')');
+    glow.addColorStop(.52,'rgba(255,145,35,'+(0.42*fade)+')');
+    glow.addColorStop(1,'rgba(255,80,20,0)');
+    x.fillStyle=glow;x.beginPath();x.arc(fx.x,fx.y,Math.max(30,fx.r),0,6.283);x.fill();
+    x.globalAlpha=.98*fade;x.strokeStyle='#fff8c9';x.lineWidth=8*(1-progress)+2;
+    x.beginPath();x.arc(fx.x,fx.y,waveRadius,0,6.283);x.stroke();
+    x.globalAlpha=.80*fade;x.strokeStyle='#ff9d24';x.lineWidth=4*(1-progress)+1.5;
+    x.beginPath();x.arc(fx.x,fx.y,waveRadius*.76,0,6.283);x.stroke();
+    x.globalAlpha=.88*fade;x.strokeStyle='#fff0a0';x.lineWidth=3;
+    for(let ray=0;ray<14;ray++){
+      const a=ray*6.283/14+.18*progress,inner=fx.r*.10,outer=waveRadius*(1.03+.10*Math.sin(ray*1.7));
+      x.beginPath();x.moveTo(fx.x+Math.cos(a)*inner,fx.y+Math.sin(a)*inner);x.lineTo(fx.x+Math.cos(a)*outer,fx.y+Math.sin(a)*outer);x.stroke();
+    }
+    x.globalAlpha=.98*fade;x.fillStyle='#ffffff';x.beginPath();x.arc(fx.x,fx.y,Math.max(5,fx.r*(.20-.09*progress)),0,6.283);x.fill();
+    x.restore();
   }
   // shell trails / explosions
   for(const q of ps){x.globalAlpha=Math.max(0,q.life*2);x.fillStyle=q.col;x.beginPath();x.arc(q.x,q.y,q.size||3.5,0,6.283);x.fill()}x.globalAlpha=1;

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100746';
+const GAME_VERSION='2026100747';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1206,7 +1206,9 @@ function renderShop(){
       q.save();q.translate(0,0);q.rotate(0);
       const visualBarrel=gunForTurret(item.id);
       const visualTurret=item;
-      q.fillStyle=item.id==='railgun'?'#202725':item.id==='fast'?'#424d3f':item.id==='rapid'?'#424d3f':'#424d3f';
+      q.fillStyle=item.id==='thunder'
+        ? (thunderVisualTier.tier===1?'#24583b':thunderVisualTier.tier===2?'#472258':thunderVisualTier.tier===3?'#665317':'#424d3f')
+        : item.id==='railgun'?'#202725':item.id==='fast'?'#424d3f':'#424d3f';
       q.beginPath();
       if(visualTurret.id==='railgun'){
         q.moveTo(-r*.50,-r*.30);q.lineTo(r*.08,-r*.36);q.quadraticCurveTo(r*.42,-r*.27,r*.48,0);
@@ -1331,6 +1333,18 @@ function renderShop(){
         q.beginPath();q.moveTo(-r*.08,0);q.lineTo(r*.36,0);q.stroke();q.globalAlpha=1;
       }
 
+      // Final tier edge pass: the colored silhouette remains visible even at the small mobile shop preview size.
+      if(visualTurret.id==='thunder'&&thunderVisualTier.tier>0){
+        const ta=thunderVisualTier.accent,tg=thunderVisualTier.glow;
+        q.save();q.globalCompositeOperation='lighter';q.shadowColor=ta;q.shadowBlur=7;
+        q.globalAlpha=.98;q.strokeStyle=tg;q.lineWidth=2.2;
+        q.beginPath();q.moveTo(-r*.57,-r*.39);q.lineTo(-r*.17,-r*.54);q.lineTo(r*.31,-r*.49);q.lineTo(r*.56,-r*.29);
+        q.quadraticCurveTo(r*.66,0,r*.56,r*.29);q.lineTo(r*.31,r*.49);q.lineTo(-r*.17,r*.54);q.lineTo(-r*.57,r*.39);
+        q.quadraticCurveTo(-r*.69,0,-r*.57,-r*.39);q.stroke();
+        q.globalAlpha=.9;q.fillStyle=ta;q.beginPath();q.arc(-r*.32,-r*.31,r*.07,0,6.283);q.fill();q.beginPath();q.arc(-r*.32,r*.31,r*.07,0,6.283);q.fill();
+        q.restore();
+      }
+      
       const twinsNeutral=visualTurret.id==='rapid'&&Math.max(0,Math.min(3,twinsTier))===0; const freezePreview=visualTurret.id==='freeze'?(freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0]):null; q.strokeStyle=visualTurret.id==='freeze'?freezePreview.accent:(visualTurret.id==='rapid'?(twinsNeutral?'#202320':(twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0]).col):(railAccent||smokyPreviewAccent||'#7f8b75'));q.lineWidth=1.25;
       q.beginPath();q.moveTo(-r*.28,-r*.40);q.quadraticCurveTo(-r*.08,-r*.29,r*.04,-r*.28);q.stroke();
       q.beginPath();q.moveTo(-r*.28,r*.40);q.quadraticCurveTo(-r*.08,r*.29,r*.04,r*.28);q.stroke();
@@ -1344,9 +1358,17 @@ function renderShop(){
       const barrelWidth=.15*barrelScale;
       if(visualTurret.id==='thunder'){
         const barrelHalf=r*.20*visualBarrel.scale,barrelStart=r*.27,barrelEnd=r*(1.55*visualBarrel.length);
-        q.fillStyle='#121515';q.beginPath();q.moveTo(barrelStart,-barrelHalf);q.lineTo(barrelEnd,-barrelHalf*.96);q.lineTo(barrelEnd+r*.07,-barrelHalf*.66);q.lineTo(barrelEnd+r*.07,barrelHalf*.66);q.lineTo(barrelEnd,barrelHalf*.96);q.lineTo(barrelStart,barrelHalf);q.closePath();q.fill();
-        q.fillStyle='#2b302c';q.fillRect(r*.40,-barrelHalf*1.16,r*.23,barrelHalf*2.32);q.fillStyle='#ffd24a';q.globalAlpha=.9;q.fillRect(r*.82,-barrelHalf*1.10,r*.09,barrelHalf*2.20);q.globalAlpha=1;
-        q.fillStyle='#080a09';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.78,0,6.283);q.fill();q.fillStyle='#454b45';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.49,0,6.283);q.fill();
+        const thunderAccent=thunderVisualTier.tier>0?thunderVisualTier.accent:'#89967c';
+        const thunderGlow=thunderVisualTier.tier>0?thunderVisualTier.glow:'#b5c0aa';
+        q.save();
+        q.shadowColor=thunderAccent;q.shadowBlur=thunderVisualTier.tier>0?9:0;
+        q.fillStyle=thunderVisualTier.tier===0?'#121515':thunderVisualTier.tier===1?'#193c2b':thunderVisualTier.tier===2?'#321641':thunderVisualTier.tier===3?'#4a3a0d':'#121515';
+        q.beginPath();q.moveTo(barrelStart,-barrelHalf);q.lineTo(barrelEnd,-barrelHalf*.96);q.lineTo(barrelEnd+r*.07,-barrelHalf*.66);q.lineTo(barrelEnd+r*.07,barrelHalf*.66);q.lineTo(barrelEnd,barrelHalf*.96);q.lineTo(barrelStart,barrelHalf);q.closePath();q.fill();
+        q.fillStyle=thunderGlow;q.globalAlpha=.78;q.fillRect(r*.40,-barrelHalf*1.16,r*.23,barrelHalf*2.32);
+        q.globalAlpha=.98;q.fillStyle=thunderAccent;q.fillRect(r*.82,-barrelHalf*1.10,r*.09,barrelHalf*2.20);
+        q.fillStyle='#080a09';q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.78,0,6.283);q.fill();
+        q.fillStyle=thunderGlow;q.globalAlpha=.95;q.beginPath();q.arc(barrelEnd+r*.07,0,barrelHalf*.49,0,6.283);q.fill();
+        q.restore();
       }else if(visualTurret.id==='rapid'){
         q.fillStyle='#151819';
         for(const sy of [-1,1]){

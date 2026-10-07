@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100743';
+const GAME_VERSION='2026100744';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -40,7 +40,7 @@ const barrels=[
   {id:'122mm',name:'Firebird',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmFreeze',name:'Freeze',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,freeze:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0},
-  {id:'thunder',name:'Thunder',cost:0,minDamage:20,maxDamage:25,reloadTime:2,scale:1.22,length:1.45,instant:true,area:true,areaRadius:70}
+  {id:'thunder',name:'Thunder',cost:0,minDamage:40,maxDamage:50,reloadTime:2,scale:1.22,length:1.45,instant:true,area:true,areaRadius:70}
 ];
 function gunForTurret(turretId){
   if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];

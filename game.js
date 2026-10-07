@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100737';
+const GAME_VERSION='2026100738';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -498,7 +498,7 @@ function makeEnemy(){
     turnRate,
     hp,max:hp,dmg:heavy?35:20,
     heavy,hullId,hullTier,turretId,turretTier,engineId,
-    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,freezeStacks:0,freezeTick:1,freezeTier:enemyFreezeTier,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,railCharging:false,railCharge:0,
+    angle:0,turretAngle:0,fire:.8+Math.random()*1.5,hitFlash:0,burnStacks:0,burnDamage:3,freezeStacks:0,freezeTick:1,freezeTier:enemyFreezeTier,firebirdTier:enemyFirebirdTier,smokyTier:turretId==='standard'?turretTier:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,freezeExhausted:false,railCharging:false,railCharge:0,
      twinsTier:turretId==='rapid'?turretTier:0,
     wanderX:Math.random()*W,wanderY:Math.random()*H,wanderTime:1+Math.random()*3 ,
     idle:Math.random()<.3
@@ -1885,14 +1885,28 @@ function update(dt){
         const moveVx=Math.cos(e.angle)*e.speed*freezeMoveMult,moveVy=Math.sin(e.angle)*e.speed*freezeMoveMult;
         const moved=moveWithWalls(e,moveVx*dt,moveVy*dt);if(moved){e.vx=moveVx;e.vy=moveVy;}
       }
-      // Enemy Freeze has a real finite fuel pool. Once empty it must recharge instead
-      // of immediately firing again from a tiny regenerated amount.
-      const freezeCanFire=d<=freezeEngageRange&&Math.abs(tda)<.10&&e.freezeFuel>0.001;
-      if(freezeCanFire){
-        enemyShoot(e);
-        e.freezeFuel=Math.max(0,e.freezeFuel-dt);
-      }else if(e.freezeFuel<=0.001){
-        e.freezeFuel=Math.min(e.freezeMaxFuel||5,e.freezeFuel+dt*.5);
+      // Enemy Freeze uses a true fuel state machine:
+      // firing drains fuel; hitting zero locks the weapon; only a real recharge
+      // period can unlock it again. This prevents zero-fuel -> tiny recharge ->
+      // fire -> zero-fuel loops that effectively create infinite ammo.
+      const freezeMaxFuel=e.freezeMaxFuel||5;
+      if(e.freezeExhausted){
+        e.freezeFuel=Math.min(freezeMaxFuel,e.freezeFuel+dt*.5);
+        // Require a meaningful reserve before allowing Freeze to resume.
+        if(e.freezeFuel>=1)e.freezeExhausted=false;
+      }else{
+        const freezeCanFire=d<=freezeEngageRange&&Math.abs(tda)<.10&&e.freezeFuel>0.001;
+        if(freezeCanFire){
+          enemyShoot(e);
+          e.freezeFuel=Math.max(0,e.freezeFuel-dt);
+          if(e.freezeFuel<=0.001){
+            e.freezeFuel=0;
+            e.freezeExhausted=true;
+          }
+        }else{
+          // Normal idle recharge, but never enough to bypass the exhausted lock.
+          e.freezeFuel=Math.min(freezeMaxFuel,e.freezeFuel+dt*.5);
+        }
       }
     }else if(isEnemyFirebird){
       if(d<=firebirdEngageRange && e.firebirdFuel>0 && Math.abs(tda)<0.10){

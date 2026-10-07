@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100733';
+const GAME_VERSION='2026100734';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1863,11 +1863,12 @@ function update(dt){
     // that a player can circle an enemy and get around its gun arc.
     const enemyTurret=turrets.find(t=>t.id===e.turretId)||turrets[0];
     let turretTurnRate=enemyTurret.turn;
-    // Freeze stacks slow turret rotation as well as hull movement: 10% per stack, max 50%.
-    turretTurnRate*=Math.max(.5,1-(e.freezeStacks||0)*.1);
     if(e.turretId==='standard') turretTurnRate+=([0,.20,.40,1.05][Math.max(0,Math.min(3,e.smokyTier||0))]||0);
     else if(e.turretId==='freeze') turretTurnRate*=([1,1.2,1.44,1.728][Math.max(0,Math.min(3,e.freezeTier||0))]||1);
     else if(e.turretId==='railgun') turretTurnRate*=([1,1.25,1.5625,2.1904761905][Math.max(0,Math.min(3,e.turretTier||0))]||1);
+    // Player Freeze slows the enemy's final turret traverse after all turret-tier bonuses.
+    // 18% per stack, up to 90% at 5 stacks, matching the player's turret slowdown.
+    turretTurnRate*=Math.max(.1,1-(e.freezeStacks||0)*.18);
     e.turretAngle+=Math.max(-turretTurnRate*dt,Math.min(turretTurnRate*dt,tda));
 
     // Firebirds only fire after closing to their dedicated close-range distance.

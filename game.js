@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101210';
+const GAME_VERSION='2026101211';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -680,9 +680,8 @@ function shoot(){
     // Like Firebird and Freeze, Isida winds up for the first 0.5 seconds of a held trigger.
     // The beam can acquire a target immediately, but neither damage nor healing starts early.
     if(target&&p.isidaFireDelay>=.5){
-      const falloff=1-Math.min(.45,targetDist/range);
-      const damage=((20+isidaTierData.damageBonus)+Math.random())*1.3;
-      const dealt=damage*falloff;
+      // Isida deals full damage anywhere inside its beam range; no distance falloff.
+      const dealt=((20+isidaTierData.damageBonus)+Math.random())*1.3;
       applyBulletHit(target,dealt,target.x,target.y,{isida:true},0);
       const healed=Math.min(p.max-p.hp,dealt*isidaTierData.healRatio);
       if(healed>0){
@@ -2814,15 +2813,40 @@ function draw(){
     }
     x.restore();
   }
-  // Persistent Isida beam: visually anchored to the locked tank and follows it each frame.
+  // Persistent Isida lightning: animated branching electrical arcs follow the locked target.
   if(p.turretId==='isida'&&(mouse.down||mobileFire||keys.has(' '))&&p.isidaTarget&&en.includes(p.isidaTarget)){
     const ib=gunForTurret('isida'),m=playerMuzzlePosition(ib,p.turretAngle),target=p.isidaTarget;
     const col=(isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0]).beam;
-    x.save();x.lineCap='round';
-    x.strokeStyle=col;x.globalAlpha=.28;x.lineWidth=13;x.beginPath();x.moveTo(m.x,m.y);x.lineTo(target.x,target.y);x.stroke();
-    x.strokeStyle=col;x.globalAlpha=.95;x.lineWidth=5;x.beginPath();x.moveTo(m.x,m.y);x.lineTo(target.x,target.y);x.stroke();
-    x.strokeStyle='#eaffff';x.globalAlpha=.95;x.lineWidth=1.8;x.beginPath();x.moveTo(m.x,m.y);x.lineTo(target.x,target.y);x.stroke();
-    x.globalAlpha=.9;x.fillStyle=col;x.beginPath();x.arc(target.x,target.y,6+Math.sin(performance.now()/65)*2,0,6.283);x.fill();
+    const now=performance.now(),dx=target.x-m.x,dy=target.y-m.y,len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len,ny=dx/len,segments=Math.max(8,Math.min(24,Math.ceil(len/24)));
+    x.save();x.globalCompositeOperation='lighter';x.lineCap='round';x.lineJoin='round';
+    function lightningPath(seed,spread){
+      const pts=[{x:m.x,y:m.y}];
+      for(let i=1;i<segments;i++){
+        const t=i/segments,wiggle=Math.sin(now*.025+i*2.17+seed*4.1)*.55+Math.sin(now*.011+i*4.7+seed)*.45;
+        const offset=wiggle*spread*(.35+.65*Math.sin(Math.PI*t));
+        pts.push({x:m.x+dx*t+nx*offset,y:m.y+dy*t+ny*offset});
+      }
+      pts.push({x:target.x,y:target.y});
+      x.beginPath();x.moveTo(pts[0].x,pts[0].y);
+      for(let i=1;i<pts.length;i++)x.lineTo(pts[i].x,pts[i].y);
+      x.stroke();
+      return pts;
+    }
+    x.strokeStyle=col;x.globalAlpha=.22;x.lineWidth=16;const mainPts=lightningPath(1,18);
+    x.strokeStyle=col;x.globalAlpha=.9;x.lineWidth=5;lightningPath(2,12);
+    x.strokeStyle='#eaffff';x.globalAlpha=.98;x.lineWidth=1.8;lightningPath(3,7);
+    // Short forked sparks split off the main bolt at irregular points.
+    x.strokeStyle=col;x.globalAlpha=.9;x.lineWidth=2;
+    for(let b=0;b<4;b++){
+      const idx=2+Math.floor(((b*0.217+((now/170+b*.31)%1)*.13)%(1))*Math.max(1,segments-4));
+      const pt=mainPts[Math.min(segments-1,idx)],t=idx/segments,side=b%2?1:-1;
+      const bx=pt.x+dx*.035+nx*side*(10+8*Math.sin(now*.02+b*2));
+      const by=pt.y+dy*.035+ny*side*(10+8*Math.sin(now*.02+b*2));
+      x.beginPath();x.moveTo(pt.x,pt.y);x.lineTo(bx,by);x.lineTo(bx+nx*side*5,by+ny*side*5);x.stroke();
+    }
+    x.globalAlpha=.95;x.fillStyle=col;x.beginPath();x.arc(target.x,target.y,7+Math.sin(now/45)*2,0,6.283);x.fill();
+    x.fillStyle='#efffff';x.globalAlpha=.95;x.beginPath();x.arc(target.x,target.y,3.5+Math.sin(now/38),0,6.283);x.fill();
     x.restore();
   }
   for(let i=smokyTracers.length-1;i>=0;i--){

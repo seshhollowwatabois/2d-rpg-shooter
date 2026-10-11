@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101213';
+const GAME_VERSION='2026101214';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -2803,12 +2803,12 @@ function draw(){
     x.save();x.globalCompositeOperation='lighter';x.lineCap='round';
     x.strokeStyle=col;x.globalAlpha=.45*pulse;x.lineWidth=7;
     x.beginPath();x.moveTo(cx+sideX*spread,cy+sideY*spread);x.lineTo(cx-sideX*spread,cy-sideY*spread);x.stroke();
-    x.strokeStyle='#dfffff';x.globalAlpha=.98;x.lineWidth=2.2;
+    x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=2.2;
     x.beginPath();x.moveTo(cx+sideX*spread,cy+sideY*spread);x.lineTo(cx-sideX*spread,cy-sideY*spread);x.stroke();
     for(let i=0;i<4;i++){
       const t=(performance.now()/95+i*.25)%1;
       const along=(t-.5)*spread*1.6;
-      x.fillStyle=i%2?col:'#f4ffff';x.globalAlpha=.9*pulse;
+      x.fillStyle=col;x.globalAlpha=1;
       x.beginPath();x.arc(cx+sideX*along,cy+sideY*along,1.5+(i%2),0,6.283);x.fill();
     }
     x.restore();
@@ -2835,7 +2835,7 @@ function draw(){
     }
     x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=5;const mainPts=lightningPath(1,13);
     x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=3.2;lightningPath(2,9);
-    x.strokeStyle='#ffffff';x.globalAlpha=1;x.lineWidth=1.8;lightningPath(3,5);
+    x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=1.8;lightningPath(3,5);
     // Short forked sparks split off the main bolt at irregular points.
     x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=1.8;
     for(let b=0;b<4;b++){
@@ -2846,7 +2846,7 @@ function draw(){
       x.beginPath();x.moveTo(pt.x,pt.y);x.lineTo(bx,by);x.lineTo(bx+nx*side*5,by+ny*side*5);x.stroke();
     }
     x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(target.x,target.y,4.5+Math.sin(now/45)*1.3,0,6.283);x.fill();
-    x.fillStyle='#ffffff';x.globalAlpha=1;x.beginPath();x.arc(target.x,target.y,2.2+Math.sin(now/38)*.6,0,6.283);x.fill();
+    x.fillStyle=col;x.globalAlpha=1;x.beginPath();x.arc(target.x,target.y,2.2+Math.sin(now/38)*.6,0,6.283);x.fill();
     x.restore();
   }
   for(let i=smokyTracers.length-1;i>=0;i--){

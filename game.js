@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101207';
+const GAME_VERSION='2026101208';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -301,7 +301,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,isidaFuel:5,isidaMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,isidaFuel:5,isidaMaxFuel:5,isidaFireDelay:0,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -677,7 +677,9 @@ function shoot(){
     const endDist=target?targetDist:range;
     const endX=muzzle.x+ca*endDist,endY=muzzle.y+sa*endDist;
     // Isida uses the continuous beam rendered from the locked target; don't spawn rapid one-shot tracers.
-    if(target){
+    // Like Firebird and Freeze, Isida winds up for the first 0.5 seconds of a held trigger.
+    // The beam can acquire a target immediately, but neither damage nor healing starts early.
+    if(target&&p.isidaFireDelay>=.5){
       const falloff=1-Math.min(.45,targetDist/range);
       const damage=(20+isidaTierData.damageBonus)+Math.random();
       const dealt=damage*falloff;
@@ -692,7 +694,8 @@ function shoot(){
     }
     // Firebird-sized damage ticks, with cooldown scaled to preserve the old DPS at each tier.
     const isidaOldMean=10.5+isidaTierData.damageBonus,isidaNewMean=20.5+isidaTierData.damageBonus;
-    soundFire('isida');p.cd=barrel.reloadTime*(isidaNewMean/isidaOldMean);return;
+    if(target&&p.isidaFireDelay>=.5)soundFire('isida');
+    p.cd=barrel.reloadTime*(isidaNewMean/isidaOldMean);return;
   }
 
   // Thunder's shell travels along the turret's aim. It only detonates when it
@@ -1930,6 +1933,10 @@ function update(dt){
   p.turretAngle+=turretStep;
 
   const fireHeld=mouse.down||mobileFire||keys.has(' ');
+  if(p.turretId==='isida'){
+    if(fireHeld&&p.isidaFuel>0)p.isidaFireDelay=Math.min(.5,(p.isidaFireDelay||0)+dt);
+    else p.isidaFireDelay=0;
+  }
   if(!fireHeld&&p.isidaTarget)p.isidaTarget=null;
   const firebird=gunForTurret(p.turretId);
   if(firebird.id==='122mm'&&firebird.flame){

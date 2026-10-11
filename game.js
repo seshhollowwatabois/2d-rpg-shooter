@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101215';
+const GAME_VERSION='2026101216';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -115,10 +115,10 @@ const thunderTiers=[
   {tier:3,name:'Thunder Tier 3',damageBonus:60,radius:110,reloadTime:2.25,turnBonus:1.05}
 ];
 const isidaTiers=[
-  {tier:0,name:'Standard Isida',damageBonus:0,healRatio:.35,range:250,turnMult:1,beam:'#ff3b30'},
-  {tier:1,name:'Isida Tier 1',damageBonus:3,healRatio:.40,range:290,turnMult:1.12,beam:'#ff241f'},
-  {tier:2,name:'Isida Tier 2',damageBonus:6,healRatio:.45,range:330,turnMult:1.25,beam:'#ff1010'},
-  {tier:3,name:'Isida Tier 3',damageBonus:10,healRatio:.50,range:370,turnMult:1.40,beam:'#ff0000'}
+  {tier:0,name:'Standard Isida',damageBonus:0,healRatio:.35,range:250,turnMult:1,beam:'#ff9b24'},
+  {tier:1,name:'Isida Tier 1',damageBonus:3,healRatio:.40,range:290,turnMult:1.12,beam:'#ff6724'},
+  {tier:2,name:'Isida Tier 2',damageBonus:6,healRatio:.45,range:330,turnMult:1.25,beam:'#ff3b24'},
+  {tier:3,name:'Isida Tier 3',damageBonus:10,healRatio:.50,range:370,turnMult:1.40,beam:'#ff1717'}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -1360,10 +1360,11 @@ function renderShop(){
       q.closePath();q.fill();
 
       if(visualTurret.id==='isida'){
-        // Bright cyan arrow in the shop preview points toward Isida's nose.
-        q.save();q.lineJoin='round';q.strokeStyle='#10262b';q.lineWidth=Math.max(1.5,r*.09);q.fillStyle='#42e8d5';
-        q.beginPath();q.moveTo(-r*.20,-r*.13);q.lineTo(r*.24,-r*.13);q.lineTo(r*.24,-r*.24);q.lineTo(r*.53,0);q.lineTo(r*.24,r*.24);q.lineTo(r*.24,r*.13);q.lineTo(-r*.20,r*.13);q.closePath();q.fill();q.stroke();
-        q.strokeStyle='#eaffff';q.lineWidth=Math.max(1,r*.035);q.beginPath();q.moveTo(-r*.10,0);q.lineTo(r*.30,0);q.stroke();q.restore();
+        const isidaShopTier=Math.max(0,Math.min(3,isidaTier));
+        const isidaShopAccent=isidaShopTier>0?tierVisual(isidaShopTier).accent:null;
+        q.fillStyle='#143b3c';q.beginPath();q.moveTo(-r*.34,-r*.22);q.lineTo(r*.28,-r*.18);q.lineTo(r*.64,0);q.lineTo(r*.28,r*.18);q.lineTo(-r*.34,r*.22);q.closePath();q.fill();
+        q.fillStyle='#061415';q.beginPath();q.moveTo(-r*.12,-r*.13);q.lineTo(r*.45,-r*.10);q.lineTo(r*.68,0);q.lineTo(r*.45,r*.10);q.lineTo(-r*.12,r*.13);q.closePath();q.fill();
+        if(isidaShopAccent){q.fillStyle=isidaShopAccent;q.beginPath();q.moveTo(-r*.20,-r*.045);q.lineTo(r*.40,-r*.045);q.lineTo(r*.61,0);q.lineTo(r*.40,r*.045);q.lineTo(-r*.20,r*.045);q.closePath();q.fill();}
       }
 
   if(visualTurret.id==='railgun'&&railAccent){
@@ -2615,16 +2616,18 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
   const barrelWidth=.15*barrelScale;
   if(visualTurret.id==='isida'){
-    const it=isidaTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):isidaTier))]||isidaTiers[0];
+    const isidaVisualTier=Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):isidaTier));
+    const it=isidaTiers[isidaVisualTier]||isidaTiers[0];
+    const isidaAccent=isidaVisualTier>0?tierVisual(isidaVisualTier).accent:null;
     // Dark center channel and long fangs make the aiming direction obvious at a glance.
     x.fillStyle='#143b3c';x.beginPath();x.moveTo(-tr*.34,-tr*.22);x.lineTo(tr*.28,-tr*.18);x.lineTo(tr*.64,0);x.lineTo(tr*.28,tr*.18);x.lineTo(-tr*.34,tr*.22);x.closePath();x.fill();
     x.fillStyle='#061415';x.beginPath();x.moveTo(-tr*.12,-tr*.13);x.lineTo(tr*.45,-tr*.10);x.lineTo(tr*.68,0);x.lineTo(tr*.45,tr*.10);x.lineTo(-tr*.12,tr*.13);x.closePath();x.fill();
-    x.fillStyle='#d8ffff';x.strokeStyle=it.beam;x.lineWidth=Math.max(1,tr*.028);
+    x.fillStyle='#202722';x.strokeStyle=isidaAccent||'#89967c';x.lineWidth=Math.max(1,tr*.028);
     x.beginPath();x.moveTo(tr*.12,-tr*.23);x.lineTo(tr*.77,-tr*.105);x.lineTo(tr*.42,-tr*.015);x.closePath();x.fill();x.stroke();
     x.beginPath();x.moveTo(tr*.12,tr*.23);x.lineTo(tr*.77,tr*.105);x.lineTo(tr*.42,tr*.015);x.closePath();x.fill();x.stroke();
     // Bright arrow-shaped spine remains visible even when the energy effect is idle.
-    x.fillStyle=it.beam;x.globalAlpha=.95;x.beginPath();x.moveTo(-tr*.20,-tr*.045);x.lineTo(tr*.40,-tr*.045);x.lineTo(tr*.61,0);x.lineTo(tr*.40,tr*.045);x.lineTo(-tr*.20,tr*.045);x.closePath();x.fill();x.globalAlpha=1;
-    if((enemy?(thunderTierVisual||0):isidaTier)>0){x.strokeStyle=it.beam;x.lineWidth=tr*.045;x.beginPath();x.moveTo(-tr*.34,-tr*.29);x.lineTo(tr*.14,-tr*.24);x.stroke();x.beginPath();x.moveTo(-tr*.34,tr*.29);x.lineTo(tr*.14,tr*.24);x.stroke();}
+    if(isidaAccent){x.fillStyle=isidaAccent;x.globalAlpha=.98;x.beginPath();x.moveTo(-tr*.20,-tr*.045);x.lineTo(tr*.40,-tr*.045);x.lineTo(tr*.61,0);x.lineTo(tr*.40,tr*.045);x.lineTo(-tr*.20,tr*.045);x.closePath();x.fill();x.globalAlpha=1;}
+    if(isidaAccent){x.strokeStyle=isidaAccent;x.lineWidth=tr*.045;x.beginPath();x.moveTo(-tr*.34,-tr*.29);x.lineTo(tr*.14,-tr*.24);x.stroke();x.beginPath();x.moveTo(-tr*.34,tr*.29);x.lineTo(tr*.14,tr*.24);x.stroke();}
   }else if(visualTurret.id==='thunder'){
     const thunderVisual=thunderTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):thunderTier))]||thunderTiers[0];
     const barrelHalf=tr*.20*barrelScale;

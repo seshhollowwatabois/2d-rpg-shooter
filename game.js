@@ -647,14 +647,19 @@ function shoot(){
       if(wallHitCircle(muzzle.x+ca*d,muzzle.y+sa*d,2.5)){wallDist=d;break;}
     }
     const hitEnemy=!!best&&bestDist<wallDist;
+    const wallImpact=!hitEnemy&&wallDist<maxDist;
     const impactDist=hitEnemy?bestDist:wallDist;
     const hitX=muzzle.x+ca*impactDist,hitY=muzzle.y+sa*impactDist;
+    // A wall collision point sits inside the wall's collision margin. Move the
+    // blast center back onto the firing side so wall-occlusion checks don't
+    // mistakenly block every enemy around the explosion.
+    const blastX=wallImpact?hitX-ca*9:hitX,blastY=wallImpact?hitY-sa*9:hitY;
     const dmg=barrel.minDamage+thunderTierData.damageBonus+Math.random()*((barrel.maxDamage+thunderTierData.damageBonus)-(barrel.minDamage+thunderTierData.damageBonus));
     smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13,col:'#ffd24a'});
     burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);
-    if(hitEnemy||wallDist<maxDist){
-      spawnThunderExplosion(hitX,hitY,thunderTierData.radius);impactExplosion(hitX,hitY,'#ffd24a',46);
-      applyThunderBlast(hitX,hitY,dmg,thunderTierData.radius,hitEnemy?best:null);
+    if(hitEnemy||wallImpact){
+      spawnThunderExplosion(blastX,blastY,thunderTierData.radius);impactExplosion(blastX,blastY,'#ffd24a',46);
+      applyThunderBlast(blastX,blastY,dmg,thunderTierData.radius,hitEnemy?best:null);
     }
     soundFire(barrel.id);p.cd=thunderTierData.reloadTime;return;
   }

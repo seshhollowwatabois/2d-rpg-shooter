@@ -87,10 +87,11 @@ const railgunTiers=[
   {tier:3,name:'Railgun Tier 3',beam:'#ffd23f',glow:'#fff0a0',damageMult:1.728,reloadMult:.30,pierceDamageMult:1,hullMoveMult:.40,turnMult:2.1904761905}
 ];
 const twinsTiers=[
-  {tier:0,name:'Standard Twins',damageMult:1,reloadTime:.30,speedMult:1,turnMult:1,col:'#3da9ff'},
-  {tier:1,name:'Twins Tier 1',damageMult:1.2,reloadTime:.25,speedMult:1.2,turnMult:1.2,col:tierVisuals[1].beam},
-  {tier:2,name:'Twins Tier 2',damageMult:1.44,reloadTime:.20,speedMult:1.44,turnMult:1.44,col:tierVisuals[2].beam},
-  {tier:3,name:'Twins Tier 3',damageMult:1.728,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:tierVisuals[3].beam}
+  // All Twins tiers deal 20% more damage; other tier stats stay unchanged.
+  {tier:0,name:'Standard Twins',damageMult:1.2,reloadTime:.30,speedMult:1,turnMult:1,col:'#3da9ff'},
+  {tier:1,name:'Twins Tier 1',damageMult:1.44,reloadTime:.25,speedMult:1.2,turnMult:1.2,col:tierVisuals[1].beam},
+  {tier:2,name:'Twins Tier 2',damageMult:1.728,reloadTime:.20,speedMult:1.44,turnMult:1.44,col:tierVisuals[2].beam},
+  {tier:3,name:'Twins Tier 3',damageMult:2.0736,reloadTime:.15,speedMult:1.728,turnMult:1.728,col:tierVisuals[3].beam}
 ];
 const smokyTiers=[
   {tier:0,name:'Standard Smoky',damageBonus:0,reloadTime:2,turnBonus:0,critBonus:0,accent:null},

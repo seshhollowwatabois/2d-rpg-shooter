@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101203';
+const GAME_VERSION='2026101204';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -676,7 +676,7 @@ function shoot(){
     }
     const endDist=target?targetDist:range;
     const endX=muzzle.x+ca*endDist,endY=muzzle.y+sa*endDist;
-    smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:target?target.x:endX,y2:target?target.y:endY,life:.22,maxLife:.22,col:isidaTierData.beam});
+    // Isida uses the continuous beam rendered from the locked target; don't spawn rapid one-shot tracers.
     if(target){
       const falloff=1-Math.min(.45,targetDist/range);
       const damage=(barrel.minDamage+isidaTierData.damageBonus)+Math.random()*(barrel.maxDamage-barrel.minDamage);

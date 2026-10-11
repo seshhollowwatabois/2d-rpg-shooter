@@ -659,7 +659,7 @@ function shoot(){
     burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);
     if(hitEnemy||wallImpact){
       spawnThunderExplosion(blastX,blastY,thunderTierData.radius);impactExplosion(blastX,blastY,'#ffd24a',46);
-      applyThunderBlast(blastX,blastY,dmg,thunderTierData.radius,hitEnemy?best:null);
+      applyThunderBlast(blastX,blastY,dmg,thunderTierData.radius,hitEnemy?best:null,wallImpact);
     }
     soundFire(barrel.id);p.cd=thunderTierData.reloadTime;return;
   }
@@ -863,13 +863,17 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   soundImpact(true);
   return {profile,ricochet:false,critical};
 }
-function applyThunderBlast(centerX,centerY,baseDamage,radius,primary){
+function applyThunderBlast(centerX,centerY,baseDamage,radius,primary,wallImpact=false){
   for(const target of [...en]){
     if(!en.includes(target))continue;
     const dx=target.x-centerX,dy=target.y-centerY,dist=Math.hypot(dx,dy);
     if(dist>radius+target.r)continue;
-    const rayDist=Math.max(0,dist-target.r);
-    if(dist>target.r&&wallRayHit(centerX,centerY,Math.atan2(dy,dx),rayDist))continue;
+    // A shell that detonates on a wall must still deliver its area damage.
+    // Don't let the wall that triggered the explosion occlude the entire blast.
+    if(!wallImpact){
+      const rayDist=Math.max(0,dist-target.r);
+      if(dist>target.r&&wallRayHit(centerX,centerY,Math.atan2(dy,dx),rayDist))continue;
+    }
     const falloff=1-Math.min(1,dist/Math.max(1,radius));
     const damage=target===primary?baseDamage:baseDamage*(.50+.50*falloff);
     applyBulletHit(target,damage,target.x,target.y,{thunder:true},0);

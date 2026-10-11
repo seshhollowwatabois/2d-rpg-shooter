@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101209';
+const GAME_VERSION='2026101210';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -681,7 +681,7 @@ function shoot(){
     // The beam can acquire a target immediately, but neither damage nor healing starts early.
     if(target&&p.isidaFireDelay>=.5){
       const falloff=1-Math.min(.45,targetDist/range);
-      const damage=(20+isidaTierData.damageBonus)+Math.random();
+      const damage=((20+isidaTierData.damageBonus)+Math.random())*1.3;
       const dealt=damage*falloff;
       applyBulletHit(target,dealt,target.x,target.y,{isida:true},0);
       const healed=Math.min(p.max-p.hp,dealt*isidaTierData.healRatio);
@@ -692,10 +692,9 @@ function shoot(){
       }
       if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);p.isidaTarget=null;}
     }
-    // Firebird-sized damage ticks, with cooldown scaled to preserve the old DPS at each tier.
-    const isidaOldMean=10.5+isidaTierData.damageBonus,isidaNewMean=20.5+isidaTierData.damageBonus;
+    // Isida ticks at a fixed 0.5-second interval, matching Firebird/Freeze's sustained-fire rhythm.
     if(target&&p.isidaFireDelay>=.5)soundFire('isida');
-    p.cd=barrel.reloadTime*(isidaNewMean/isidaOldMean);return;
+    p.cd=.5;return;
   }
 
   // Thunder's shell travels along the turret's aim. It only detonates when it
@@ -1709,7 +1708,7 @@ function renderShop(){
           addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Blast Radius',t.radius+' px');addStat('Critical Chance','0%');addStat('Tier','T'+t.tier);
         }else if(item.id==='isida'){
           const t=isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0];
-          addStat('Turret Rotation',(item.turn*t.turnMult).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Heal Conversion',Math.round(t.healRatio*100)+'%');addStat('Beam Range',t.range+' px');addStat('Tick Rate',(gun.reloadTime*((20.5+t.damageBonus)/(10.5+t.damageBonus))).toFixed(2)+'s');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*t.turnMult).toFixed(2),true);addStat('Damage',Math.round((20+t.damageBonus)*1.3)+'-'+Math.round((21+t.damageBonus)*1.3));addStat('Heal Conversion',Math.round(t.healRatio*100)+'%');addStat('Beam Range',t.range+' px');addStat('Tick Rate','0.50s');addStat('Tier','T'+t.tier);
         }else if(item.id==='freeze'){
           const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(15+t.directBonus)+'-'+(26+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101201';
+const GAME_VERSION='2026101202';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -301,7 +301,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -651,18 +651,31 @@ function shoot(){
   // converts part of that damage into player healing.
   if(barrel.id==='isida'&&barrel.isida){
     const range=isidaTierData.range||barrel.range||250;
-    let target=null,targetDist=Infinity;
-    for(const e of en){
+    const isValidTarget=e=>{
+      if(!e||!en.includes(e))return false;
       const dx=e.x-muzzle.x,dy=e.y-muzzle.y,d=Math.hypot(dx,dy);
-      const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
-      const targetAngle=Math.asin(Math.min(1,e.r/Math.max(d,1)));
-      if(d>range+e.r||da>barrel.cone*.5+targetAngle)continue;
-      if(wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-e.r)))continue;
-      if(d<targetDist){target=e;targetDist=d;}
+      if(d>range+e.r)return false;
+      return !wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-e.r));
+    };
+    // Keep the beam locked to its current tank while the trigger is held.
+    // The target can move inside the beam's range without the beam snapping away.
+    let target=isValidTarget(p.isidaTarget)?p.isidaTarget:null;
+    let targetDist=target?Math.hypot(target.x-muzzle.x,target.y-muzzle.y):Infinity;
+    if(!target){
+      p.isidaTarget=null;
+      for(const e of en){
+        const dx=e.x-muzzle.x,dy=e.y-muzzle.y,d=Math.hypot(dx,dy);
+        const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
+        const targetAngle=Math.asin(Math.min(1,e.r/Math.max(d,1)));
+        if(d>range+e.r||da>barrel.cone*.5+targetAngle)continue;
+        if(wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-e.r)))continue;
+        if(d<targetDist){target=e;targetDist=d;}
+      }
+      p.isidaTarget=target;
     }
     const endDist=target?targetDist:range;
     const endX=muzzle.x+ca*endDist,endY=muzzle.y+sa*endDist;
-    smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:target?target.x:endX,y2:target?target.y:endY,life:.15,maxLife:.15,col:isidaTierData.beam});
+    smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:target?target.x:endX,y2:target?target.y:endY,life:.22,maxLife:.22,col:isidaTierData.beam});
     if(target){
       const falloff=1-Math.min(.45,targetDist/range);
       const damage=(barrel.minDamage+isidaTierData.damageBonus)+Math.random()*(barrel.maxDamage-barrel.minDamage);
@@ -674,7 +687,7 @@ function shoot(){
         dmgTexts.push({x:p.x,y:p.y-p.r-30,text:'+'+Math.round(healed),life:.8,col:'#23bd73',kind:'heal'});
         burst(p.x,p.y,'#42e8d5',4);
       }
-      if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);}
+      if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);p.isidaTarget=null;}
     }
     soundFire('isida');p.cd=barrel.reloadTime;return;
   }
@@ -1899,6 +1912,7 @@ function update(dt){
   p.turretAngle+=turretStep;
 
   const fireHeld=mouse.down||mobileFire||keys.has(' ');
+  if(!fireHeld&&p.isidaTarget)p.isidaTarget=null;
   const firebird=gunForTurret(p.turretId);
   if(firebird.id==='122mm'&&firebird.flame){
     if(fireHeld&&p.firebirdFuel>0){
@@ -2751,6 +2765,17 @@ function draw(){
     x.restore();
   }
   // Smoky is an instant-hit cannon, so render a short-lived tracer to make the shot visible.
+  // Persistent Isida beam: visually anchored to the locked tank and follows it each frame.
+  if(p.turretId==='isida'&&(mouse.down||mobileFire||keys.has(' '))&&p.isidaTarget&&en.includes(p.isidaTarget)){
+    const ib=gunForTurret('isida'),m=playerMuzzlePosition(ib,p.turretAngle),target=p.isidaTarget;
+    const col=(isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0]).beam;
+    x.save();x.lineCap='round';
+    x.strokeStyle=col;x.globalAlpha=.28;x.lineWidth=13;x.beginPath();x.moveTo(m.x,m.y);x.lineTo(target.x,target.y);x.stroke();
+    x.strokeStyle=col;x.globalAlpha=.95;x.lineWidth=5;x.beginPath();x.moveTo(m.x,m.y);x.lineTo(target.x,target.y);x.stroke();
+    x.strokeStyle='#eaffff';x.globalAlpha=.95;x.lineWidth=1.8;x.beginPath();x.moveTo(m.x,m.y);x.lineTo(target.x,target.y);x.stroke();
+    x.globalAlpha=.9;x.fillStyle=col;x.beginPath();x.arc(target.x,target.y,6+Math.sin(performance.now()/65)*2,0,6.283);x.fill();
+    x.restore();
+  }
   for(let i=smokyTracers.length-1;i>=0;i--){
     const t=smokyTracers[i],a=Math.max(0,t.life/t.maxLife);
     x.save();x.globalAlpha=a;x.lineCap='round';

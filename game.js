@@ -631,25 +631,30 @@ function shoot(){
   const smokyTierData=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
   const thunderTierData=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
 
-  // Thunder fires an instant shell and splashes nearby enemies.
+  // Thunder's shell travels along the turret's aim. It only detonates when it
+  // hits an enemy or a wall; firing into open space never explodes at the muzzle.
   if(barrel.id==='thunder'&&barrel.instant){
-    let best=null,bestDist=1400;
+    const maxDist=1400;
+    let best=null,bestDist=maxDist;
     for(const e of en){
       const dx=e.x-muzzle.x,dy=e.y-muzzle.y,along=dx*ca+dy*sa,side=Math.abs(dx*sa-dy*ca);
       if(along<=0||along>=bestDist||side>e.r)continue;
       if(wallRayHit(muzzle.x,muzzle.y,fireAngle,along))continue;
       best=e;bestDist=along;
     }
-    if(best){
-      const hitX=muzzle.x+ca*bestDist,hitY=muzzle.y+sa*bestDist;
-      const dmg=barrel.minDamage+thunderTierData.damageBonus+Math.random()*((barrel.maxDamage+thunderTierData.damageBonus)-(barrel.minDamage+thunderTierData.damageBonus));
-      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13,col:'#ffd24a'});
-      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);spawnThunderExplosion(hitX,hitY,thunderTierData.radius);impactExplosion(hitX,hitY,'#ffd24a',46);
-      applyThunderBlast(hitX,hitY,dmg,thunderTierData.radius,best);
-    }else{
-      const missX=muzzle.x+ca*34,missY=muzzle.y+sa*34;
-      smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:missX,y2:missY,life:.10,maxLife:.10,col:'#ffd24a'});
-      burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);spawnThunderExplosion(missX,missY,thunderTierData.radius*.72);impactExplosion(missX,missY,'#ffd24a',30);
+    let wallDist=maxDist;
+    for(let d=4;d<=maxDist;d+=4){
+      if(wallHitCircle(muzzle.x+ca*d,muzzle.y+sa*d,2.5)){wallDist=d;break;}
+    }
+    const hitEnemy=!!best&&bestDist<wallDist;
+    const impactDist=hitEnemy?bestDist:wallDist;
+    const hitX=muzzle.x+ca*impactDist,hitY=muzzle.y+sa*impactDist;
+    const dmg=barrel.minDamage+thunderTierData.damageBonus+Math.random()*((barrel.maxDamage+thunderTierData.damageBonus)-(barrel.minDamage+thunderTierData.damageBonus));
+    smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:hitX,y2:hitY,life:.13,maxLife:.13,col:'#ffd24a'});
+    burst(muzzle.x,muzzle.y,'#ffd24a',14);burst(muzzle.x,muzzle.y,'#fff1a6',8);
+    if(hitEnemy||wallDist<maxDist){
+      spawnThunderExplosion(hitX,hitY,thunderTierData.radius);impactExplosion(hitX,hitY,'#ffd24a',46);
+      applyThunderBlast(hitX,hitY,dmg,thunderTierData.radius,hitEnemy?best:null);
     }
     soundFire(barrel.id);p.cd=thunderTierData.reloadTime;return;
   }

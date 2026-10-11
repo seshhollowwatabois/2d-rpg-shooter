@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101216';
+const GAME_VERSION='2026101217';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1921,7 +1921,7 @@ function update(dt){
   p.turretAngle+=hullTurnDelta;
   const targetTurret=Math.atan2(mouse.y-p.y,mouse.x-p.x);
   let turretDa=((targetTurret-p.turretAngle+Math.PI*3)%(Math.PI*2))-Math.PI;
-  const playerTurretTurnRate=turret.turn*freezeMoveMult;
+  const playerTurretTurnRate=turret.turn*(p.turretId==='isida'?1.3:1)*freezeMoveMult;
   const turretStep=Math.max(-playerTurretTurnRate*dt,Math.min(playerTurretTurnRate*dt,turretDa));
   p.turretAngle+=turretStep;
 

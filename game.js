@@ -1,4 +1,4 @@
-const GAME_VERSION='2026100751';
+const GAME_VERSION='2026101101';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -864,17 +864,13 @@ function applyBulletHit(target,baseDamage,bx,by,b=null,critChance=0){
   return {profile,ricochet:false,critical};
 }
 function applyThunderBlast(centerX,centerY,baseDamage,radius,primary,wallImpact=false){
+  // Thunder is an area-damage weapon: nearby enemies must take splash damage
+  // even when the shell detonates against a wall or another tank.
   for(const target of [...en]){
     if(!en.includes(target))continue;
     const dx=target.x-centerX,dy=target.y-centerY,dist=Math.hypot(dx,dy);
     if(dist>radius+target.r)continue;
-    // A shell that detonates on a wall must still deliver its area damage.
-    // Don't let the wall that triggered the explosion occlude the entire blast.
-    if(!wallImpact){
-      const rayDist=Math.max(0,dist-target.r);
-      if(dist>target.r&&wallRayHit(centerX,centerY,Math.atan2(dy,dx),rayDist))continue;
-    }
-    const falloff=1-Math.min(1,dist/Math.max(1,radius));
+    const falloff=1-Math.min(1,Math.max(0,dist-target.r)/Math.max(1,radius));
     const damage=target===primary?baseDamage:baseDamage*(.50+.50*falloff);
     applyBulletHit(target,damage,target.x,target.y,{thunder:true},0);
     if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);}

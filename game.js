@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101217';
+const GAME_VERSION='2026101218';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -301,7 +301,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,isidaFuel:5,isidaMaxFuel:5,isidaFireDelay:0,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:1,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,isidaFuel:5,isidaMaxFuel:5,isidaFireDelay:0,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -847,7 +847,7 @@ function getHitProfile(target,bx,by){
 }
 function applyFreeze(target){
   target.freezeStacks=Math.min(5,(target.freezeStacks||0)+1);
-  target.freezeTick=2;
+  target.freezeTick=1;
   burst(target.x,target.y,'#59d9ff',12);
   target.hitFlash=.05;
 }
@@ -873,7 +873,7 @@ function spawnFreezeParticles(owner,muzzle,angle,tier,cone,range,count=18){
 }
 function applyFreeze(target){
   target.freezeStacks=Math.min(5,(target.freezeStacks||0)+1);
-  target.freezeTick=2;
+  target.freezeTick=1;
   burst(target.x,target.y,'#59d9ff',12);
   target.hitFlash=.05;
 }
@@ -1843,7 +1843,7 @@ function update(dt){
     p.firebirdFuel=Math.min(5,p.firebirdFuel+dt*.5);
   }
   // Burning tanks take 3 damage every 1 second per stack, up to 5 stacks.
-  if(p.freezeStacks>0){p.freezeTick=(p.freezeTick||2)-dt;if(p.freezeTick<=0){p.freezeStacks=Math.max(0,p.freezeStacks-1);p.freezeTick=2;}}
+  if(p.freezeStacks>0){p.freezeTick=(p.freezeTick||2)-dt;if(p.freezeTick<=0){p.freezeStacks=Math.max(0,p.freezeStacks-1);p.freezeTick=1;}}
   if(p.burnStacks>0){
     p.burnTick=(p.burnTick||1)-dt;
     if(p.burnTick<=0){
@@ -2036,7 +2036,7 @@ function update(dt){
       }
     }
 
-    if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||2)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=2;}}
+    if(e.freezeStacks>0){e.freezeTick=(e.freezeTick||2)-dt;if(e.freezeTick<=0){e.freezeStacks=Math.max(0,e.freezeStacks-1);e.freezeTick=1;}}
     const freezeMoveMult=Math.max(.1,1-(e.freezeStacks||0)*.18);
 
     const enemyBarrel=gunForTurret(e.turretId);

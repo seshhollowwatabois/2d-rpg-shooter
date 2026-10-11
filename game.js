@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101208';
+const GAME_VERSION='2026101209';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -1349,13 +1349,7 @@ function renderShop(){
         q.moveTo(-r*.57,-r*.39);q.lineTo(-r*.17,-r*.54);q.lineTo(r*.31,-r*.49);q.lineTo(r*.56,-r*.29);
         q.quadraticCurveTo(r*.66,0,r*.56,r*.29);q.lineTo(r*.31,r*.49);q.lineTo(-r*.17,r*.54);q.lineTo(-r*.57,r*.39);
         q.quadraticCurveTo(-r*.69,0,-r*.57,-r*.39);
-      }else if(visualTurret.id==='isida'){
-    // Pointed projector silhouette makes its facing easier to read.
-    x.moveTo(-tr*.52,-tr*.28);x.lineTo(-tr*.22,-tr*.43);x.lineTo(tr*.16,-tr*.35);
-    x.lineTo(tr*.43,-tr*.19);x.lineTo(tr*.60,0);x.lineTo(tr*.43,tr*.19);
-    x.lineTo(tr*.16,tr*.35);x.lineTo(-tr*.22,tr*.43);x.lineTo(-tr*.52,tr*.28);
-    x.quadraticCurveTo(-tr*.63,0,-tr*.52,-tr*.28);
-  }else if(visualTurret.id==='rapid'){
+      }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
         q.quadraticCurveTo(r*.52,-r*.24,r*.52,0);q.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
         q.quadraticCurveTo(-r*.18,r*.45,-r*.50,r*.34);q.quadraticCurveTo(-r*.58,0,-r*.50,-r*.34);
@@ -1368,11 +1362,11 @@ function renderShop(){
       q.closePath();q.fill();
 
       if(visualTurret.id==='isida'){
-    // Bright cyan arrow points forward from the Isida turret.
-    x.save();x.lineJoin='round';x.strokeStyle='#10262b';x.lineWidth=Math.max(1.5,tr*.09);x.fillStyle='#42e8d5';
-    x.beginPath();x.moveTo(-tr*.20,-tr*.13);x.lineTo(tr*.24,-tr*.13);x.lineTo(tr*.24,-tr*.24);x.lineTo(tr*.53,0);x.lineTo(tr*.24,tr*.24);x.lineTo(tr*.24,tr*.13);x.lineTo(-tr*.20,tr*.13);x.closePath();x.fill();x.stroke();
-    x.strokeStyle='#eaffff';x.lineWidth=Math.max(1,tr*.035);x.beginPath();x.moveTo(-tr*.10,0);x.lineTo(tr*.30,0);x.stroke();x.restore();
-  }
+        // Bright cyan arrow in the shop preview points toward Isida's nose.
+        q.save();q.lineJoin='round';q.strokeStyle='#10262b';q.lineWidth=Math.max(1.5,r*.09);q.fillStyle='#42e8d5';
+        q.beginPath();q.moveTo(-r*.20,-r*.13);q.lineTo(r*.24,-r*.13);q.lineTo(r*.24,-r*.24);q.lineTo(r*.53,0);q.lineTo(r*.24,r*.24);q.lineTo(r*.24,r*.13);q.lineTo(-r*.20,r*.13);q.closePath();q.fill();q.stroke();
+        q.strokeStyle='#eaffff';q.lineWidth=Math.max(1,r*.035);q.beginPath();q.moveTo(-r*.10,0);q.lineTo(r*.30,0);q.stroke();q.restore();
+      }
 
   if(visualTurret.id==='railgun'&&railAccent){
         q.strokeStyle=railAccent;q.lineWidth=1.7;

@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101101';
+const GAME_VERSION='2026101201';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -27,7 +27,8 @@ const turrets=[
   {id:'fast',name:'Firebird',cost:0,turn:1.8,scale:1},
   {id:'freeze',name:'Freeze',cost:0,turn:1.7,scale:1},
   {id:'railgun',name:'Railgun',cost:0,turn:1.05,scale:1},
-  {id:'thunder',name:'Thunder',cost:0,turn:1.25,scale:1.12}
+  {id:'thunder',name:'Thunder',cost:0,turn:1.25,scale:1.12},
+  {id:'isida',name:'Isida',cost:0,turn:1.65,scale:1.02}
 ];
 const engines=[
   {id:'standard',name:'Standard Engine',cost:0,speed:1,turn:1},
@@ -40,7 +41,8 @@ const barrels=[
   {id:'122mm',name:'Firebird',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,flame:true,range:230,cone:.42},
   {id:'122mmFreeze',name:'Freeze',cost:0,minDamage:20,maxDamage:21,reloadTime:0.5,scale:1.05,length:1.05,freeze:true,range:230,cone:.42},
   {id:'122mmLong',name:'Railgun',cost:0,minDamage:90,maxDamage:110,reloadTime:10,scale:1.28,length:1.65,instant:true,railTier:0},
-  {id:'thunder',name:'Thunder',cost:0,minDamage:40,maxDamage:60,reloadTime:2,scale:1.22,length:1.45,instant:true,area:true,areaRadius:70}
+  {id:'thunder',name:'Thunder',cost:0,minDamage:40,maxDamage:60,reloadTime:2,scale:1.22,length:1.45,instant:true,area:true,areaRadius:70},
+  {id:'isida',name:'Isida',cost:0,minDamage:9,maxDamage:12,reloadTime:.18,scale:.78,length:.88,range:250,cone:.24,isida:true}
 ];
 function gunForTurret(turretId){
   if(turretId==='rapid')return barrels.find(v=>v.id==='85mm')||barrels[1];
@@ -48,6 +50,7 @@ function gunForTurret(turretId){
   if(turretId==='freeze')return barrels.find(v=>v.id==='122mmFreeze')||barrels[3];
   if(turretId==='railgun')return barrels.find(v=>v.id==='122mmLong')||barrels[4];
   if(turretId==='thunder')return barrels.find(v=>v.id==='thunder')||barrels[5];
+  if(turretId==='isida')return barrels.find(v=>v.id==='isida')||barrels[6];
   return barrels.find(v=>v.id==='57mm')||barrels[0];
 }
 function turretForPlayer(){
@@ -75,6 +78,10 @@ function turretForPlayer(){
   if(t.id==='thunder'){
     const tier=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
     return {...t,turn:t.turn+(tier.turnBonus||0)};
+  }
+  if(t.id==='isida'){
+    const tier=isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0];
+    return {...t,turn:t.turn*(tier.turnMult||1)};
   }
   return t;
 }
@@ -106,6 +113,12 @@ const thunderTiers=[
   {tier:1,name:'Thunder Tier 1',damageBonus:12,radius:82,reloadTime:3.25,turnBonus:.20},
   {tier:2,name:'Thunder Tier 2',damageBonus:24,radius:95,reloadTime:2.75,turnBonus:.40},
   {tier:3,name:'Thunder Tier 3',damageBonus:60,radius:110,reloadTime:2.25,turnBonus:1.05}
+];
+const isidaTiers=[
+  {tier:0,name:'Standard Isida',damageBonus:0,healRatio:.35,range:250,turnMult:1,beam:'#42e8d5'},
+  {tier:1,name:'Isida Tier 1',damageBonus:3,healRatio:.40,range:290,turnMult:1.12,beam:tierVisuals[1].beam},
+  {tier:2,name:'Isida Tier 2',damageBonus:6,healRatio:.45,range:330,turnMult:1.25,beam:tierVisuals[2].beam},
+  {tier:3,name:'Isida Tier 3',damageBonus:10,healRatio:.50,range:370,turnMult:1.40,beam:tierVisuals[3].beam}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -152,6 +165,8 @@ let twinsOwnedTier=Math.max(twinsTier,Number(safeStorageGet('tankTwinsOwnedTier'
 let smokyTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankSmokyTier')||0)));
 let smokyOwnedTier=Math.max(smokyTier,Math.min(3,Number(safeStorageGet('tankSmokyOwnedTier')||0)));
 let thunderTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankThunderTier')||0)));
+let isidaTier=Math.max(0,Math.min(3,Number(safeStorageGet('tankIsidaTier')||0)));
+let isidaOwnedTier=Math.max(isidaTier,Math.min(3,Number(safeStorageGet('tankIsidaOwnedTier')||0)));
 let thunderOwnedTier=Math.max(thunderTier,Math.min(3,Number(safeStorageGet('tankThunderOwnedTier')||0)));
 let hullTierById={scout:0,standard:0,heavy:0,mammoth:0};
 let hullOwnedTierById={scout:0,standard:0,heavy:0,mammoth:0};
@@ -217,7 +232,7 @@ function noise(duration=.12,volume=.08,filterFreq=1800){
 function soundRailCharge(){initAudio();tone(95,.9,'sawtooth',.045,520);tone(180,.75,'sine',.035,920)}
 function soundRailFire(){initAudio();tone(48,.32,'sawtooth',.18,24);tone(180,.22,'square',.12,55);noise(.28,.16,2400)}
 function soundFire(barrelId='85mm'){
-  const f=barrelId==='57mm'?150:barrelId==='85mm'?105:barrelId==='122mm'?75:62;
+  const f=barrelId==='isida'?430:barrelId==='57mm'?150:barrelId==='85mm'?105:barrelId==='122mm'?75:62;
   tone(f,.12,'sawtooth',.12,Math.max(35,f*.45));noise(.16,.10,1200);
 }
 function soundImpact(penetrated=true){
@@ -286,7 +301,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,hullId:hull.id,turretId:turret.id};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -612,7 +627,7 @@ function fireRailgun(){
   burst(muzzleX,muzzleY,'#ffffff',12);
   soundRailFire();
 }
-function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;if(turretId==='freeze')return freezeTier;if(turretId==='thunder')return thunderTier;return smokyTier}
+function visualTierIndexForTurret(turretId){if(turretId==='railgun')return railgunTier;if(turretId==='rapid')return twinsTier;if(turretId==='fast')return firebirdTier;if(turretId==='freeze')return freezeTier;if(turretId==='thunder')return thunderTier;if(turretId==='isida')return isidaTier;return smokyTier}
 function shoot(){
   const coarse=window.matchMedia?.('(pointer:coarse)').matches;
   if(coarse&&!mobileFire)return;
@@ -630,6 +645,39 @@ function shoot(){
   const twinsTierData=twinsTiers[Math.max(0,Math.min(3,twinsTier))]||twinsTiers[0];
   const smokyTierData=smokyTiers[Math.max(0,Math.min(3,smokyTier))]||smokyTiers[0];
   const thunderTierData=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
+  const isidaTierData=isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0];
+
+  // Isida is a short-range energy siphon: sustained contact hurts enemies and
+  // converts part of that damage into player healing.
+  if(barrel.id==='isida'&&barrel.isida){
+    const range=isidaTierData.range||barrel.range||250;
+    let target=null,targetDist=Infinity;
+    for(const e of en){
+      const dx=e.x-muzzle.x,dy=e.y-muzzle.y,d=Math.hypot(dx,dy);
+      const da=Math.abs(((Math.atan2(dy,dx)-fireAngle+Math.PI*3)%(Math.PI*2))-Math.PI);
+      const targetAngle=Math.asin(Math.min(1,e.r/Math.max(d,1)));
+      if(d>range+e.r||da>barrel.cone*.5+targetAngle)continue;
+      if(wallRayHit(muzzle.x,muzzle.y,Math.atan2(dy,dx),Math.max(0,d-e.r)))continue;
+      if(d<targetDist){target=e;targetDist=d;}
+    }
+    const endDist=target?targetDist:range;
+    const endX=muzzle.x+ca*endDist,endY=muzzle.y+sa*endDist;
+    smokyTracers.push({x1:muzzle.x,y1:muzzle.y,x2:target?target.x:endX,y2:target?target.y:endY,life:.15,maxLife:.15,col:isidaTierData.beam});
+    if(target){
+      const falloff=1-Math.min(.45,targetDist/range);
+      const damage=(barrel.minDamage+isidaTierData.damageBonus)+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const dealt=damage*falloff;
+      applyBulletHit(target,dealt,target.x,target.y,{isida:true},0);
+      const healed=Math.min(p.max-p.hp,dealt*isidaTierData.healRatio);
+      if(healed>0){
+        p.hp+=healed;
+        dmgTexts.push({x:p.x,y:p.y-p.r-30,text:'+'+Math.round(healed),life:.8,col:'#23bd73',kind:'heal'});
+        burst(p.x,p.y,'#42e8d5',4);
+      }
+      if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);}
+    }
+    soundFire('isida');p.cd=barrel.reloadTime;return;
+  }
 
   // Thunder's shell travels along the turret's aim. It only detonates when it
   // hits an enemy or a wall; firing into open space never explodes at the muzzle.
@@ -1026,6 +1074,8 @@ function saveShop(){
   safeStorageSet('tankFirebirdTier',String(firebirdTier)); safeStorageSet('tankTwinsTier',String(twinsTier)); safeStorageSet('tankTwinsOwnedTier',String(twinsOwnedTier));
   safeStorageSet('tankSmokyTier',String(smokyTier)); safeStorageSet('tankSmokyOwnedTier',String(smokyOwnedTier));
   safeStorageSet('tankThunderTier',String(thunderTier)); safeStorageSet('tankThunderOwnedTier',String(thunderOwnedTier));
+  safeStorageSet('tankIsidaTier',String(isidaTier)); safeStorageSet('tankIsidaOwnedTier',String(isidaOwnedTier));
+  safeStorageSet('tankIsidaTier',String(isidaTier)); safeStorageSet('tankIsidaOwnedTier',String(isidaOwnedTier));
   safeStorageSet('tankFirebirdOwnedTier',String(firebirdOwnedTier));
   safeStorageSet('tankFreezeTier',String(freezeTier));
   safeStorageSet('tankFreezeOwnedTier',String(freezeOwnedTier));
@@ -1273,6 +1323,9 @@ function renderShop(){
           q.beginPath();q.moveTo(-r*.50,-r*.15);q.lineTo(-r*.31,-r*.30);q.lineTo(-r*.06,-r*.33);q.stroke();
           q.beginPath();q.moveTo(-r*.50,r*.15);q.lineTo(-r*.31,r*.30);q.lineTo(-r*.06,r*.33);q.stroke();
         }
+      }else if(visualTurret.id==='isida'){
+        q.moveTo(-r*.48,-r*.34);q.lineTo(-r*.16,-r*.48);q.lineTo(r*.24,-r*.40);q.lineTo(r*.48,-r*.20);
+        q.lineTo(r*.48,r*.20);q.lineTo(r*.24,r*.40);q.lineTo(-r*.16,r*.48);q.lineTo(-r*.48,r*.34);q.quadraticCurveTo(-r*.60,0,-r*.48,-r*.34);
       }else if(visualTurret.id==='thunder'){
         q.moveTo(-r*.57,-r*.39);q.lineTo(-r*.17,-r*.54);q.lineTo(r*.31,-r*.49);q.lineTo(r*.56,-r*.29);
         q.quadraticCurveTo(r*.66,0,r*.56,r*.29);q.lineTo(r*.31,r*.49);q.lineTo(-r*.17,r*.54);q.lineTo(-r*.57,r*.39);
@@ -1350,7 +1403,10 @@ function renderShop(){
 
       const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
       const barrelWidth=.15*barrelScale;
-      if(visualTurret.id==='thunder'){
+      if(visualTurret.id==='isida'){
+        q.fillStyle='#151819';q.beginPath();q.moveTo(r*.28,-r*.13);q.lineTo(r*.75,-r*.17);q.lineTo(r*1.12,-r*.12);q.lineTo(r*1.18,0);q.lineTo(r*1.12,r*.12);q.lineTo(r*.75,r*.17);q.lineTo(r*.28,r*.13);q.closePath();q.fill();
+        q.fillStyle='#42e8d5';q.fillRect(r*.72,-r*.10,r*.08,r*.20);q.fillStyle='#0b0d0c';q.beginPath();q.arc(r*1.17,0,r*.09,0,6.283);q.fill();
+      }else if(visualTurret.id==='thunder'){
         const barrelHalf=r*.20*visualBarrel.scale,barrelStart=r*.27,barrelEnd=r*(1.55*visualBarrel.length);
         q.fillStyle='#121515';
         q.beginPath();q.moveTo(barrelStart,-barrelHalf);q.lineTo(barrelEnd,-barrelHalf*.96);q.lineTo(barrelEnd+r*.07,-barrelHalf*.66);q.lineTo(barrelEnd+r*.07,barrelHalf*.66);q.lineTo(barrelEnd,barrelHalf*.96);q.lineTo(barrelStart,barrelHalf);q.closePath();q.fill();
@@ -1560,6 +1616,16 @@ function renderShop(){
       });
       info.appendChild(tiers);
     }
+    if(type==='turret'&&item.id==='isida'&&isSelected){
+      const tiers=document.createElement('div');tiers.className='railgunTierMini';
+      isidaTiers.forEach(t=>{
+        const owned=t.tier<=isidaOwnedTier,tier=document.createElement('div');tier.className='railgunTierMiniRow'+(t.tier===isidaTier?' current':'');
+        const label=document.createElement('span');label.innerHTML='<b>T'+t.tier+'</b><small>'+t.name+'</small>';
+        const b=document.createElement('button');b.className='tierInlineButton';b.textContent=t.tier===isidaTier?'CURRENT':owned?'SELECT':t.tier===isidaOwnedTier+1?'UPGRADE':'LOCKED';b.disabled=t.tier===isidaTier||(!owned&&t.tier!==isidaOwnedTier+1);
+        b.onclick=e=>{e.stopPropagation();initAudio();soundUi();if(!owned&&t.tier===isidaOwnedTier+1)isidaOwnedTier=t.tier;isidaTier=t.tier;if(p)p.isidaTier=isidaTier;saveShop();renderShop()};
+        tier.appendChild(label);tier.appendChild(b);tiers.appendChild(tier);
+      });info.appendChild(tiers);
+    }
     if(type==='turret'&&item.id==='freeze'&&isSelected){
       const tiers=document.createElement('div');tiers.className='railgunTierMini';
       freezeTiers.forEach(t=>{
@@ -1615,6 +1681,9 @@ function renderShop(){
         }else if(item.id==='thunder'){
           const t=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
           addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Blast Radius',t.radius+' px');addStat('Critical Chance','0%');addStat('Tier','T'+t.tier);
+        }else if(item.id==='isida'){
+          const t=isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0];
+          addStat('Turret Rotation',(item.turn*t.turnMult).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Heal Conversion',Math.round(t.healRatio*100)+'%');addStat('Beam Range',t.range+' px');addStat('Tick Rate',gun.reloadTime.toFixed(2)+'s');addStat('Tier','T'+t.tier);
         }else if(item.id==='freeze'){
           const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(15+t.directBonus)+'-'+(26+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);
@@ -2329,7 +2398,7 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const visualBarrel=gunForTurret(turretId);
   const visualTurret=turrets.find(v=>v.id===turretId)||turrets[0];
   const tr=r*(visualTurret.scale||1);
-  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?freezeTierVisual:visualTurret.id==='thunder'?(enemy?thunderTierVisual:thunderTier):(enemy?smokyTierVisual:smokyTier)));
+  const visualTierIndex=Math.max(0,Math.min(3,visualTurret.id==='railgun'?(enemy?railgunTierVisual:railgunTier):visualTurret.id==='rapid'?(enemy?twinsTierVisual:twinsTier):visualTurret.id==='fast'?(enemy?firebirdTierVisual:firebirdTier):visualTurret.id==='freeze'?freezeTierVisual:visualTurret.id==='thunder'?(enemy?thunderTierVisual:thunderTier):visualTurret.id==='isida'?(enemy?thunderTierVisual:isidaTier):(enemy?smokyTierVisual:smokyTier)));
   const visualTier=tierVisual(visualTierIndex);
   const railAccent=visualTurret.id==='railgun'&&visualTierIndex>0?visualTier.accent:null;
   const smokyAccent=visualTurret.id==='standard'&&visualTierIndex>0?visualTier.accent:null;
@@ -2507,7 +2576,12 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   const barrelScale=visualBarrel.scale,barrelLength=visualBarrel.length;
   const barrelWidth=.15*barrelScale;
-  if(visualTurret.id==='thunder'){
+  if(visualTurret.id==='isida'){
+    const it=isidaTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):isidaTier))]||isidaTiers[0];
+    x.fillStyle='#143b3c';x.beginPath();x.roundRect(-tr*.26,-tr*.18,tr*.66,tr*.36,tr*.08);x.fill();
+    x.fillStyle=it.beam;x.globalAlpha=.95;x.beginPath();x.arc(tr*.20,0,tr*.13,0,6.283);x.fill();x.globalAlpha=1;
+    if((enemy?(thunderTierVisual||0):isidaTier)>0){x.strokeStyle=it.beam;x.lineWidth=tr*.055;x.beginPath();x.moveTo(-tr*.38,-tr*.28);x.lineTo(tr*.20,-tr*.22);x.stroke();x.beginPath();x.moveTo(-tr*.38,tr*.28);x.lineTo(tr*.20,tr*.22);x.stroke();}
+  }else if(visualTurret.id==='thunder'){
     const thunderVisual=thunderTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):thunderTier))]||thunderTiers[0];
     const barrelHalf=tr*.20*barrelScale;
     const barrelStart=tr*.27;
@@ -2737,7 +2811,7 @@ function draw(){
     const bw=e.r*2.7;x.fillStyle='#252c35';x.fillRect(e.x-bw/2,e.y-e.r-11,bw,5);
     x.fillStyle=e.heavy?'#d28a55':'#d85b68';x.fillRect(e.x-bw/2,e.y-e.r-11,bw*Math.max(0,e.hp/e.max),5);
   }
-  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier,p.freezeStacks||0,thunderTier);
+  if(!p.dead)tankBody(p.x,p.y,p.r,p.angle,p.turretAngle,false,false,p.inv>0,p.turretId,p.hullId,firebirdTier,twinsTier,smokyTier,railgunTier,hullTierById[p.hullId]||0,freezeTier,p.freezeStacks||0,p.turretId==='isida'?isidaTier:thunderTier);
   const barW=p.r*2.7, barX=p.x-barW/2, hpY=p.y-p.r-18, reloadY=p.y-p.r-10;
   const turret=turrets.find(v=>v.id===p.turretId)||turrets[0], barrel=gunForTurret(p.turretId);
   const activeRailTier=railgunTiers[Math.max(0,Math.min(3,railgunTier))];
@@ -2745,7 +2819,9 @@ function draw(){
   const actualThunderTier=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
   const actualReloadTime=barrel.id==='122mmLong'
     ? barrel.reloadTime*(activeRailTier?.reloadMult||1)
-    : barrel.id==='57mm'
+    : barrel.id==='isida'
+      ? barrel.reloadTime
+      : barrel.id==='57mm'
       ? activeSmokyTier.reloadTime
       : barrel.id==='thunder'
         ? actualThunderTier.reloadTime
@@ -2761,7 +2837,7 @@ function draw(){
       :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
   x.fillStyle='#252c35';x.fillRect(barX,hpY,barW,4);x.fillStyle='#e15b64';x.fillRect(barX,hpY,barW*Math.max(0,p.hp/p.max),4);
   x.fillStyle='#252c35';x.fillRect(barX,reloadY,barW,3);x.fillStyle='#ffd21a';x.fillRect(barX,reloadY,barW*reloadPct,3);
-  for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/(q.kind==='burn'?.9:.7));x.fillStyle=q.col||'#ff3b3b';x.font=q.kind==='burn'?'bold 14px system-ui':'bold 18px system-ui';x.textAlign='center';x.fillText(q.kind==='burn'?'🔥 -'+q.text:'-'+q.text,q.x,q.y);x.globalAlpha=1}
+  for(const q of dmgTexts){x.globalAlpha=Math.max(0,q.life/(q.kind==='burn'?.9:.7));x.fillStyle=q.col||'#ff3b3b';x.font=q.kind==='burn'?'bold 14px system-ui':'bold 18px system-ui';x.textAlign='center';x.fillText(q.kind==='burn'?'🔥 -'+q.text:q.kind==='heal'?q.text:'-'+q.text,q.x,q.y);x.globalAlpha=1}
   x.restore();
 
   const xp=Math.max(0,p.xp/p.next);
@@ -2788,7 +2864,9 @@ function draw(){
     const activeThunderTier=thunderTiers[Math.max(0,Math.min(3,thunderTier))]||thunderTiers[0];
     const actualReloadTime=activeBarrel.id==='122mmLong'
       ? activeBarrel.reloadTime*(activeRailTier?.reloadMult||1)
-      : activeBarrel.id==='57mm'
+      : activeBarrel.id==='isida'
+        ? activeBarrel.reloadTime
+        : activeBarrel.id==='57mm'
         ? activeSmokyTier.reloadTime
         : activeBarrel.id==='thunder'
           ? activeThunderTier.reloadTime

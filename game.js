@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101214';
+const GAME_VERSION='2026101215';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -115,10 +115,10 @@ const thunderTiers=[
   {tier:3,name:'Thunder Tier 3',damageBonus:60,radius:110,reloadTime:2.25,turnBonus:1.05}
 ];
 const isidaTiers=[
-  {tier:0,name:'Standard Isida',damageBonus:0,healRatio:.35,range:250,turnMult:1,beam:'#ff9b24'},
-  {tier:1,name:'Isida Tier 1',damageBonus:3,healRatio:.40,range:290,turnMult:1.12,beam:'#ff6724'},
-  {tier:2,name:'Isida Tier 2',damageBonus:6,healRatio:.45,range:330,turnMult:1.25,beam:'#ff3b24'},
-  {tier:3,name:'Isida Tier 3',damageBonus:10,healRatio:.50,range:370,turnMult:1.40,beam:'#ff1717'}
+  {tier:0,name:'Standard Isida',damageBonus:0,healRatio:.35,range:250,turnMult:1,beam:'#ff3b30'},
+  {tier:1,name:'Isida Tier 1',damageBonus:3,healRatio:.40,range:290,turnMult:1.12,beam:'#ff241f'},
+  {tier:2,name:'Isida Tier 2',damageBonus:6,healRatio:.45,range:330,turnMult:1.25,beam:'#ff1010'},
+  {tier:3,name:'Isida Tier 3',damageBonus:10,healRatio:.50,range:370,turnMult:1.40,beam:'#ff0000'}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},
@@ -2800,7 +2800,7 @@ function draw(){
     const ang=p.turretAngle,ca=Math.cos(ang),sa=Math.sin(ang),sideX=-sa,sideY=ca;
     const cx=p.x+ca*p.r*.57,cy=p.y+sa*p.r*.57,spread=p.r*.15;
     const pulse=.65+.35*Math.sin(performance.now()/48),col=(isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0]).beam;
-    x.save();x.globalCompositeOperation='lighter';x.lineCap='round';
+    x.save();x.globalCompositeOperation='source-over';x.lineCap='round';
     x.strokeStyle=col;x.globalAlpha=.45*pulse;x.lineWidth=7;
     x.beginPath();x.moveTo(cx+sideX*spread,cy+sideY*spread);x.lineTo(cx-sideX*spread,cy-sideY*spread);x.stroke();
     x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=2.2;
@@ -2819,7 +2819,7 @@ function draw(){
     const col=(isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0]).beam;
     const now=performance.now(),dx=target.x-m.x,dy=target.y-m.y,len=Math.hypot(dx,dy)||1;
     const nx=-dy/len,ny=dx/len,segments=Math.max(8,Math.min(24,Math.ceil(len/24)));
-    x.save();x.globalCompositeOperation='lighter';x.lineCap='round';x.lineJoin='round';
+    x.save();x.globalCompositeOperation='source-over';x.lineCap='round';x.lineJoin='round';
     function lightningPath(seed,spread){
       const pts=[{x:m.x,y:m.y}];
       for(let i=1;i<segments;i++){

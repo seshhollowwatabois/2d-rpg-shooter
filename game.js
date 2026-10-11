@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101204';
+const GAME_VERSION='2026101205';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -679,7 +679,7 @@ function shoot(){
     // Isida uses the continuous beam rendered from the locked target; don't spawn rapid one-shot tracers.
     if(target){
       const falloff=1-Math.min(.45,targetDist/range);
-      const damage=(barrel.minDamage+isidaTierData.damageBonus)+Math.random()*(barrel.maxDamage-barrel.minDamage);
+      const damage=(20+isidaTierData.damageBonus)+Math.random();
       const dealt=damage*falloff;
       applyBulletHit(target,dealt,target.x,target.y,{isida:true},0);
       const healed=Math.min(p.max-p.hp,dealt*isidaTierData.healRatio);
@@ -690,7 +690,9 @@ function shoot(){
       }
       if(target.hp<=0){const j=en.indexOf(target);if(j>=0)killEnemy(target,j);p.isidaTarget=null;}
     }
-    soundFire('isida');p.cd=barrel.reloadTime;return;
+    // Firebird-sized damage ticks, with cooldown scaled to preserve the old DPS at each tier.
+    const isidaOldMean=10.5+isidaTierData.damageBonus,isidaNewMean=20.5+isidaTierData.damageBonus;
+    soundFire('isida');p.cd=barrel.reloadTime*(isidaNewMean/isidaOldMean);return;
   }
 
   // Thunder's shell travels along the turret's aim. It only detonates when it
@@ -1344,7 +1346,13 @@ function renderShop(){
         q.moveTo(-r*.57,-r*.39);q.lineTo(-r*.17,-r*.54);q.lineTo(r*.31,-r*.49);q.lineTo(r*.56,-r*.29);
         q.quadraticCurveTo(r*.66,0,r*.56,r*.29);q.lineTo(r*.31,r*.49);q.lineTo(-r*.17,r*.54);q.lineTo(-r*.57,r*.39);
         q.quadraticCurveTo(-r*.69,0,-r*.57,-r*.39);
-      }else if(visualTurret.id==='rapid'){
+      }else if(visualTurret.id==='isida'){
+    // Pointed projector silhouette makes its facing easier to read.
+    x.moveTo(-tr*.52,-tr*.28);x.lineTo(-tr*.22,-tr*.43);x.lineTo(tr*.16,-tr*.35);
+    x.lineTo(tr*.43,-tr*.19);x.lineTo(tr*.60,0);x.lineTo(tr*.43,tr*.19);
+    x.lineTo(tr*.16,tr*.35);x.lineTo(-tr*.22,tr*.43);x.lineTo(-tr*.52,tr*.28);
+    x.quadraticCurveTo(-tr*.63,0,-tr*.52,-tr*.28);
+  }else if(visualTurret.id==='rapid'){
         q.moveTo(-r*.50,-r*.34);q.quadraticCurveTo(-r*.18,-r*.45,r*.24,-r*.39);
         q.quadraticCurveTo(r*.52,-r*.24,r*.52,0);q.quadraticCurveTo(r*.52,r*.24,r*.24,r*.39);
         q.quadraticCurveTo(-r*.18,r*.45,-r*.50,r*.34);q.quadraticCurveTo(-r*.58,0,-r*.50,-r*.34);
@@ -1356,7 +1364,14 @@ function renderShop(){
       }
       q.closePath();q.fill();
 
-      if(visualTurret.id==='railgun'&&railAccent){
+      if(visualTurret.id==='isida'){
+    // Bright cyan arrow points forward from the Isida turret.
+    x.save();x.lineJoin='round';x.strokeStyle='#10262b';x.lineWidth=Math.max(1.5,tr*.09);x.fillStyle='#42e8d5';
+    x.beginPath();x.moveTo(-tr*.20,-tr*.13);x.lineTo(tr*.24,-tr*.13);x.lineTo(tr*.24,-tr*.24);x.lineTo(tr*.53,0);x.lineTo(tr*.24,tr*.24);x.lineTo(tr*.24,tr*.13);x.lineTo(-tr*.20,tr*.13);x.closePath();x.fill();x.stroke();
+    x.strokeStyle='#eaffff';x.lineWidth=Math.max(1,tr*.035);x.beginPath();x.moveTo(-tr*.10,0);x.lineTo(tr*.30,0);x.stroke();x.restore();
+  }
+
+  if(visualTurret.id==='railgun'&&railAccent){
         q.strokeStyle=railAccent;q.lineWidth=1.7;
         q.beginPath();q.moveTo(-r*.34,-r*.27);q.lineTo(r*.20,-r*.23);q.lineTo(r*.35,-r*.10);q.stroke();
         q.beginPath();q.moveTo(-r*.34,r*.27);q.lineTo(r*.20,r*.23);q.lineTo(r*.35,r*.10);q.stroke();
@@ -1697,7 +1712,7 @@ function renderShop(){
           addStat('Turret Rotation',(item.turn+(t.turnBonus||0)).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Reload Time',t.reloadTime.toFixed(2)+'s');addStat('Blast Radius',t.radius+' px');addStat('Critical Chance','0%');addStat('Tier','T'+t.tier);
         }else if(item.id==='isida'){
           const t=isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0];
-          addStat('Turret Rotation',(item.turn*t.turnMult).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Heal Conversion',Math.round(t.healRatio*100)+'%');addStat('Beam Range',t.range+' px');addStat('Tick Rate',gun.reloadTime.toFixed(2)+'s');addStat('Tier','T'+t.tier);
+          addStat('Turret Rotation',(item.turn*t.turnMult).toFixed(2),true);addStat('Damage',(gun.minDamage+t.damageBonus)+'-'+(gun.maxDamage+t.damageBonus));addStat('Heal Conversion',Math.round(t.healRatio*100)+'%');addStat('Beam Range',t.range+' px');addStat('Tick Rate',(gun.reloadTime*((20.5+t.damageBonus)/(10.5+t.damageBonus))).toFixed(2)+'s');addStat('Tier','T'+t.tier);
         }else if(item.id==='freeze'){
           const t=freezeTiers[Math.max(0,Math.min(3,freezeTier))]||freezeTiers[0];
           addStat('Turret Rotation',(item.turn*(t.turnMult||1)).toFixed(2),true);addStat('Damage',(15+t.directBonus)+'-'+(26+t.directBonus));addStat('Reload Time',gun.reloadTime.toFixed(2)+'s');addStat('Range',t.range+' px');addStat('Slow / Stack','10%');addStat('Max Freeze Stacks','5');addStat('Tier','T'+t.tier);

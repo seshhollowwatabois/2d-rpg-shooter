@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101205';
+const GAME_VERSION='2026101206';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -2611,9 +2611,14 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const barrelWidth=.15*barrelScale;
   if(visualTurret.id==='isida'){
     const it=isidaTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):isidaTier))]||isidaTiers[0];
-    x.fillStyle='#143b3c';x.beginPath();x.roundRect(-tr*.26,-tr*.18,tr*.66,tr*.36,tr*.08);x.fill();
-    x.fillStyle=it.beam;x.globalAlpha=.95;x.beginPath();x.arc(tr*.20,0,tr*.13,0,6.283);x.fill();x.globalAlpha=1;
-    if((enemy?(thunderTierVisual||0):isidaTier)>0){x.strokeStyle=it.beam;x.lineWidth=tr*.055;x.beginPath();x.moveTo(-tr*.38,-tr*.28);x.lineTo(tr*.20,-tr*.22);x.stroke();x.beginPath();x.moveTo(-tr*.38,tr*.28);x.lineTo(tr*.20,tr*.22);x.stroke();}
+    // Isida's front is a pair of vampire fangs instead of a conventional barrel.
+    x.fillStyle='#143b3c';x.beginPath();x.roundRect(-tr*.30,-tr*.23,tr*.64,tr*.46,tr*.09);x.fill();
+    x.fillStyle='#081718';x.beginPath();x.roundRect(tr*.18,-tr*.205,tr*.30,tr*.41,tr*.06);x.fill();
+    x.fillStyle='#d8ffff';x.strokeStyle=it.beam;x.lineWidth=Math.max(1,tr*.025);
+    x.beginPath();x.moveTo(tr*.13,-tr*.23);x.lineTo(tr*.57,-tr*.17);x.lineTo(tr*.30,-tr*.015);x.closePath();x.fill();x.stroke();
+    x.beginPath();x.moveTo(tr*.13,tr*.23);x.lineTo(tr*.57,tr*.17);x.lineTo(tr*.30,tr*.015);x.closePath();x.fill();x.stroke();
+    x.fillStyle=it.beam;x.globalAlpha=.9;x.beginPath();x.arc(tr*.29,0,tr*.045,0,6.283);x.fill();x.globalAlpha=1;
+    if((enemy?(thunderTierVisual||0):isidaTier)>0){x.strokeStyle=it.beam;x.lineWidth=tr*.045;x.beginPath();x.moveTo(-tr*.30,-tr*.29);x.lineTo(tr*.12,-tr*.24);x.stroke();x.beginPath();x.moveTo(-tr*.30,tr*.29);x.lineTo(tr*.12,tr*.24);x.stroke();}
   }else if(visualTurret.id==='thunder'){
     const thunderVisual=thunderTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):thunderTier))]||thunderTiers[0];
     const barrelHalf=tr*.20*barrelScale;
@@ -2784,6 +2789,24 @@ function draw(){
     x.restore();
   }
   // Smoky is an instant-hit cannon, so render a short-lived tracer to make the shot visible.
+  // With no enemy in range, Isida gathers visible energy between its fangs while firing.
+  if(p.turretId==='isida'&&(mouse.down||mobileFire||keys.has(' '))&&p.isidaFuel>0&&(!p.isidaTarget||!en.includes(p.isidaTarget))){
+    const ang=p.turretAngle,ca=Math.cos(ang),sa=Math.sin(ang),sideX=-sa,sideY=ca;
+    const cx=p.x+ca*p.r*.57,cy=p.y+sa*p.r*.57,spread=p.r*.15;
+    const pulse=.65+.35*Math.sin(performance.now()/48),col=(isidaTiers[Math.max(0,Math.min(3,isidaTier))]||isidaTiers[0]).beam;
+    x.save();x.globalCompositeOperation='lighter';x.lineCap='round';
+    x.strokeStyle=col;x.globalAlpha=.45*pulse;x.lineWidth=7;
+    x.beginPath();x.moveTo(cx+sideX*spread,cy+sideY*spread);x.lineTo(cx-sideX*spread,cy-sideY*spread);x.stroke();
+    x.strokeStyle='#dfffff';x.globalAlpha=.98;x.lineWidth=2.2;
+    x.beginPath();x.moveTo(cx+sideX*spread,cy+sideY*spread);x.lineTo(cx-sideX*spread,cy-sideY*spread);x.stroke();
+    for(let i=0;i<4;i++){
+      const t=(performance.now()/95+i*.25)%1;
+      const along=(t-.5)*spread*1.6;
+      x.fillStyle=i%2?col:'#f4ffff';x.globalAlpha=.9*pulse;
+      x.beginPath();x.arc(cx+sideX*along,cy+sideY*along,1.5+(i%2),0,6.283);x.fill();
+    }
+    x.restore();
+  }
   // Persistent Isida beam: visually anchored to the locked tank and follows it each frame.
   if(p.turretId==='isida'&&(mouse.down||mobileFire||keys.has(' '))&&p.isidaTarget&&en.includes(p.isidaTarget)){
     const ib=gunForTurret('isida'),m=playerMuzzlePosition(ib,p.turretAngle),target=p.isidaTarget;

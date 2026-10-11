@@ -99,11 +99,12 @@ const smokyTiers=[
   {tier:3,name:'Smoky Tier 3',damageBonus:25,reloadTime:1.25,turnBonus:1.05,critBonus:.15,accent:tierVisuals[3].accent}
 ];
 const thunderTiers=[
-  // Thunder is exactly 2x Smoky's damage, with reload reduced by 0.25s at each tier.
+  // Thunder's base max damage is increased by 20%, and its tier damage bonuses
+  // are also increased by 20% so the buff scales consistently across every tier.
   {tier:0,name:'Standard Thunder',damageBonus:0,radius:70,reloadTime:3.75,turnBonus:0},
-  {tier:1,name:'Thunder Tier 1',damageBonus:10,radius:82,reloadTime:3.25,turnBonus:.20},
-  {tier:2,name:'Thunder Tier 2',damageBonus:20,radius:95,reloadTime:2.75,turnBonus:.40},
-  {tier:3,name:'Thunder Tier 3',damageBonus:50,radius:110,reloadTime:2.25,turnBonus:1.05}
+  {tier:1,name:'Thunder Tier 1',damageBonus:12,radius:82,reloadTime:3.25,turnBonus:.20},
+  {tier:2,name:'Thunder Tier 2',damageBonus:24,radius:95,reloadTime:2.75,turnBonus:.40},
+  {tier:3,name:'Thunder Tier 3',damageBonus:60,radius:110,reloadTime:2.25,turnBonus:1.05}
 ];
 const firebirdTiers=[
   {tier:0,name:'Standard Firebird',directBonus:0,burnBonus:0,range:230,turnMult:1,flame:'#ff5a18',core:'#fff1a6',accent:'#ffb52e'},

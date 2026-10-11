@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101212';
+const GAME_VERSION='2026101213';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -2833,11 +2833,11 @@ function draw(){
       x.stroke();
       return pts;
     }
-    x.strokeStyle=col;x.globalAlpha=.18;x.lineWidth=8;const mainPts=lightningPath(1,13);
-    x.strokeStyle=col;x.globalAlpha=.88;x.lineWidth=2.8;lightningPath(2,9);
-    x.strokeStyle='#fff3df';x.globalAlpha=.95;x.lineWidth=1.1;lightningPath(3,5);
+    x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=5;const mainPts=lightningPath(1,13);
+    x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=3.2;lightningPath(2,9);
+    x.strokeStyle='#ffffff';x.globalAlpha=1;x.lineWidth=1.8;lightningPath(3,5);
     // Short forked sparks split off the main bolt at irregular points.
-    x.strokeStyle=col;x.globalAlpha=.88;x.lineWidth=1.25;
+    x.strokeStyle=col;x.globalAlpha=1;x.lineWidth=1.8;
     for(let b=0;b<4;b++){
       const idx=2+Math.floor(((b*0.217+((now/170+b*.31)%1)*.13)%(1))*Math.max(1,segments-4));
       const pt=mainPts[Math.min(segments-1,idx)],t=idx/segments,side=b%2?1:-1;
@@ -2845,8 +2845,8 @@ function draw(){
       const by=pt.y+dy*.035+ny*side*(10+8*Math.sin(now*.02+b*2));
       x.beginPath();x.moveTo(pt.x,pt.y);x.lineTo(bx,by);x.lineTo(bx+nx*side*5,by+ny*side*5);x.stroke();
     }
-    x.globalAlpha=.75;x.fillStyle=col;x.beginPath();x.arc(target.x,target.y,4.5+Math.sin(now/45)*1.3,0,6.283);x.fill();
-    x.fillStyle='#fff3df';x.globalAlpha=.95;x.beginPath();x.arc(target.x,target.y,2.2+Math.sin(now/38)*.6,0,6.283);x.fill();
+    x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(target.x,target.y,4.5+Math.sin(now/45)*1.3,0,6.283);x.fill();
+    x.fillStyle='#ffffff';x.globalAlpha=1;x.beginPath();x.arc(target.x,target.y,2.2+Math.sin(now/38)*.6,0,6.283);x.fill();
     x.restore();
   }
   for(let i=smokyTracers.length-1;i>=0;i--){

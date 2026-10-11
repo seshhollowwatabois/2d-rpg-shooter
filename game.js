@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101202';
+const GAME_VERSION='2026101203';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -301,7 +301,7 @@ function startNewGame(){
 function reset(){
   const hull=effectiveHull(hulls.find(v=>v.id===equippedHull)||hulls[0]), turret=turrets.find(v=>v.id===equippedTurret)||turrets[0], engine=engines.find(v=>v.id===equippedEngine)||engines[0];
   const totalHp=hull.hp;
-  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
+  p={x:W/2,y:H/2,r:20*hull.scale,speed:hull.speed*engine.speed,hp:totalHp,max:totalHp,lv:1,xp:0,next:120,coins:0,kills:0,cd:0,inv:0,angle:0,turretAngle:0,burnStacks:0,burnTick:1,freezeStacks:0,freezeTick:2,railCharging:false,railCharge:0,firebirdFuel:5,firebirdMaxFuel:5,freezeFuel:5,freezeMaxFuel:5,isidaFuel:5,isidaMaxFuel:5,firebirdActive:false,freezeActive:false,freezeFireDelay:0,firebirdTier:firebirdTier,freezeTier:freezeTier,smokyTier:smokyTier,thunderTier:thunderTier,isidaTier:isidaTier,hullId:hull.id,turretId:turret.id,isidaTarget:null};
   en=[];deadTanks=[];playerDeathTank=null;playerDeathTimer=0;playerDeathElapsed=0;bs=[];ebs=[];ps=[];dmgTexts=[];smokyTracers=[];spawn=.8;over=false;wave=1;waveRemaining=waveSize(wave);waveStarted=true;waveClearTimer=0;
   const waveDisplay=document.getElementById('waveDisplay');
   if(waveDisplay)waveDisplay.textContent='WAVE 1';
@@ -635,6 +635,7 @@ function shoot(){
   const barrel=gunForTurret(p.turretId);
   if(barrel.id==='122mm'&&barrel.flame&&p.firebirdFuel<=0)return;
   if(barrel.id==='122mmFreeze'&&barrel.freeze&&p.freezeFuel<=0)return;
+  if(barrel.id==='isida'&&barrel.isida&&p.isidaFuel<=0)return;
   if(barrel.id==='122mmLong'){
     if(!p.railCharging){p.railCharging=true;p.railCharge=1;soundRailCharge();}
     return;
@@ -1822,7 +1823,9 @@ function update(dt){
     if(e.corpseTime<=0)deadTanks.splice(i,1);
   }
 
-  // Firebird and Freeze both use a 5-second continuous firing pool.
+  // Firebird, Freeze, and Isida use 5 seconds of continuous firing fuel.
+  // Fuel recharges at 0.5 seconds per second (10 seconds for a full refill) while the trigger is released.
+  if(p.turretId==='isida' && p.isidaFuel<5 && !mouse.down && !mobileFire && !keys.has(' '))p.isidaFuel=Math.min(5,p.isidaFuel+dt*.5);
   if(p.turretId==='freeze' && p.freezeFuel<5 && !mouse.down && !mobileFire && !keys.has(' '))p.freezeFuel=Math.min(5,p.freezeFuel+dt*.5);
   // Firebird fuel: 5 seconds of firing capacity, recovering fully in 10 seconds when not firing.
   if(p.turretId==='fast' && p.firebirdFuel<8 && !mouse.down && !mobileFire && !keys.has(' ')){
@@ -1941,6 +1944,7 @@ function update(dt){
   }
   if(firebird.id==='122mm'&&firebird.flame&&fireHeld&&p.firebirdFuel>0)p.firebirdFuel=Math.max(0,p.firebirdFuel-dt);
   if(firebird.id==='122mmFreeze'&&firebird.freeze&&fireHeld&&p.freezeFuel>0)p.freezeFuel=Math.max(0,p.freezeFuel-dt);
+  if(firebird.id==='isida'&&firebird.isida&&fireHeld&&p.isidaFuel>0){p.isidaFuel=Math.max(0,p.isidaFuel-dt);if(p.isidaFuel<=0)p.isidaTarget=null;}
   if(fireHeld)shoot();
 
   for(let i=bs.length-1;i>=0;i--){
@@ -2857,6 +2861,8 @@ function draw(){
     ?Math.max(0,Math.min(1,p.firebirdFuel/(p.firebirdMaxFuel||5)))
     :(barrel.id==='122mmFreeze'&&barrel.freeze)
       ?Math.max(0,Math.min(1,p.freezeFuel/(p.freezeMaxFuel||5)))
+    :(barrel.id==='isida'&&barrel.isida)
+      ?Math.max(0,Math.min(1,p.isidaFuel/(p.isidaMaxFuel||5)))
     :p.railCharging
       ?Math.max(0,Math.min(1,p.railCharge))
       :(actualReloadTime>0?Math.max(0,Math.min(1,1-p.cd/actualReloadTime)):1);
@@ -2871,7 +2877,7 @@ function draw(){
   $('levelText').textContent=p.lv;const topCoins=$('topCoinsText'),topKills=$('topKillsText');if(topCoins)topCoins.textContent=p.coins;if(topKills)topKills.textContent=p.kills;
   const reloadBar=$('reloadBar');
   if(reloadBar)reloadBar.style.width=(reloadPct*100)+'%';
-  if((barrel.id==='122mm'&&barrel.flame)||(barrel.id==='122mmFreeze'&&barrel.freeze)){
+  if((barrel.id==='122mm'&&barrel.flame)||(barrel.id==='122mmFreeze'&&barrel.freeze)||(barrel.id==='isida'&&barrel.isida)){
     const reloadText=$('reloadText');
     if(reloadText)reloadText.textContent='FUEL';
     if(reloadText)reloadText.style.color='#ffd21a';

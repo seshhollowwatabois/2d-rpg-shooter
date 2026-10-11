@@ -1,4 +1,4 @@
-const GAME_VERSION='2026101206';
+const GAME_VERSION='2026101207';
 const c=document.getElementById('game'),x=c.getContext('2d'),$=id=>document.getElementById(id);
 let W,H,last=0,spawn=0,over=false,p,en=[],deadTanks=[],playerDeathTank=null,playerDeathTimer=0,playerDeathElapsed=0,bs=[],ebs=[],ps=[],dmgTexts=[],walls=[],smokyTracers=[],thunderExplosions=[];
 let wave=1,waveRemaining=0,waveStarted=false,waveClearTimer=0;
@@ -2439,7 +2439,13 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
 
   // Turret silhouette varies with weapon class.
   x.fillStyle=frostColor(enemy?(heavy?'#45413b':'#61373a'):'#424d3f');x.beginPath();
-  if(visualTurret.id==='railgun'){
+  if(visualTurret.id==='isida'){
+    // Isida gets a long, unmistakably forward-pointing nose instead of a round ball.
+    x.moveTo(-tr*.49,-tr*.30);x.quadraticCurveTo(-tr*.31,-tr*.47,-tr*.02,-tr*.43);
+    x.lineTo(tr*.27,-tr*.31);x.lineTo(tr*.48,-tr*.16);x.lineTo(tr*.69,0);
+    x.lineTo(tr*.48,tr*.16);x.lineTo(tr*.27,tr*.31);x.lineTo(-tr*.02,tr*.43);
+    x.quadraticCurveTo(-tr*.31,tr*.47,-tr*.49,tr*.30);x.quadraticCurveTo(-tr*.60,0,-tr*.49,-tr*.30);
+  }else if(visualTurret.id==='railgun'){
     x.moveTo(-tr*.50,-tr*.30);x.lineTo(tr*.08,-tr*.36);x.quadraticCurveTo(tr*.42,-tr*.27,tr*.48,0);
     x.quadraticCurveTo(tr*.42,tr*.27,tr*.08,tr*.36);x.lineTo(-tr*.50,tr*.30);x.quadraticCurveTo(-tr*.60,0,-tr*.50,-tr*.30);
   }else if(visualTurret.id==='fast'){
@@ -2611,14 +2617,15 @@ function tankBody(cx,cy,r,hullAngle,turretAngle,enemy=false,heavy=false,flash=fa
   const barrelWidth=.15*barrelScale;
   if(visualTurret.id==='isida'){
     const it=isidaTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):isidaTier))]||isidaTiers[0];
-    // Isida's front is a pair of vampire fangs instead of a conventional barrel.
-    x.fillStyle='#143b3c';x.beginPath();x.roundRect(-tr*.30,-tr*.23,tr*.64,tr*.46,tr*.09);x.fill();
-    x.fillStyle='#081718';x.beginPath();x.roundRect(tr*.18,-tr*.205,tr*.30,tr*.41,tr*.06);x.fill();
-    x.fillStyle='#d8ffff';x.strokeStyle=it.beam;x.lineWidth=Math.max(1,tr*.025);
-    x.beginPath();x.moveTo(tr*.13,-tr*.23);x.lineTo(tr*.57,-tr*.17);x.lineTo(tr*.30,-tr*.015);x.closePath();x.fill();x.stroke();
-    x.beginPath();x.moveTo(tr*.13,tr*.23);x.lineTo(tr*.57,tr*.17);x.lineTo(tr*.30,tr*.015);x.closePath();x.fill();x.stroke();
-    x.fillStyle=it.beam;x.globalAlpha=.9;x.beginPath();x.arc(tr*.29,0,tr*.045,0,6.283);x.fill();x.globalAlpha=1;
-    if((enemy?(thunderTierVisual||0):isidaTier)>0){x.strokeStyle=it.beam;x.lineWidth=tr*.045;x.beginPath();x.moveTo(-tr*.30,-tr*.29);x.lineTo(tr*.12,-tr*.24);x.stroke();x.beginPath();x.moveTo(-tr*.30,tr*.29);x.lineTo(tr*.12,tr*.24);x.stroke();}
+    // Dark center channel and long fangs make the aiming direction obvious at a glance.
+    x.fillStyle='#143b3c';x.beginPath();x.moveTo(-tr*.34,-tr*.22);x.lineTo(tr*.28,-tr*.18);x.lineTo(tr*.64,0);x.lineTo(tr*.28,tr*.18);x.lineTo(-tr*.34,tr*.22);x.closePath();x.fill();
+    x.fillStyle='#061415';x.beginPath();x.moveTo(-tr*.12,-tr*.13);x.lineTo(tr*.45,-tr*.10);x.lineTo(tr*.68,0);x.lineTo(tr*.45,tr*.10);x.lineTo(-tr*.12,tr*.13);x.closePath();x.fill();
+    x.fillStyle='#d8ffff';x.strokeStyle=it.beam;x.lineWidth=Math.max(1,tr*.028);
+    x.beginPath();x.moveTo(tr*.12,-tr*.23);x.lineTo(tr*.77,-tr*.105);x.lineTo(tr*.42,-tr*.015);x.closePath();x.fill();x.stroke();
+    x.beginPath();x.moveTo(tr*.12,tr*.23);x.lineTo(tr*.77,tr*.105);x.lineTo(tr*.42,tr*.015);x.closePath();x.fill();x.stroke();
+    // Bright arrow-shaped spine remains visible even when the energy effect is idle.
+    x.fillStyle=it.beam;x.globalAlpha=.95;x.beginPath();x.moveTo(-tr*.20,-tr*.045);x.lineTo(tr*.40,-tr*.045);x.lineTo(tr*.61,0);x.lineTo(tr*.40,tr*.045);x.lineTo(-tr*.20,tr*.045);x.closePath();x.fill();x.globalAlpha=1;
+    if((enemy?(thunderTierVisual||0):isidaTier)>0){x.strokeStyle=it.beam;x.lineWidth=tr*.045;x.beginPath();x.moveTo(-tr*.34,-tr*.29);x.lineTo(tr*.14,-tr*.24);x.stroke();x.beginPath();x.moveTo(-tr*.34,tr*.29);x.lineTo(tr*.14,tr*.24);x.stroke();}
   }else if(visualTurret.id==='thunder'){
     const thunderVisual=thunderTiers[Math.max(0,Math.min(3,enemy?(thunderTierVisual||0):thunderTier))]||thunderTiers[0];
     const barrelHalf=tr*.20*barrelScale;
